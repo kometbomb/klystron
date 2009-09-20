@@ -2,7 +2,7 @@
 
 = Tools =
 
-Since klystron uses own file formats and data structures, custom tools are provided in the tools/ directory. 
+Since klystron uses own file formats and data structures, custom tools are provided in the _tools/_ directory. 
 
 == makebundle ==
 
