@@ -10,6 +10,7 @@ The engine source code is divided into three distinct areas. The user interface 
     * Sprites
     * Background
     * Text
+    * Primitives
   * Collision checking
   * Upscaling
 
