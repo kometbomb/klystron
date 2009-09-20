@@ -1,0 +1,47 @@
+#summary Description of the bundle data structure and APIs
+
+= Bundle =
+
+Game data for a klystron game is contained inside bundles. E.g. a font is a bundle of a text file and an image file.
+
+
+== APIs ==
+
+{{{
+int bnd_open(Bundle *bundle, const char * filename);
+int bnd_open_file(Bundle *bundle, FILE *f, const char * filename);
+void bnd_free(Bundle *bundle);
+FILE *bnd_locate(Bundle *bundle, const char *filename, int static_handle);
+SDL_RWops *SDL_RWFromBundle(Bundle *bundle, const char *filename);
+}}}
+
+== Examples ==
+
+=== Example using SDL_RWops ===
+
+The bundle system is best explained by an example. The below code opens a bundle, locates a file inside the bundle and makes SDL load an image from the bundle.
+
+{{{
+Bundle b;
+SDL_Surface *image;
+
+if (bnd_open(&b, "gamedata.dat")
+{
+    SDL_RWops *rw = SDL_RWFromBundle(&b, "enemy.bmp");
+
+    if (rw)
+    {
+        image = SDL_LoadBMP_RW(rw, 0);
+    }
+    else
+    {
+        // file not found inside the bundle
+    }
+
+    bnd_free(&b);
+}
+else
+{
+    // file could not be opened
+}
+}}}
