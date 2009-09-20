@@ -2,6 +2,8 @@
 
 = Bundle =
 
+See also: [CreatingBundles]
+
 Game data for a klystron game is contained inside bundles. E.g. a font is a bundle of a text file and an image file.
 
 
