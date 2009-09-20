@@ -58,39 +58,39 @@ static const TileDescriptor * findchar(const Font *font, char c)
 }
 
 
-void font_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...)
+static void font_write_va(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, const char * text, va_list va)
 {
-	va_list va;
-	va_start(va, text);
-	
 	int len = vsnprintf(NULL, 0, text, va) + 1;
 	char * formatted = malloc(len * sizeof(*formatted));
 	vsnprintf(formatted, len, text, va);
 	
-	va_end(va);
-	
 	const char *c = formatted;
-	int x = 0, y = 0, cr = 0, right = dest->w;
+	int x = (*cursor & 0xff) * font->h, y = ((*cursor >> 8) & 0xff) * font->h, cr = 0, right = dest->w;
 	
 	if (r)
 	{
-		cr = x = r->x;
-		y = r->y;
+		x = x + (cr = r->x);
+		y = r->y + y;
 		right = r->w + r->x;
 	}
 	
-	while (*c)
+	for (;*c;++c)
 	{
-		if (x >= right) --c;
-		
 		if (*c == '\n' || x >= right)
 		{
 			y += font->h;
 			x = cr;
+			*cursor &= (Uint16)0xff00;
+			*cursor += 0x0100;
+			
+			if (*c == '\n') 
+				continue;
 		}
-		else if (*c == ' ')
+		
+		if (*c == ' ')
 		{
 			x += font->w;
+			++*cursor;
 		}
 		else
 		{
@@ -107,9 +107,9 @@ void font_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * t
 			{
 				x += font->w;
 			}
+			
+			++*cursor;
 		}
-		
-		++c;
 	}
 	
 	free(formatted);
@@ -171,3 +171,26 @@ int font_load(Font *font, Bundle *bundle, char *name)
 	}
 }
 
+
+void font_write_cursor(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, const char * text, ...)
+{
+	va_list va;
+	va_start(va, text);
+	
+	font_write_va(font, dest, r, cursor, text, va);
+	
+	va_end(va);
+}
+
+
+void font_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...)
+{
+	Uint16 cursor = 0;
+	
+	va_list va;
+	va_start(va, text);
+	
+	font_write_va(font, dest, r, &cursor, text, va);
+	
+	va_end(va);
+}
