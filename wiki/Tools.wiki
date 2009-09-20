@@ -1,0 +1,24 @@
+#summary List of tools used to create content for klystron
+
+= Tools =
+
+Since klystron uses own file formats and data structures, custom tools are provided in the tools/ directory. 
+
+== makebundle ==
+
+_makebundle_ is used to bundle multiple files in one klystron data container (called a _bundle_). E.g. a font is a bundle of an image file and a text file with the character map. The bundles can be accessed in random fashion. The bundle can contain more bundles. 
+
+For example, klystron font is a bundle of the following directory structure:
+
+{{{
+font/charmap.txt
+font/font.bmp
+}}}
+
+The actual bundle is created with makebundle as follows:
+
+{{{
+makebundle font.fnt fontdata
+}}}
+
+This bundles all files in the directory _fontdata_ as _font.fnt_. The font could then, for example, be bundled inside a larger bundle containing all game data.
