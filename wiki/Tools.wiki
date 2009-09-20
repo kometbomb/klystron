@@ -16,4 +16,4 @@ The idea behind generic events is that the editor is not tied to only one game. 
 
 == makebundle ==
 
-_makebundle_ is used to [CreatingBundles bundle multiple files] in one klystron data container (called a [Bundle bundle]). 
+_makebundle_ is used to [CreatingBundles bundle multiple files] inside one klystron data container (called a [Bundle bundle]). 
