@@ -6,7 +6,7 @@ Since klystron uses own file formats and data structures, custom tools are provi
 
 == makebundle ==
 
-_makebundle_ is used to bundle multiple files in one klystron data container (called a _bundle_). E.g. a font is a bundle of an image file and a text file with the character map. The bundles can be accessed in random fashion. The bundle can contain more bundles. 
+_makebundle_ is used to bundle multiple files in one klystron data container (called a [Bundle bundle]). E.g. a font is a bundle of an image file and a text file with the character map. The bundles can be accessed in random fashion. The bundle can contain more bundles. 
 
 For example, klystron font is a bundle of the following directory structure:
 
