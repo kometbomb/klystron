@@ -11,8 +11,8 @@ _makebundle_ is used to bundle multiple files in one klystron data container (ca
 For example, klystron font is a bundle of the following directory structure:
 
 {{{
-font/charmap.txt
-font/font.bmp
+fontdata/charmap.txt
+fontdata/font.bmp
 }}}
 
 The actual bundle is created with makebundle as follows:
