@@ -1,4 +1,4 @@
-#summary List of tools used to create content for klystron
+#summary Brief description of tools used to create content for klystron
 
 = Tools =
 
@@ -8,21 +8,12 @@ Since klystron uses own file formats and data structures, custom tools are provi
 
 _[http://code.google.com/p/klystrack/ klystrack]_ is the music and sound effects editor. 
 
+== editor ==
+
+_editor_ is a tile-based level editor that can export packed level files to be used by klystron. The levels contain one or more layers of tile data and any number of _events_ that are interpreted by the level loader. The engine itself doesn't care about the events and only passes them to the client. 
+
+The idea behind generic events is that the editor is not tied to only one game. Each event has a number of parameters that in part can contain enumerations of enemy types et cetera. The events also have the property of width and height so they can be used to define areas in the level to e.g. trigger events in the game (and that's why the objects are called "events").
+
 == makebundle ==
 
-_makebundle_ is used to bundle multiple files in one klystron data container (called a [Bundle bundle]). E.g. a font is a bundle of an image file and a text file with the character map. The bundles can be accessed in random fashion. The bundle can contain more bundles. 
-
-For example, klystron font is a bundle of the following directory structure:
-
-{{{
-fontdata/charmap.txt
-fontdata/font.bmp
-}}}
-
-The actual bundle is created with makebundle as follows:
-
-{{{
-makebundle font.fnt fontdata
-}}}
-
-This bundles all files in the directory _fontdata_ as _font.fnt_. The font could then, for example, be bundled inside a larger bundle containing all game data.
+_makebundle_ is used to [CreatingBundles bundle multiple files] in one klystron data container (called a [Bundle bundle]). 
