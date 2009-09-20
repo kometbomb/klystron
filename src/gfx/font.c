@@ -58,9 +58,18 @@ static const TileDescriptor * findchar(const Font *font, char c)
 }
 
 
-void font_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text)
+void font_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...)
 {
-	const char *c = text;
+	va_list va;
+	va_start(va, text);
+	
+	int len = vsnprintf(NULL, 0, text, va) + 1;
+	char * formatted = malloc(len * sizeof(*formatted));
+	vsnprintf(formatted, len, text, va);
+	
+	va_end(va);
+	
+	const char *c = formatted;
 	int x = 0, y = 0, cr = 0, right = dest->w;
 	
 	if (r)
@@ -102,6 +111,8 @@ void font_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * t
 		
 		++c;
 	}
+	
+	free(formatted);
 }
 
 
