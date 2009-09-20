@@ -43,6 +43,6 @@ typedef struct
 int font_load(Font *font, Bundle *b, char *name);
 void font_create(Font *font, SDL_Surface *tiles, const int w, const int h, char *charmap);
 void font_destroy(Font *font);
-void font_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...);
+void font_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...) __attribute__ ((format (printf, 4, 5)));
 
 #endif
