@@ -148,7 +148,27 @@ int font_load(Font *font, Bundle *bundle, char *name)
 				}
 			}
 			
-			font_create(font, s, 8, 9, map);
+			int w, h;
+			
+			{
+				SDL_RWops *rw = SDL_RWFromBundle(&fb, "res.txt");
+				char res[10];
+				
+				if (rw)
+				{
+					rw->read(rw, res, 1, sizeof(res)-1);
+					SDL_FreeRW(rw);
+					
+					sscanf(res, "%d %d", &w, &h);
+				}
+				else
+				{
+					w = 8;
+					h = 9;
+				}
+			}
+			
+			font_create(font, s, w, h, map);
 		
 			font->surface = s;
 			
