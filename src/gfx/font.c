@@ -129,7 +129,8 @@ static void inner_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16
 	}
 }
 
-static void font_write_va(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text, va_list va)
+
+void font_write_va(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text, va_list va)
 {
 	int len = vsnprintf(NULL, 0, text, va) + 1;
 	char * formatted = malloc(len * sizeof(*formatted));
