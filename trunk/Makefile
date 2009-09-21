@@ -47,7 +47,9 @@ endif
 # A common link flag for all configurations
 LDFLAGS = 
 
-all: bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a 
+all: bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a tools
+
+tools: tools/bin/makebundle.exe
 
 inform:
 	@echo "Configuration "$(CFG)
@@ -119,3 +121,6 @@ ifneq ($(MAKECMDGOALS),clean)
 -include ${Group1_DEP}
 -include ${Group2_DEP}
 endif
+
+tools/bin/makebundle.exe: tools/makebundle/*.c
+	make -C tools/makebundle
