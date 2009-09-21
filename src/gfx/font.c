@@ -58,13 +58,9 @@ static const TileDescriptor * findchar(const Font *font, char c)
 }
 
 
-static void font_write_va(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, const char * text, va_list va)
+static void inner_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text)
 {
-	int len = vsnprintf(NULL, 0, text, va) + 1;
-	char * formatted = malloc(len * sizeof(*formatted));
-	vsnprintf(formatted, len, text, va);
-	
-	const char *c = formatted;
+	const char *c = text;
 	int x = (*cursor & 0xff) * font->h, y = ((*cursor >> 8) & 0xff) * font->h, cr = 0, right = dest->w;
 	
 	if (r)
@@ -72,6 +68,14 @@ static void font_write_va(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint
 		x = x + (cr = r->x);
 		y = r->y + y;
 		right = r->w + r->x;
+	}
+	
+	int prev_x = x, prev_y = y;
+	
+	if (bounds && bounds->w == 0)
+	{
+		bounds->x = x;
+		bounds->y = y;
 	}
 	
 	for (;*c;++c)
@@ -82,6 +86,8 @@ static void font_write_va(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint
 			x = cr;
 			*cursor &= (Uint16)0xff00;
 			*cursor += 0x0100;
+			
+			prev_y = y;
 			
 			if (*c == '\n') 
 				continue;
@@ -110,7 +116,26 @@ static void font_write_va(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint
 			
 			++*cursor;
 		}
+		
+		if (bounds)
+		{
+			bounds->x = my_min(prev_x, bounds->x);
+			bounds->y = my_min(prev_y, bounds->y);
+			bounds->w = my_max(x - bounds->x, bounds->w);
+			bounds->h = my_max(y - bounds->y + font->h, bounds->h);
+		}
+		
+		prev_x = x;
 	}
+}
+
+static void font_write_va(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text, va_list va)
+{
+	int len = vsnprintf(NULL, 0, text, va) + 1;
+	char * formatted = malloc(len * sizeof(*formatted));
+	vsnprintf(formatted, len, text, va);
+	
+	inner_write(font, dest, r, cursor, bounds, formatted);
 	
 	free(formatted);
 }
@@ -192,25 +217,37 @@ int font_load(Font *font, Bundle *bundle, char *name)
 }
 
 
-void font_write_cursor(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, const char * text, ...)
+void font_write_cursor_args(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text, ...)
 {
 	va_list va;
 	va_start(va, text);
 	
-	font_write_va(font, dest, r, cursor, text, va);
+	font_write_va(font, dest, r, cursor, bounds, text, va);
 	
 	va_end(va);
 }
 
 
-void font_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...)
+void font_write_cursor(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text)
+{
+	inner_write(font, dest, r, cursor, bounds, text);
+}
+
+
+void font_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text)
+{
+	inner_write(font, dest, r, NULL, NULL, text);
+}
+
+
+void font_write_args(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...)
 {
 	Uint16 cursor = 0;
 	
 	va_list va;
 	va_start(va, text);
 	
-	font_write_va(font, dest, r, &cursor, text, va);
+	font_write_va(font, dest, r, &cursor, NULL, text, va);
 	
 	va_end(va);
 }

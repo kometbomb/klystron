@@ -43,7 +43,9 @@ typedef struct
 int font_load(Font *font, Bundle *b, char *name);
 void font_create(Font *font, SDL_Surface *tiles, const int w, const int h, char *charmap);
 void font_destroy(Font *font);
-void font_write_cursor(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, const char * text, ...) __attribute__ ((format (printf, 5, 6)));
-void font_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...) __attribute__ ((format (printf, 4, 5)));
+void font_write_cursor(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text);
+void font_write_cursor_args(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text, ...) __attribute__ ((format (printf, 6, 7)));
+void font_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text);
+void font_write_args(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...) __attribute__ ((format (printf, 4, 5)));
 
 #endif
