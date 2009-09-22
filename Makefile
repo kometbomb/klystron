@@ -47,6 +47,8 @@ endif
 # A common link flag for all configurations
 LDFLAGS = 
 
+.PHONY: tools all
+
 all: bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a tools
 
 tools: tools/bin/makebundle.exe
