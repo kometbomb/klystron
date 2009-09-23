@@ -288,7 +288,7 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 		break;
 		
 		default:
-		assert(1);
+		assert(0);
 		break;
 	}
 	
