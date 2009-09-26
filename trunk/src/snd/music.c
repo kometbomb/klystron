@@ -191,7 +191,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			
 			case MUS_FX_PORTA_VOLUME_SET:
 			{
-				mus->cyd->channel[chan].volume = (inst & 0x7f) * (int)mus->volume / 128;
+				mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : (inst & 0x7f) * (int)mus->volume / 128;
 			}
 			break;
 			
@@ -339,7 +339,7 @@ static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrume
 	
 	MusChannel *chn = &mus->channel[chan];
 
-	chn->flags = MUS_CHN_PLAYING;
+	chn->flags = MUS_CHN_PLAYING | (chn->flags & MUS_CHN_DISABLED);
 	if (ins->prog_period > 0) chn->flags |= MUS_CHN_PROGRAM_RUNNING;
 	chn->instrument = ins;
 	chn->program_counter = 0;
@@ -368,7 +368,7 @@ static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrume
 	mus->song_track[chan].vibrato_position = 0;
 	mus->song_track[chan].slide_speed = 0;
 	
-	mus->cyd->channel[chan].volume = ins->volume * (int)mus->volume / 128;
+	mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : ins->volume * (int)mus->volume / 128;
 	
 	mus->cyd->channel[chan].sync_source = ins->sync_source == 0xff? chan : ins->sync_source;
 	mus->cyd->channel[chan].ring_mod = ins->ring_mod == 0xff? chan : ins->ring_mod;
@@ -446,7 +446,6 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 	
 	if (mus->song_track[chan].delayed.instrument != NULL)
 	{
-		
 		mus_trigger_instrument_internal(mus, mus->song_track[chan].delayed.channel, mus->song_track[chan].delayed.instrument, mus->song_track[chan].delayed.note);
 		mus->song_track[chan].delayed.instrument = NULL;
 	}

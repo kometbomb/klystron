@@ -145,7 +145,8 @@ typedef struct
 enum
 {
 	MUS_CHN_PLAYING = 1,
-	MUS_CHN_PROGRAM_RUNNING = 2
+	MUS_CHN_PROGRAM_RUNNING = 2,
+	MUS_CHN_DISABLED = 4
 };
 
 enum
