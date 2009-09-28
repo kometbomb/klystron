@@ -100,6 +100,8 @@ void cyd_deinit(CydEngine *cyd)
 	free(cyd->channel);
 	cyd->channel = NULL;
 	
+	cydrvb_deinit(&cyd->rvb);
+	
 #ifdef USESDLMUTEXES
 	if (cyd->mutex)
 		SDL_DestroyMutex(cyd->mutex);
