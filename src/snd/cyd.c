@@ -88,8 +88,6 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	
 	cydrvb_init(&cyd->rvb, sample_rate);
 	
-	//cyd->flags |= CYD_ENABLE_REVERB;
-	
 	cyd_reset(cyd);
 }
 
