@@ -32,7 +32,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define MUS_PROG_LEN 32
 #define MUS_CHANNELS 3
 
-#define MUS_VERSION 2
+#define MUS_VERSION 3
 
 typedef struct
 {
@@ -105,6 +105,8 @@ typedef struct
 	Uint16 song_length, loop_point;
 	Uint8 song_speed, song_speed2, song_rate;
 	Uint16 time_signature;
+	Uint32 flags;
+	struct { int delay, gain; } rvbtap[CYDRVB_TAPS];
 } MusSong;
 
 
@@ -193,6 +195,11 @@ enum
 	
 };
 
+enum
+{
+	MUS_ENABLE_REVERB = 1
+};
+
 #define MUS_INST_SIG "cyd!inst"
 #define MUS_SONG_SIG "cyd!song"
 
@@ -209,5 +216,6 @@ void mus_get_default_instrument(MusInstrument *inst);
 void mus_load_song(const char *path, MusSong *song);
 void mus_load_song_file(FILE *f, MusSong *song);
 void mus_free_song(MusSong *song);
+void mus_set_reverb(MusEngine *mus, MusSong *song);
 
 #endif
