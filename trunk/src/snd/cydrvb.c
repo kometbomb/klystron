@@ -33,7 +33,7 @@ void cydrvb_init(CydReverb *rvb, int rate)
 	
 	rvb->size = bufsize;
 	rvb->rate = rate;
-	rvb->buffer = malloc(sizeof(*rvb->buffer) * bufsize);
+	rvb->buffer = calloc(sizeof(*rvb->buffer), bufsize);
 	
 	for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
 		cydrvb_set_tap(rvb, i, i * 100 + 50, CYDRVB_0dB / (i*i + 2));
