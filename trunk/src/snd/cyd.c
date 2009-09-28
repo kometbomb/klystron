@@ -86,6 +86,10 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	
 	cyd_init_log_table(cyd);
 	
+	cydrvb_init(&cyd->rvb, sample_rate);
+	
+	//cyd->flags |= CYD_ENABLE_REVERB;
+	
 	cyd_reset(cyd);
 }
 
@@ -294,7 +298,7 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 
 static Sint16 cyd_output(CydEngine *cyd)
 {
-	Sint32 v = 0, s[CYD_MAX_CHANNELS];
+	Sint32 v = 0, s[CYD_MAX_CHANNELS], rvb_input = 0;
 	
 	for (int i = 0 ; i < cyd->n_channels ; ++i)
 	{
@@ -332,14 +336,25 @@ static Sint16 cyd_output(CydEngine *cyd)
 					case FLT_HP: o = cydflt_output_hp(&chn->flt); break;
 				}
 			}
+			
+			if (chn->flags & CYD_CHN_ENABLE_REVERB)
+			{
+				rvb_input += o;
+			}
 		}
-		
-		
 		
 		v += o;
 	}
-
-	return v;
+	
+	if (cyd->flags & CYD_ENABLE_REVERB)
+	{
+		cydrvb_cycle(&cyd->rvb, rvb_input);
+		return v + cydrvb_output(&cyd->rvb);
+	}
+	else
+	{
+		return v;
+	}
 }
 
 
