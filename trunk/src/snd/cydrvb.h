@@ -27,11 +27,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include "SDL.h"
+#include <math.h>
 
 // Max delay length in milliseconds
 #define CYDRVB_SIZE 1000
 #define CYDRVB_TAPS 8
 #define CYDRVB_0dB 2048
+#define CYDRVB_LOW_LIMIT (int)(100.0 * log(1.0 / (double)CYDRVB_0dB))
 
 typedef struct
 {
@@ -50,6 +52,6 @@ void cydrvb_init(CydReverb *rvb, int rate);
 void cydrvb_deinit(CydReverb *rvb);
 void cydrvb_cycle(CydReverb *rvb, Sint32 input);
 Sint32 cydrvb_output(CydReverb *rvb);
-void cydrvb_set_tap(CydReverb *rvb, int idx, int delay_ms, int gain);
+void cydrvb_set_tap(CydReverb *rvb, int idx, int delay_ms, int gain_db);
 
 #endif

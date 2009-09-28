@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include "cydrvb.h"
+#include <math.h>
 
 void cydrvb_init(CydReverb *rvb, int rate)
 {
@@ -76,9 +77,13 @@ Sint32 cydrvb_output(CydReverb *rvb)
 }
 
 
-void cydrvb_set_tap(CydReverb *rvb, int idx, int delay_ms, int gain)
+void cydrvb_set_tap(CydReverb *rvb, int idx, int delay_ms, int gain_db)
 {
 	rvb->tap[idx].delay = delay_ms;
 	rvb->tap[idx].position = (rvb->position - (delay_ms * rvb->rate / 1000) + rvb->size) % rvb->size;
-	rvb->tap[idx].gain = gain;
+	
+	if (gain_db <= CYDRVB_LOW_LIMIT)
+		rvb->tap[idx].gain = 0;
+	else
+		rvb->tap[idx].gain = pow(10.0, (double)gain_db * 0.01) * CYDRVB_0dB;
 }

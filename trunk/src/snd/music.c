@@ -793,6 +793,27 @@ void mus_get_default_instrument(MusInstrument *inst)
 		inst->program[p] = MUS_FX_NOP;
 }
 
+
+void mus_set_reverb(MusEngine *mus, MusSong *song)
+{
+	cyd_lock(mus->cyd, 1);
+	if (song->flags & MUS_ENABLE_REVERB)
+	{
+		for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
+		{
+			cydrvb_set_tap(&mus->cyd->rvb, i, song->rvbtap[i].delay, song->rvbtap[i].gain);
+		}
+		
+		mus->cyd->flags |= CYD_ENABLE_REVERB;
+	}
+	else
+	{
+		mus->cyd->flags &= ~CYD_ENABLE_REVERB;
+	}
+	cyd_lock(mus->cyd, 0);
+}
+
+
 void mus_load_song_file(FILE *f, MusSong *song)
 {
 	char id[9];
@@ -814,6 +835,18 @@ void mus_load_song_file(FILE *f, MusSong *song)
 		fread(&song->song_speed, 1, sizeof(song->song_speed), f);
 		fread(&song->song_speed2, 1, sizeof(song->song_speed2), f);
 		fread(&song->song_rate, 1, sizeof(song->song_rate), f);
+		
+		if (version > 2) fread(&song->flags, 1, sizeof(song->flags), f);
+		else song->flags = 0;
+		
+		if (song->flags & MUS_ENABLE_REVERB)
+		{
+			for (int i = 0 ; i < CYDRVB_TAPS ; ++i)	
+			{
+				fread(&song->rvbtap[i].gain, 1, sizeof(song->rvbtap[i].gain), f);
+				fread(&song->rvbtap[i].delay, 1, sizeof(song->rvbtap[i].delay), f);
+			}
+		}
 		
 		if (song->instrument == NULL)
 			song->instrument = malloc((size_t)song->num_instruments * sizeof(song->instrument[0]));
@@ -853,9 +886,6 @@ void mus_load_song_file(FILE *f, MusSong *song)
 			for (int step = 0 ; step < song->pattern[i].num_steps ; ++step)
 				fread(&song->pattern[i].step[step], 1, s, f);
 		}
-		
-		
-		
 	}
 }
 
