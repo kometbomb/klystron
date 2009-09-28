@@ -34,6 +34,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <signal.h>
 
 #include "cydflt.h"
+#include "cydrvb.h"
 
 #define CYD_BASE_FREQ 22050
 #define CYD_MAX_CHANNELS 32
@@ -80,7 +81,8 @@ enum
 	CYD_CHN_ENABLE_KEY_SYNC = 64,
 	CYD_CHN_ENABLE_METAL = 128,
 	CYD_CHN_ENABLE_RING_MODULATION = 256,
-	CYD_CHN_ENABLE_FILTER = 512
+	CYD_CHN_ENABLE_FILTER = 512,
+	CYD_CHN_ENABLE_REVERB = 1024
 };
 
 enum {
@@ -115,6 +117,7 @@ typedef struct
 	volatile Uint32 callback_period, callback_counter;
 	Uint16 *lookup_table;
 	CydFilter flt;
+	CydReverb rvb;
 #ifdef USESDLMUTEXES
 	SDL_mutex *mutex;	
 #else
@@ -125,7 +128,8 @@ typedef struct
 
 enum
 {
-	CYD_PAUSED = 1
+	CYD_PAUSED = 1,
+	CYD_ENABLE_REVERB = 2
 };
 
 /////////////////777
