@@ -61,7 +61,7 @@ static const TileDescriptor * findchar(const Font *font, char c)
 static void inner_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text)
 {
 	const char *c = text;
-	int x = (*cursor & 0xff) * font->h, y = ((*cursor >> 8) & 0xff) * font->h, cr = 0, right = dest->w;
+	int x = (*cursor & 0xff) * font->w, y = ((*cursor >> 8) & 0xff) * font->h, cr = 0, right = dest->w;
 	
 	if (r)
 	{
