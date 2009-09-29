@@ -30,7 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <math.h>
 
 // Max delay length in milliseconds
-#define CYDRVB_SIZE 1000
+#define CYDRVB_SIZE 2000
 #define CYDRVB_TAPS 8
 #define CYDRVB_0dB 2048
 #define CYDRVB_LOW_LIMIT (int)(100.0 * log(1.0 / (double)CYDRVB_0dB))
