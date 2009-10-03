@@ -108,8 +108,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			if (mus->song_track[chan].pw > 0x7ff) mus->song_track[chan].pw = 0x7ff;
 		}
 		break;
-		
-		
+				
 		case MUS_FX_CUTOFF_DN:
 		{
 			mus->song_track[chan].filter_cutoff -= inst & 0xff;
@@ -125,9 +124,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, 0);
 		}
 		break;
-		
-		
-		
+				
 		case MUS_FX_PW_SET:
 		{
 			mus->song_track[chan].pw = inst & 0xff << 4;
@@ -140,8 +137,20 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 				cyd_enable_gate(mus->cyd, cydchn, 0);
 		}
 		break;
+		
+		case MUS_FX_FADE_VOLUME:
+		{
+			if (!(chn->flags & MUS_CHN_DISABLED))
+			{
+				mus->song_track[chan].volume -= inst & 0xf;
+				if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = 0;
+				mus->song_track[chan].volume += (inst >> 4) & 0xf;
+				if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = MAX_VOLUME;
+				cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / 128;
+			}
+		}
+		break;
 	}
-	
 	
 	if (chn->program_counter != 0) return;
 	
@@ -149,6 +158,37 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 	
 	switch (inst & 0xff00)
 	{
+		case MUS_FX_EXT:
+		{
+			// Protracker style Exy commands
+		
+			switch (inst & 0xfff0)
+			{
+				case MUS_FX_EXT_FADE_VOLUME_DN:
+				{
+					if (!(chn->flags & MUS_CHN_DISABLED))
+					{
+						mus->song_track[chan].volume -= inst & 0xf;
+						if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = 0;
+						cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / 128;
+					}
+				}
+				break;
+				
+				case MUS_FX_EXT_FADE_VOLUME_UP:
+				{
+					if (!(chn->flags & MUS_CHN_DISABLED))
+					{
+						mus->song_track[chan].volume += inst & 0xf;
+						if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = MAX_VOLUME;
+						cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / 128;
+					}
+				}
+				break;
+			}
+		}
+		break;
+	
 		case MUS_FX_CUTOFF_SET:
 		{
 			mus->song_track[chan].filter_cutoff = (inst & 0xff) << 3;
@@ -188,14 +228,14 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			}
 			break;
 			
-			
-			case MUS_FX_PORTA_VOLUME_SET:
+			case MUS_FX_SET_VOLUME:
 			{
-				mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : (inst & 0x7f) * (int)mus->volume / 128;
+				mus->song_track[chan].volume = my_max(MAX_VOLUME, inst & 0xff);
+				mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : mus->song_track[chan].volume * (int)mus->volume / 128;
 			}
 			break;
 			
-			case MUS_FX_PORTA_WAVEFORM_SET:
+			case MUS_FX_SET_WAVEFORM:
 			{
 				cyd_set_waveform(&mus->cyd->channel[chan], inst & 0xff);
 			}
@@ -368,7 +408,8 @@ static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrume
 	mus->song_track[chan].vibrato_position = 0;
 	mus->song_track[chan].slide_speed = 0;
 	
-	mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : ins->volume * (int)mus->volume / 128;
+	mus->song_track[chan].volume = ins->volume;
+	mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : mus->song_track[chan].volume * (int)mus->volume / 128;
 	
 	mus->cyd->channel[chan].sync_source = ins->sync_source == 0xff? chan : ins->sync_source;
 	mus->cyd->channel[chan].ring_mod = ins->ring_mod == 0xff? chan : ins->ring_mod;

@@ -127,6 +127,7 @@ typedef struct
 	Sint8 note_offset;
 	Uint16 filter_cutoff;
 	Uint8 extarp1, extarp2;
+	Uint8 volume;
 } MusTrackStatus;
 
 typedef struct
@@ -158,10 +159,9 @@ enum
 };
 
 #define MIDDLE_C (12*4)
-
 #define MUS_NOTE_NO_INSTRUMENT 0xff
-
 #define MUS_CTRL_BIT 1
+#define MAX_VOLUME 128
 
 enum
 {
@@ -169,6 +169,11 @@ enum
 	MUS_FX_SET_EXT_ARP = 0x1000,
 	MUS_FX_PORTA_UP = 0x0100,
 	MUS_FX_PORTA_DN = 0x0200,
+	MUS_FX_FADE_VOLUME = 0x0a00,
+	MUS_FX_SET_VOLUME = 0x0c00,
+	MUS_FX_EXT = 0x0e00,
+	MUS_FX_EXT_FADE_VOLUME_DN = 0x0ea0,
+	MUS_FX_EXT_FADE_VOLUME_UP = 0x0eb0,
 	MUS_FX_PORTA_UP_SEMI = 0x1100,
 	MUS_FX_PORTA_DN_SEMI = 0x1200,
 	MUS_FX_CUTOFF_UP = 0x2100,
@@ -177,8 +182,7 @@ enum
 	MUS_FX_PW_DN = 0x0700,
 	MUS_FX_PW_UP = 0x0800,
 	MUS_FX_PW_SET = 0x0900,
-	MUS_FX_PORTA_VOLUME_SET = 0x0c00,
-	MUS_FX_PORTA_WAVEFORM_SET = 0x0b00,
+	MUS_FX_SET_WAVEFORM = 0x0b00,
 	MUS_FX_END = 0xffff,
 	MUS_FX_JUMP = 0xff00,
 	MUS_FX_LABEL = 0xfd00,
