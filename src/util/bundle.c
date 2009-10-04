@@ -53,7 +53,7 @@ int bnd_open(Bundle *bundle, const char * filename)
 	}
 	else
 	{
-		debug("Can't open bundle '%s'", filename);
+		warning("Can't open bundle '%s'", filename);
 		return 0;
 	}
 }
@@ -73,14 +73,14 @@ int bnd_open_file(Bundle *bundle, FILE *f, const char * filename)
 	
 	if (strncmp(sig, BND_SIG, strlen(BND_SIG)) != 0)
 	{
-		debug("Bundle sig does not match '"BND_SIG"'");
+		warning("Bundle sig does not match '"BND_SIG"'");
 		return 0;
 	}
 	
 	fread(&bundle->flags, 1, sizeof(bundle->flags), f);
 	
 	if (bundle->flags != 0)
-		debug("Unsupported bundle mode");
+		warning("Unsupported bundle mode");
 	
 	fread(&bundle->n_files, 1, sizeof(bundle->n_files), f);
 	
@@ -103,7 +103,7 @@ int bnd_open_file(Bundle *bundle, FILE *f, const char * filename)
 				++l;
 			}
 			else
-				debug("Warning bundle name too long");
+				warning("Bundle name too long");
 		}
 		while (c);
 		
@@ -120,8 +120,6 @@ int bnd_open_file(Bundle *bundle, FILE *f, const char * filename)
 		bundle->file[i].offset += header_size;
 	}
 	
-	
-	
 	debug("Opened bundle '%s', %d files", filename, bundle->n_files);
 	
 	return 1;
@@ -135,12 +133,16 @@ void bnd_free(Bundle *bundle)
 		free(bundle->file[i].name);
 	}
 	
-	if (bundle->handle) fclose(bundle->handle);
+	if (bundle->handle) 
+	{
+		fclose(bundle->handle);
+	}
 	
 	free(bundle->path);
 	free(bundle->file);
 	memset(bundle, 0, sizeof(*bundle));
 }
+
 
 FILE *bnd_locate(Bundle *bundle, const char *filename, int static_handle)
 {
@@ -165,14 +167,14 @@ FILE *bnd_locate(Bundle *bundle, const char *filename, int static_handle)
 			}
 			else
 			{
-				debug("Could not reopen bundle '%s'", bundle->path);
+				warning("Could not reopen bundle '%s'", bundle->path);
 			}
 			
 			return h;
 		}
 	}
 	
-	debug("File '%s' not found in bundle", filename);
+	warning("File '%s' not found in bundle", filename);
 	
 	return NULL;
 }
@@ -221,10 +223,11 @@ static int bnd_read(struct SDL_RWops *context, void *ptr, int size, int num)
 
 static int bnd_close(struct SDL_RWops *context)
 {
+	debug("bnd_close");
 	RWOpsBundle *b = context->hidden.unknown.data1;
 	fclose(b->handle);
 	free(b);
-	free(context);
+	SDL_FreeRW(context);
 	return 0;
 }
 
@@ -237,7 +240,7 @@ SDL_RWops *SDL_RWFromBundle(Bundle *bundle, const char *filename)
 	
 	if (!f)
 	{
-		debug("SDL_RWFromBundle failed to open file");
+		warning("SDL_RWFromBundle failed to open file");
 		return NULL;
 	}
 	
@@ -254,7 +257,9 @@ SDL_RWops *SDL_RWFromBundle(Bundle *bundle, const char *filename)
 	}
 	
 	rwops = SDL_AllocRW();
-	if ( rwops != NULL ) {
+	
+	if (rwops != NULL) 
+	{
 		rwops->seek = bnd_seek;
 		rwops->read = bnd_read;
 		rwops->write = NULL;
