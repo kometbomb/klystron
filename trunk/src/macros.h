@@ -32,8 +32,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define SQR(x) ((x)*(x))
 #define my_min(a,b) (((a)<(b))?(a):(b))
 #define my_max(a,b) (((a)>(b))?(a):(b))
-#define my_lock(s) { if (SDL_MUSTLOCK(s)) SDL_LockSurface(s); }
-#define my_unlock(s) { if (SDL_MUSTLOCK(s)) SDL_UnlockSurface(s); }
+#define my_lock(s) { if (SDL_MUSTLOCK(s)) SDL_LockSurface(s); } while(0)
+#define my_unlock(s) { if (SDL_MUSTLOCK(s)) SDL_UnlockSurface(s); } while(0)
 #define VER(file_version, first_version, last_version, block)\
 	if ((((Uint16)file_version) >= ((Uint16)first_version)) && (((Uint16)file_version) <= ((Uint16)last_version)))\
 	{\
