@@ -45,12 +45,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define _VER_WRITE(x, size) fwrite(x, !size ? sizeof(*x) : size, 1, f)
 
 #ifdef DEBUG
-# define debug(...) { printf("[DEBUG] "); printf(__VA_ARGS__); printf("\n"); }
+# define debug(...) { printf("[DEBUG] "); printf(__VA_ARGS__); printf("\n"); } while(0)
 #else
-# define debug(...) {}
+# define debug(...) {} while(0)
 #endif
 
-#define warning(...) { fputs("[WARNING] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); }
-#define fatal(...) { fputs("[FATAL] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); }
+#define warning(...) { fputs("[WARNING] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
+#define fatal(...) { fputs("[FATAL] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
 
 #endif
