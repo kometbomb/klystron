@@ -155,7 +155,6 @@ int font_load(Font *font, Bundle *bundle, char *name)
 		if (rw)
 		{
 			SDL_Surface * s= gfx_load_surface_RW(rw, GFX_KEYED);
-			SDL_FreeRW(rw);
 			
 			char map[1000];
 			memset(map, 0, sizeof(map));
@@ -165,7 +164,7 @@ int font_load(Font *font, Bundle *bundle, char *name)
 				if (rw)
 				{
 					rw->read(rw, map, 1, sizeof(map)-1);
-					SDL_FreeRW(rw);
+					SDL_RWclose(rw);
 				}
 				else
 				{
@@ -178,12 +177,12 @@ int font_load(Font *font, Bundle *bundle, char *name)
 			
 			{
 				SDL_RWops *rw = SDL_RWFromBundle(&fb, "res.txt");
-				char res[10];
+				char res[10] = { 0 };
 				
 				if (rw)
 				{
 					rw->read(rw, res, 1, sizeof(res)-1);
-					SDL_FreeRW(rw);
+					SDL_RWclose(rw);
 					
 					sscanf(res, "%d %d", &w, &h);
 				}

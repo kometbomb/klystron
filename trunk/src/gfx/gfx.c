@@ -55,7 +55,6 @@ SDL_Surface* gfx_load_surface(const char* filename, const int flags)
 	{
 		SDL_RWops * rw = SDL_RWFromFP(f, 1);
 		SDL_Surface * s = gfx_load_surface_RW(rw, flags);
-		SDL_FreeRW(rw);
 		return s;
 	}
 	else
@@ -68,7 +67,7 @@ SDL_Surface* gfx_load_surface(const char* filename, const int flags)
 
 SDL_Surface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
 {
-	SDL_Surface* loaded = SDL_LoadBMP_RW(rw, 0);
+	SDL_Surface* loaded = SDL_LoadBMP_RW(rw, 1);
 	
 	if (!loaded) 
 	{
