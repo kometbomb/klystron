@@ -32,8 +32,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define SQR(x) ((x)*(x))
 #define my_min(a,b) (((a)<(b))?(a):(b))
 #define my_max(a,b) (((a)>(b))?(a):(b))
-#define my_lock(s) { if (SDL_MUSTLOCK(s)) SDL_LockSurface(s); } while(0)
-#define my_unlock(s) { if (SDL_MUSTLOCK(s)) SDL_UnlockSurface(s); } while(0)
+#define my_lock(s) do { if (SDL_MUSTLOCK(s)) SDL_LockSurface(s); } while(0)
+#define my_unlock(s) do { if (SDL_MUSTLOCK(s)) SDL_UnlockSurface(s); } while(0)
 #define VER(file_version, first_version, last_version, block)\
 	if ((((Uint16)file_version) >= ((Uint16)first_version)) && (((Uint16)file_version) <= ((Uint16)last_version)))\
 	{\
@@ -45,12 +45,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define _VER_WRITE(x, size) fwrite(x, !size ? sizeof(*x) : size, 1, f)
 
 #ifdef DEBUG
-# define debug(...) { printf("[DEBUG] "); printf(__VA_ARGS__); printf("\n"); } while(0)
+# define debug(...) do { printf("[DEBUG] "); printf(__VA_ARGS__); printf("\n"); } while(0)
 #else
-# define debug(...) {} while(0)
+# define debug(...) do {} while(0)
 #endif
 
-#define warning(...) { fputs("[WARNING] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
-#define fatal(...) { fputs("[FATAL] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
+#define warning(...) do { fputs("[WARNING] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
+#define fatal(...) do { fputs("[FATAL] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
 
 #endif
