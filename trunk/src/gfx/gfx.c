@@ -581,7 +581,7 @@ void gfx_domain_update(GfxDomain *domain)
 {
 	debug("Setting screen mode (scale = %d%s)", domain->scale, domain->fullscreen ? ", fullscreen" : "");
 	
-	domain->screen = SDL_SetVideoMode(domain->screen_w * domain->scale, domain->screen_h * domain->scale, 32, (domain->fullscreen ? SDL_FULLSCREEN : 0) | SDL_SWSURFACE | SDL_DOUBLEBUF);
+	domain->screen = SDL_SetVideoMode(domain->screen_w * domain->scale, domain->screen_h * domain->scale, 32, (domain->fullscreen ? SDL_FULLSCREEN : 0) | SDL_HWSURFACE | SDL_DOUBLEBUF);
 	
 	if (!domain->screen)
 	{
