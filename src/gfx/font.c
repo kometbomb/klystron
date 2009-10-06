@@ -239,7 +239,8 @@ void font_write_cursor(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 
 
 void font_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text)
 {
-	inner_write(font, dest, r, NULL, NULL, text);
+	Uint16 cursor = 0;
+	inner_write(font, dest, r, &cursor, NULL, text);
 }
 
 
