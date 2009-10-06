@@ -70,14 +70,6 @@ static void inner_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16
 		right = r->w + r->x;
 	}
 	
-	int prev_x = x, prev_y = y;
-	
-	if (bounds && bounds->w == 0)
-	{
-		bounds->x = x;
-		bounds->y = y;
-	}
-	
 	for (;*c;++c)
 	{
 		if (*c == '\n' || x >= right)
@@ -87,45 +79,56 @@ static void inner_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16
 			*cursor &= (Uint16)0xff00;
 			*cursor += 0x0100;
 			
-			prev_y = y;
-			
 			if (*c == '\n') 
 				continue;
 		}
 		
-		if (*c == ' ')
+		const TileDescriptor *tile = findchar(font, *c);
+		
+		if (tile)
 		{
-			x += font->w;
-			++*cursor;
+			SDL_Rect rect = { x, y, tile->rect.w, tile->rect.h };
+			SDL_BlitSurface(tile->surface, (SDL_Rect*)&tile->rect, dest, &rect);
+			
+			if (bounds)
+			{
+				if (bounds->w == 0)
+					memcpy(bounds, &rect, sizeof(rect));
+				else
+				{
+					bounds->x = my_min(rect.x, bounds->x);
+					bounds->y = my_min(rect.y, bounds->y);
+					bounds->w = my_max(rect.x + rect.w - bounds->x, bounds->w);
+					bounds->h = my_max(rect.y + rect.h - bounds->y, bounds->h);
+				}
+			}
+			
+			x += tile->rect.w;
 		}
 		else
 		{
-			const TileDescriptor *tile = findchar(font, *c);
-			
-			if (tile)
+			if (bounds)
 			{
-				SDL_Rect rect = { x, y, tile->rect.w, tile->rect.h };
-				SDL_BlitSurface(tile->surface, (SDL_Rect*)&tile->rect, dest, &rect);
-				
-				x += tile->rect.w;
-			}
-			else
-			{
-				x += font->w;
+				if (bounds->w == 0)
+				{
+					bounds->x = x;
+					bounds->y = y;
+					bounds->w = font->w;
+					bounds->h = font->h;
+				}
+				else
+				{
+					bounds->x = my_min(x, bounds->x);
+					bounds->y = my_min(y, bounds->y);
+					bounds->w = my_max(x + font->w - bounds->x, bounds->w);
+					bounds->h = my_max(y + font->h - bounds->y, bounds->h);
+				}
 			}
 			
-			++*cursor;
+			x += font->w;
 		}
 		
-		if (bounds)
-		{
-			bounds->x = my_min(prev_x, bounds->x);
-			bounds->y = my_min(prev_y, bounds->y);
-			bounds->w = my_max(x - bounds->x, bounds->w);
-			bounds->h = my_max(y - bounds->y + font->h, bounds->h);
-		}
-		
-		prev_x = x;
+		++*cursor;
 	}
 }
 
