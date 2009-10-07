@@ -30,9 +30,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cyd.h"
 
 #define MUS_PROG_LEN 32
-#define MUS_CHANNELS 3
+#define MUS_CHANNELS 4
 
-#define MUS_VERSION 3
+#define MUS_VERSION 4
 
 typedef struct
 {
