@@ -647,7 +647,7 @@ void mus_advance_tick(void* udata)
 							{
 								if (ctrl & MUS_CTRL_LEGATO)
 								{
-									mus_set_slide(mus, i, (Uint16)note << 8);
+									mus_set_slide(mus, i, ((Uint16)note + pinst->base_note - MIDDLE_C) << 8);
 								}
 								else
 								{
@@ -660,12 +660,12 @@ void mus_advance_tick(void* udata)
 							else if (ctrl & MUS_CTRL_LEGATO)
 							{
 								mus_set_note(mus, i, (Uint16)note << 8, 1);
-								mus->channel[i].target_note = (Uint16)note << 8;
+								mus->channel[i].target_note = ((Uint16)note + pinst->base_note - MIDDLE_C) << 8;
 							}
 							else 
 							{
 								mus_trigger_instrument_internal(mus, i, pinst, note);
-								mus->channel[i].target_note = mus->channel[i].note;
+								mus->channel[i].target_note = ((Uint16)note + pinst->base_note - MIDDLE_C) << 8;
 							}
 						}
 					}
