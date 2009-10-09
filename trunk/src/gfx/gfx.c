@@ -629,37 +629,50 @@ void gfx_domain_update(GfxDomain *domain)
 
 void gfx_domain_flip(GfxDomain *domain)
 {
-	if (domain->scale_type == GFX_SCALE_FAST)
+	if (domain->scale > 1)
 	{
-		switch (domain->scale)
+		if (domain->scale_type == GFX_SCALE_FAST)
 		{
-			default: break;
-			case 2: 
-				gfx_blit_2x(domain->screen, domain->buf); 
-			break;
-			case 3: 
-				gfx_blit_3x(domain->screen, domain->buf); 
-			break;
-			case 4: 
-				gfx_blit_4x(domain->screen, domain->buf); 
-			break;
+			my_lock(domain->screen);
+			my_lock(domain->buf);
+			switch (domain->scale)
+			{
+				default: break;
+				case 2: 
+					gfx_blit_2x(domain->screen, domain->buf); 
+				break;
+				case 3: 
+					gfx_blit_3x(domain->screen, domain->buf); 
+				break;
+				case 4: 
+					gfx_blit_4x(domain->screen, domain->buf); 
+				break;
+			}
+			my_unlock(domain->screen);
+			my_unlock(domain->buf);
 		}
-	}
-	else
-	{
-		switch (domain->scale)
+		else
 		{
-			default: break;
-			case 2: 
-				gfx_blit_2x_resample(domain->screen, domain->buf); 
-			break;
-			case 3: 
-				gfx_blit_3x_resample(domain->screen, domain->buf); 
-			break;
-			case 4: 
-				gfx_blit_2x_resample(domain->buf2, domain->buf); 
-				gfx_blit_2x_resample(domain->screen, domain->buf2);
-			break;
+			my_lock(domain->screen);
+			my_lock(domain->buf);
+			switch (domain->scale)
+			{
+				default: break;
+				case 2: 
+					gfx_blit_2x_resample(domain->screen, domain->buf); 
+				break;
+				case 3: 
+					gfx_blit_3x_resample(domain->screen, domain->buf); 
+				break;
+				case 4: 
+					my_lock(domain->buf2);
+					gfx_blit_2x_resample(domain->buf2, domain->buf); 
+					gfx_blit_2x_resample(domain->screen, domain->buf2);
+					my_unlock(domain->buf2);
+				break;
+			}
+			my_unlock(domain->screen);
+			my_unlock(domain->buf);
 		}
 	}
 	
