@@ -254,6 +254,8 @@ static void mus_exec_track_command(MusEngine *mus, int chan)
 	
 	switch (inst & 0xff00)
 	{
+		case MUS_FX_ARPEGGIO:
+			if (!(inst & 0xff)) break; // no params = use the same settings
 		case MUS_FX_SET_EXT_ARP:
 		{
 			mus->song_track[chan].extarp1 = (inst & 0xf0) >> 4;
@@ -511,8 +513,6 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 		if (chn->target_note > chn->note)
 		{
 			chn->note += my_min((Uint16)mus->song_track[chan].slide_speed, chn->target_note - chn->note);
-			
-			
 		}
 		else if (chn->target_note < chn->note)
 		{
@@ -541,10 +541,22 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 	}
 	
 	Uint8 ctrl = 0;
+	int vibdep = ins->vibrato_depth;
+	int vibspd = ins->vibrato_speed;
 	
 	if (mus->song_track[chan].pattern)
 	{
 		ctrl = mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].ctrl;
+		if ((mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].command & 0xff00) == MUS_FX_VIBRATO)
+		{
+			ctrl |= MUS_CTRL_VIB;
+			if (mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].command & 0xff)
+			{
+				vibdep = (mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].command & 0xf) << 2;
+				vibspd = (mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].command & 0xf0) >> 2;
+			}
+		}
+			
 		/*do_vib(mus, chan, mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].ctrl);
 		
 		if ((mus->song_track[chan].last_ctrl & MUS_CTRL_VIB) && !(mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].ctrl & MUS_CTRL_VIB))
@@ -559,8 +571,8 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 	
 	if (((ctrl & MUS_CTRL_VIB) && !(ins->flags & MUS_INST_INVERT_VIBRATO_BIT)) || (!(ctrl & MUS_CTRL_VIB) && (ins->flags & MUS_INST_INVERT_VIBRATO_BIT)))
 	{
-		mus->song_track[chan].vibrato_position += ins->vibrato_speed;
-		vib = vibrato_table[((mus->song_track[chan].vibrato_position) >> 1) & (VIB_TAB_SIZE - 1)] * ins->vibrato_depth / 64;
+		mus->song_track[chan].vibrato_position += vibspd;
+		vib = vibrato_table[((mus->song_track[chan].vibrato_position) >> 1) & (VIB_TAB_SIZE - 1)] * vibdep / 64;
 	}
 	
 	
@@ -622,7 +634,15 @@ void mus_advance_tick(void* udata)
 						else if (note != MUS_NOTE_NONE)
 						{
 							mus->song_track[i].slide_speed = 0;
-							const Uint8 ctrl = mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].ctrl;
+							int speed = pinst->slide_speed | 1;
+							Uint8 ctrl = mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].ctrl;
+							
+							if ((mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command & 0xff00) == MUS_FX_SLIDE)
+							{
+								ctrl |= MUS_CTRL_SLIDE | MUS_CTRL_LEGATO; 
+								speed = (mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command & 0xff);
+							}
+							
 							if (ctrl & MUS_CTRL_SLIDE)
 							{
 								if (ctrl & MUS_CTRL_LEGATO)
@@ -635,7 +655,7 @@ void mus_advance_tick(void* udata)
 									mus_trigger_instrument_internal(mus, i, pinst, note);
 									mus->channel[i].note = oldnote;
 								}
-								mus->song_track[i].slide_speed = pinst->slide_speed | 1;
+								mus->song_track[i].slide_speed = speed;
 							}
 							else if (ctrl & MUS_CTRL_LEGATO)
 							{
@@ -825,7 +845,7 @@ void mus_get_default_instrument(MusInstrument *inst)
 	inst->cydflags = CYD_CHN_ENABLE_TRIANGLE;
 	inst->adsr.a = 1;
 	inst->adsr.d = 12;
-	inst->volume = 127;
+	inst->volume = MAX_VOLUME;
 	inst->base_note = MIDDLE_C;
 	inst->prog_period = 2;
 	inst->cutoff = 2047;
@@ -879,6 +899,8 @@ void mus_load_song_file(FILE *f, MusSong *song)
 		
 		if (version > 2) fread(&song->flags, 1, sizeof(song->flags), f);
 		else song->flags = 0;
+		
+		if (version >= 5) fread(song->title, 1, MUS_TITLE_LEN + 1, f);
 		
 		if (song->flags & MUS_ENABLE_REVERB)
 		{

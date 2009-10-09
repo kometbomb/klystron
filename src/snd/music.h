@@ -32,7 +32,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define MUS_PROG_LEN 32
 #define MUS_CHANNELS 4
 
-#define MUS_VERSION 4
+#define MUS_VERSION 5
+
+#define MUS_TITLE_LEN 16
 
 typedef struct
 {
@@ -106,6 +108,7 @@ typedef struct
 	Uint8 song_speed, song_speed2, song_rate;
 	Uint16 time_signature;
 	Uint32 flags;
+	char title[MUS_TITLE_LEN + 1];
 	struct { int delay, gain; } rvbtap[CYDRVB_TAPS];
 } MusSong;
 
@@ -169,6 +172,8 @@ enum
 	MUS_FX_SET_EXT_ARP = 0x1000,
 	MUS_FX_PORTA_UP = 0x0100,
 	MUS_FX_PORTA_DN = 0x0200,
+	MUS_FX_SLIDE = 0x0300,
+	MUS_FX_VIBRATO = 0x0400,
 	MUS_FX_FADE_VOLUME = 0x0a00,
 	MUS_FX_SET_VOLUME = 0x0c00,
 	MUS_FX_EXT = 0x0e00,
