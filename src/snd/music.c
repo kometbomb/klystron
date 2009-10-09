@@ -230,7 +230,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			
 			case MUS_FX_SET_VOLUME:
 			{
-				mus->song_track[chan].volume = my_max(MAX_VOLUME, inst & 0xff);
+				mus->song_track[chan].volume = my_min(MAX_VOLUME, inst & 0xff);
 				mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : mus->song_track[chan].volume * (int)mus->volume / 128;
 			}
 			break;
