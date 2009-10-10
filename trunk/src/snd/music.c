@@ -185,6 +185,22 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 					}
 				}
 				break;
+				
+				case MUS_FX_EXT_PORTA_UP:
+				{
+					Uint16 prev = chn->note;
+					chn->note += ((inst & 0x0f));
+					if (prev > chn->note) chn->note = 0xffff;
+				}
+				break;
+				
+				case MUS_FX_EXT_PORTA_DN:
+				{
+					Uint16 prev = chn->note;
+					chn->note -= ((inst & 0x0f));
+					if (prev < chn->note) chn->note = 0x0;
+				}
+				break;
 			}
 		}
 		break;
