@@ -368,7 +368,7 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan)
 		
 		default:
 		
-		do_command(mus, chan, chn->program_tick, inst);
+		do_command(mus, chan, chn->program_counter, inst);
 		
 		break;
 	}
