@@ -30,6 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "SDL.h"
 
 #define USESDLMUTEXES
+#define ENABLEAUDIODUMP
 
 #include <signal.h>
 
@@ -124,6 +125,9 @@ typedef struct
 	volatile sig_atomic_t lock_request;
 	volatile sig_atomic_t lock_locked;
 #endif
+#ifdef ENABLEAUDIODUMP
+	FILE *dump;
+#endif
 } CydEngine;
 
 enum
@@ -146,6 +150,9 @@ void cyd_set_callback(CydEngine *cyd, void (*callback)(void*), void*param, Uint1
 int cyd_register(CydEngine * cyd);
 int cyd_unregister(CydEngine * cyd);
 void cyd_lock(CydEngine *cyd, Uint8 enable);
-
+#ifdef ENABLEAUDIODUMP
+void cyd_enable_audio_dump(CydEngine *cyd);
+void cyd_disable_audio_dump(CydEngine *cyd);
+#endif
 
 #endif
