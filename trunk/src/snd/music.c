@@ -780,7 +780,7 @@ void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position)
 }
 
 
-int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, MusPattern **pattern)
+int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, MusPattern **pattern, MusChannel *channel)
 {
 	cyd_lock(mus->cyd, 1);
 	
@@ -800,6 +800,11 @@ int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, M
 		{
 			pattern[i] = mus->song_track[i].pattern;
 		}
+	}
+	
+	if (channel)
+	{
+		memcpy(channel, mus->channel, sizeof(mus->channel));
 	}
 	
 	cyd_lock(mus->cyd, 0);
