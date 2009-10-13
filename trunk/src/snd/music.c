@@ -133,7 +133,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 		
 		case MUS_FX_TRIGGER_RELEASE:
 		{
-			if (chn->program_counter == (inst & 0xff)) 
+			if (tick == (inst & 0xff)) 
 				cyd_enable_gate(mus->cyd, cydchn, 0);
 		}
 		break;
@@ -150,9 +150,28 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			}
 		}
 		break;
+		
+		case MUS_FX_EXT:
+		{
+			// Protracker style Exy commands
+		
+			switch (inst & 0xfff0)
+			{
+				case MUS_FX_EXT_NOTE_CUT:
+				{
+					if (!(chn->flags & MUS_CHN_DISABLED))
+					{
+						if ((inst & 0xf) <= tick)
+						cydchn->volume = 0;
+					}
+				}
+				break;
+			}
+		}
+		break;
 	}
 	
-	if (chn->program_counter != 0) return;
+	if (tick != 0) return;
 	
 	// --- commands that run only on tick 0
 	
