@@ -30,6 +30,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef ENABLEAUDIODUMP
+#include <time.h>
+#endif
+
 #define RANDOM_SEED 0xf31782ce
 #define CLOCK 985250
 
@@ -108,6 +112,10 @@ void cyd_deinit(CydEngine *cyd)
 	cyd->mutex = NULL;
 #endif	
 
+#ifdef ENABLEAUDIODUMP
+	if (cyd->dump) fclose(cyd->dump);
+	cyd->dump = NULL;
+#endif
 }
 
 
@@ -372,11 +380,12 @@ static void cyd_cycle(CydEngine *cyd)
 }
 
 
-void cyd_output_buffer(int chan, void *stream, int len, void *udata)
+void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 {
 	CydEngine *cyd = udata;
+	Sint16 * stream = _stream;
 	
-	for (int i = 0 ; i < len ; i += sizeof(Sint16), stream += sizeof(Sint16))
+	for (int i = 0 ; i < len ; i += sizeof(Sint16), ++stream)
 	{
 #ifndef USESDLMUTEXES
 #ifdef DEBUG
@@ -428,6 +437,10 @@ void cyd_output_buffer(int chan, void *stream, int len, void *udata)
 		SDL_mutexV(cyd->mutex);
 #endif
 	}
+	
+#ifdef ENABLEAUDIODUMP
+	if (cyd->dump) fwrite(_stream, len, 1, cyd->dump);
+#endif	
 }
 
 
@@ -660,3 +673,23 @@ void cyd_lock(CydEngine *cyd, Uint8 enable)
 	}
 #endif
 }
+
+#ifdef ENABLEAUDIODUMP
+void cyd_enable_audio_dump(CydEngine *cyd)
+{
+	cyd_lock(cyd, 1);
+	
+	char fn[100];
+	sprintf(fn, "cyd-dump-%d-%u.raw", cyd->sample_rate, (Uint32)time(NULL));
+	
+	cyd->dump = fopen(fn, "wb");
+	
+	cyd_lock(cyd, 0);
+}
+
+void cyd_disable_audio_dump(CydEngine *cyd)
+{
+	if (cyd->dump) fclose(cyd->dump);
+	cyd->dump = NULL;
+}
+#endif
