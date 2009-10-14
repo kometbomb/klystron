@@ -396,7 +396,7 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 #ifdef DEBUG
 			if (SDL_GetTicks() - waittime > 5000)
 			{
-				puts("Deadlock from cyd_output_buffer");
+				warning("Deadlock from cyd_output_buffer");
 				waittime = SDL_GetTicks();
 			}
 #endif
@@ -406,13 +406,8 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 
 	
 		if (cyd->flags & CYD_PAUSED) continue;
-#ifdef USESDLMUTEXES		
-		SDL_mutexP(cyd->mutex);
-#endif	
-
-#ifndef USESDLMUTEXES
-		cyd->lock_locked = 1;
-#endif
+		
+		cyd_lock(cyd, 1);
 		
 		if (cyd->callback && cyd->callback_counter-- == 0)
 		{
@@ -429,13 +424,7 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 		
 		cyd_cycle(cyd);
 
-#ifndef USESDLMUTEXES
-		cyd->lock_locked = 0;
-#endif
-		
-#ifdef USESDLMUTEXES
-		SDL_mutexV(cyd->mutex);
-#endif
+		cyd_lock(cyd, 0);
 	}
 	
 #ifdef ENABLEAUDIODUMP
@@ -459,7 +448,7 @@ void cyd_output_buffer_stereo(int chan, void *stream, int len, void *udata)
 #ifdef DEBUG
 			if (SDL_GetTicks() - waittime > 5000)
 			{
-				puts("Deadlock from cyd_output_buffer");
+				warning("Deadlock from cyd_output_buffer");
 				waittime = SDL_GetTicks();
 			}
 #endif
@@ -469,13 +458,8 @@ void cyd_output_buffer_stereo(int chan, void *stream, int len, void *udata)
 
 	
 		if (cyd->flags & CYD_PAUSED) continue;
-#ifdef USESDLMUTEXES		
-		SDL_mutexP(cyd->mutex);
-#endif	
-
-#ifndef USESDLMUTEXES
-		cyd->lock_locked = 1;
-#endif
+		
+		cyd_lock(cyd, 1);
 		
 		if (cyd->callback && cyd->callback_counter-- == 0)
 		{
@@ -500,13 +484,7 @@ void cyd_output_buffer_stereo(int chan, void *stream, int len, void *udata)
 		
 		cyd_cycle(cyd);
 
-#ifndef USESDLMUTEXES
-		cyd->lock_locked = 0;
-#endif
-		
-#ifdef USESDLMUTEXES
-		SDL_mutexV(cyd->mutex);
-#endif
+		cyd_lock(cyd, 0);
 	}
 }
 
