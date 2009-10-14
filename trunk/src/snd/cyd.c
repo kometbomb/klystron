@@ -623,11 +623,11 @@ void cyd_lock(CydEngine *cyd, Uint8 enable)
 		while (cyd->lock_locked )
 		{
 #ifdef DEBUG
-	if (SDL_GetTicks() - waittime > 5000)
-	{
-		puts("Deadlock from cyd_lock");
-		waittime = SDL_GetTicks();
-	}
+			if (SDL_GetTicks() - waittime > 5000)
+			{
+				warning("Deadlock from cyd_lock");
+				waittime = SDL_GetTicks();
+			}
 #endif
 			SDL_Delay(1);
 		}
