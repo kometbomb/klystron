@@ -307,14 +307,15 @@ static void mus_exec_track_command(MusEngine *mus, int chan)
 }
 
 
-static void mus_exec_prog_tick(MusEngine *mus, int chan)
+static void mus_exec_prog_tick(MusEngine *mus, int chan, int advance)
 {
 	MusChannel *chn = &mus->channel[chan];
-	int last_loop = -1;
+	int tick = chn->program_tick;
+	int visited[MUS_PROG_LEN] = { 0 };
 	
 	do_it_again:;
 	
-	const Uint16 inst = chn->instrument->program[chn->program_tick];
+	const Uint16 inst = chn->instrument->program[tick];
 	
 	switch (inst)
 	{	
@@ -332,12 +333,12 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan)
 	{
 		case MUS_FX_JUMP:
 		{
-			if (chn->program_tick != (inst & (MUS_PROG_LEN - 1)) && last_loop != chn->program_tick)
+			if (!visited[tick])
 			{
-				last_loop = chn->program_tick;
-				chn->program_tick = (inst & (MUS_PROG_LEN - 1)) - 1;
-				
+				visited[tick] = 1;
+				tick = inst & (MUS_PROG_LEN - 1);
 			}
+			else return;
 		}
 		break;
 		
@@ -358,10 +359,10 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan)
 			else
 			{
 				++chn->program_loop;
-				while ((chn->instrument->program[chn->program_tick] & 0xff00) != 0xfd00 && chn->program_tick > 0) 
-					--chn->program_tick;
+				while ((chn->instrument->program[tick] & 0xff00) != MUS_FX_LABEL && tick > 0) 
+					--tick;
 					
-				--chn->program_tick;
+				--tick;
 			}
 		}
 		break;
@@ -373,18 +374,25 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan)
 		break;
 	}
 	
+	if ((inst & 0xff00) != MUS_FX_JUMP)
+	{
+		++tick;
+		if (tick >= MUS_PROG_LEN)
+		{
+			tick = 0;
+		}
+	}
 	
-		
 	// skip to next on msb
 	
-	if (inst & 0x8000)
+	if ((chn->instrument->program[tick] & 0x8000))
 	{
-		++chn->program_tick;
-		if (chn->program_tick >= MUS_PROG_LEN)
-		{
-			chn->program_tick = 0;
-		}
 		goto do_it_again;
+	}
+	
+	if (advance) 
+	{
+		chn->program_tick = tick;
 	}
 }
 
@@ -559,10 +567,12 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 	
 	if (mus->channel[chan].flags & MUS_CHN_PROGRAM_RUNNING)
 	{
-	
-		mus_exec_prog_tick(mus, chan);
+		int u = (chn->program_counter + 1) >= chn->instrument->prog_period;
+		mus_exec_prog_tick(mus, chan, u);
+		++chn->program_counter;
+		if (u) chn->program_counter = 0;
 		
-		++chn->program_counter;	
+		/*++chn->program_counter;	
 		if (chn->program_counter >= chn->instrument->prog_period)
 		{
 			++chn->program_tick;
@@ -572,7 +582,7 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 				chn->program_tick = 0;
 			}
 			chn->program_counter = 0;
-		}
+		}*/
 	}
 	
 	Uint8 ctrl = 0;
