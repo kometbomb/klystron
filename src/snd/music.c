@@ -319,8 +319,6 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan, int advance)
 	
 	switch (inst)
 	{	
-		case MUS_FX_NOP: break;
-		
 		case MUS_FX_END:
 		{
 			chn->flags &= ~MUS_CHN_PROGRAM_RUNNING;
@@ -329,52 +327,55 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan, int advance)
 		break;
 	}
 	
-	switch (inst & 0xff00)
+	if(inst != MUS_FX_NOP)
 	{
-		case MUS_FX_JUMP:
+		switch (inst & 0xff00)
 		{
-			if (!visited[tick])
+			case MUS_FX_JUMP:
 			{
-				visited[tick] = 1;
-				tick = inst & (MUS_PROG_LEN - 1);
+				if (!visited[tick])
+				{
+					visited[tick] = 1;
+					tick = inst & (MUS_PROG_LEN - 1);
+				}
+				else return;
 			}
-			else return;
-		}
-		break;
-		
-		case MUS_FX_LABEL:
-		{
+			break;
 			
-			
-		}
-		break;
-		
-		case MUS_FX_LOOP:
-		{
-			if (chn->program_loop == (inst & 0xff))
+			case MUS_FX_LABEL:
 			{
-				chn->program_loop = 1;
+				
 				
 			}
-			else
+			break;
+			
+			case MUS_FX_LOOP:
 			{
-				++chn->program_loop;
-				while ((chn->instrument->program[tick] & 0xff00) != MUS_FX_LABEL && tick > 0) 
-					--tick;
+				if (chn->program_loop == (inst & 0xff))
+				{
+					chn->program_loop = 1;
 					
-				--tick;
+				}
+				else
+				{
+					++chn->program_loop;
+					while ((chn->instrument->program[tick] & 0xff00) != MUS_FX_LABEL && tick > 0) 
+						--tick;
+						
+					--tick;
+				}
 			}
+			break;
+			
+			default:
+			
+			do_command(mus, chan, chn->program_counter, inst);
+			
+			break;
 		}
-		break;
-		
-		default:
-		
-		do_command(mus, chan, chn->program_counter, inst);
-		
-		break;
 	}
 	
-	if ((inst & 0xff00) != MUS_FX_JUMP)
+	if (inst == MUS_FX_NOP || (inst & 0xff00) != MUS_FX_JUMP)
 	{
 		++tick;
 		if (tick >= MUS_PROG_LEN)
