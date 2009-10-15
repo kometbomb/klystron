@@ -319,7 +319,7 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan, int advance)
 	
 	switch (inst)
 	{	
-		case MUS_FX_NOP: return; break;
+		case MUS_FX_NOP: break;
 		
 		case MUS_FX_END:
 		{
@@ -385,7 +385,7 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan, int advance)
 	
 	// skip to next on msb
 	
-	if ((chn->instrument->program[tick] & 0x8000))
+	if ((inst & 0x8000) && inst != MUS_FX_NOP)
 	{
 		goto do_it_again;
 	}
