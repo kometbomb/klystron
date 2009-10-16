@@ -209,7 +209,8 @@ enum
 
 enum
 {
-	MUS_ENABLE_REVERB = 1
+	MUS_ENABLE_REVERB = 1,
+	MUS_ENABLE_CRUSH = 2
 };
 
 #define MUS_INST_SIG "cyd!inst"
