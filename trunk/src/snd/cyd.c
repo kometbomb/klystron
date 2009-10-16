@@ -357,12 +357,13 @@ static Sint16 cyd_output(CydEngine *cyd)
 	if (cyd->flags & CYD_ENABLE_REVERB)
 	{
 		cydrvb_cycle(&cyd->rvb, rvb_input);
-		return v + cydrvb_output(&cyd->rvb);
+		v += cydrvb_output(&cyd->rvb);
 	}
-	else
-	{
-		return v;
-	}
+	
+	if (cyd->flags & CYD_ENABLE_CRUSH)
+		v = v & 0xfffffff0;
+
+	return v;
 }
 
 
@@ -531,10 +532,10 @@ void cyd_set_callback(CydEngine *cyd, void (*callback)(void*), void*param, Uint1
 {
 	cyd_lock(cyd, 1);
 	
-	cyd->callback_counter = 0;
 	cyd->callback_parameter = param;
 	cyd->callback = callback;
 	cyd->callback_period = cyd->sample_rate / period;
+	cyd->callback_counter = cyd->callback_counter % cyd->callback_period;
 	
 	cyd_lock(cyd, 0);
 }

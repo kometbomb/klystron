@@ -133,7 +133,8 @@ typedef struct
 enum
 {
 	CYD_PAUSED = 1,
-	CYD_ENABLE_REVERB = 2
+	CYD_ENABLE_REVERB = 2,
+	CYD_ENABLE_CRUSH = 4
 };
 
 /////////////////777
