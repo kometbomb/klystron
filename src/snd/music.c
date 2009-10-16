@@ -169,6 +169,22 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			}
 		}
 		break;
+		
+		case MUS_FX_SET_SPEED:
+		{
+			mus->song->song_speed = inst & 0xf;
+			if ((inst & 0xf0) == 0) mus->song->song_speed2 = mus->song->song_speed;
+			else mus->song->song_speed2 = (inst >> 4) & 0xf;
+		}
+		break;
+		
+		case MUS_FX_SET_RATE:
+		{
+			mus->song->song_rate = inst & 0xff;
+			if (mus->song->song_rate < 1) mus->song->song_rate = 1;
+			cyd_set_callback_rate(mus->cyd, mus->song->song_rate);
+		}
+		break;
 	}
 	
 	if (tick != 0) return;

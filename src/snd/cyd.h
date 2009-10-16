@@ -148,6 +148,7 @@ void cyd_set_waveform(CydChannel *chn, Uint32 wave);
 void cyd_set_filter_coeffs(CydEngine * cyd, CydChannel *chn, Uint16 cutoff, Uint8 resonance);
 void cyd_pause(CydEngine *cyd, Uint8 enable);
 void cyd_set_callback(CydEngine *cyd, void (*callback)(void*), void*param, Uint16 period);
+void cyd_set_callback_rate(CydEngine *cyd, Uint16 period);
 int cyd_register(CydEngine * cyd);
 int cyd_unregister(CydEngine * cyd);
 void cyd_lock(CydEngine *cyd, Uint8 enable);
