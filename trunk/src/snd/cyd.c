@@ -541,6 +541,17 @@ void cyd_set_callback(CydEngine *cyd, void (*callback)(void*), void*param, Uint1
 }
 
 
+void cyd_set_callback_rate(CydEngine *cyd, Uint16 period)
+{
+	cyd_lock(cyd, 1);
+	
+	cyd->callback_period = cyd->sample_rate / period;
+	cyd->callback_counter = cyd->callback_counter % cyd->callback_period;
+	
+	cyd_lock(cyd, 0);
+}
+
+
 void cyd_pause(CydEngine *cyd, Uint8 enable)
 {
 	cyd_lock(cyd, 1);
