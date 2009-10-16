@@ -2,6 +2,7 @@ TARGET=engine
 VPATH=src:src
 ECHO = echo
 CFG = debug
+REV = SubWCRev.exe
 MACHINE = -march=pentium4 -mfpmath=sse -msse3
 
 
@@ -47,7 +48,11 @@ endif
 # A common link flag for all configurations
 LDFLAGS = 
 
-.PHONY: tools all
+.PHONY: tools all build
+
+build:
+	$(REV) . ./src/version.in ./src/version.h
+	make all CFG=$(CFG)
 
 all: bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a tools
 
