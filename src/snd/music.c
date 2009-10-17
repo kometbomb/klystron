@@ -32,6 +32,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "rnd.h"
 
 
+static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note);
+
+
 static void mus_set_note(MusEngine *mus, int chan, Uint16 note, int update_note)
 {
 	MusChannel *chn = &mus->channel[chan];
@@ -163,6 +166,19 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 					{
 						if ((inst & 0xf) <= tick)
 						cydchn->volume = 0;
+					}
+				}
+				break;
+				
+				case MUS_FX_EXT_RETRIGGER:
+				{
+					if ((inst & 0xf) > 0 && (tick % (inst & 0xf)) == 0)
+					{
+						Uint8 prev_vol = mus->song_track[chan].volume;
+						Uint16 note = chn->note;
+						mus_trigger_instrument_internal(mus, chan, chn->instrument, chn->note);
+						mus_set_note(mus, chan, note, 1);
+						mus->song_track[chan].volume = prev_vol;
 					}
 				}
 				break;
@@ -425,7 +441,7 @@ static void do_pwm(MusEngine* mus, int chan)
 
 
 //***** USE THIS INSIDE MUS_ADVANCE_TICK TO AVOID MUTEX DEADLOCK
-static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note)
+int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note)
 {
 	if (chan == -1)
 	{
@@ -726,8 +742,14 @@ void mus_advance_tick(void* udata)
 							}
 							else 
 							{
+								Uint8 prev_vol = mus->song_track[i].volume;
 								mus_trigger_instrument_internal(mus, i, pinst, note);
 								mus->channel[i].target_note = ((Uint16)note + pinst->base_note - MIDDLE_C) << 8;
+								if (inst == MUS_NOTE_NO_INSTRUMENT)
+								{
+									mus->song_track[i].volume = prev_vol;
+									mus->cyd->channel[i].volume = prev_vol;
+								}
 							}
 						}
 					}
