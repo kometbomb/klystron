@@ -673,7 +673,7 @@ void mus_advance_tick(void* udata)
 	{
 		if	(mus->song_counter == 0)
 		{
-			for (int i = 0 ; i < MUS_CHANNELS ; ++i)
+			for (int i = 0 ; i < mus->song->num_channels ; ++i)
 			{
 				while (mus->song_track[i].sequence_position < mus->song->num_sequences[i] && mus->song->sequence[i][mus->song_track[i].sequence_position].position <= mus->song_position)
 				{
@@ -816,7 +816,7 @@ void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position)
 		
 	mus->song_position = position;
 	
-	for (int i = 0 ; i < MUS_CHANNELS ; ++i)
+	for (int i = 0 ; i < MUS_MAX_CHANNELS ; ++i)
 	{
 		mus->song_track[i].pattern = NULL;
 		mus->song_track[i].pattern_step = 0;
@@ -837,7 +837,7 @@ int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, M
 	
 	if (pattern_position)
 	{
-		for (int i = 0 ; i < MUS_CHANNELS ; ++i)
+		for (int i = 0 ; i < MUS_MAX_CHANNELS ; ++i)
 		{
 			pattern_position[i] = mus->song_track[i].pattern_step;
 		}
@@ -845,7 +845,7 @@ int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, M
 	
 	if (pattern)
 	{
-		for (int i = 0 ; i < MUS_CHANNELS ; ++i)
+		for (int i = 0 ; i < MUS_MAX_CHANNELS ; ++i)
 		{
 			pattern[i] = mus->song_track[i].pattern;
 		}
@@ -976,10 +976,13 @@ void mus_load_song_file(FILE *f, MusSong *song)
 		Uint8 version = 0;
 		fread(&version, 1, sizeof(version), f);
 		
+		if (version >= 6) fread(&song->num_channels, 1, sizeof(song->num_channels), f);
+			else song->num_channels = 4;
+		
 		fread(&song->time_signature, 1, sizeof(song->time_signature), f);
 		fread(&song->num_instruments, 1, sizeof(song->num_instruments), f);
 		fread(&song->num_patterns, 1, sizeof(song->num_patterns), f);
-		fread(song->num_sequences, 1, sizeof(song->num_sequences), f);
+		fread(song->num_sequences, 1, sizeof(song->num_sequences[0]) * (int)song->num_channels, f);
 		fread(&song->song_length, 1, sizeof(song->song_length), f);
 		fread(&song->loop_point, 1, sizeof(song->loop_point), f);
 		fread(&song->song_speed, 1, sizeof(song->song_speed), f);
@@ -1009,7 +1012,7 @@ void mus_load_song_file(FILE *f, MusSong *song)
 		}
 		
 		
-		for (int i = 0 ; i < MUS_CHANNELS; ++i)
+		for (int i = 0 ; i < song->num_channels ; ++i)
 		{
 			if (song->num_sequences[i] > 0)
 			{
@@ -1057,7 +1060,7 @@ void mus_free_song(MusSong *song)
 {
 	free(song->instrument);
 
-	for (int i = 0 ; i < MUS_CHANNELS; ++i)
+	for (int i = 0 ; i < MUS_MAX_CHANNELS; ++i)
 	{
 		free(song->sequence[i]);
 	}

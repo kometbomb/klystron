@@ -30,9 +30,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cyd.h"
 
 #define MUS_PROG_LEN 32
-#define MUS_CHANNELS 4
+#define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
 
-#define MUS_VERSION 5
+#define MUS_VERSION 6
 
 #define MUS_TITLE_LEN 16
 
@@ -102,12 +102,13 @@ typedef struct
 	Uint8 num_instruments;
 	MusPattern *pattern;
 	Uint16 num_patterns;
-	MusSeqPattern *sequence[MUS_CHANNELS];
-	Uint16 num_sequences[MUS_CHANNELS];
+	MusSeqPattern *sequence[MUS_MAX_CHANNELS];
+	Uint16 num_sequences[MUS_MAX_CHANNELS];
 	Uint16 song_length, loop_point;
 	Uint8 song_speed, song_speed2, song_rate;
 	Uint16 time_signature;
 	Uint32 flags;
+	Uint8 num_channels;
 	char title[MUS_TITLE_LEN + 1];
 	struct { int delay, gain; } rvbtap[CYDRVB_TAPS];
 } MusSong;
@@ -135,10 +136,10 @@ typedef struct
 
 typedef struct
 {
-	MusChannel channel[CYD_MAX_CHANNELS];
+	MusChannel channel[MUS_MAX_CHANNELS];
 	Uint8 tick_period; // 1 = at the rate this is polled
 	// ----
-	MusTrackStatus song_track[CYD_MAX_CHANNELS];
+	MusTrackStatus song_track[MUS_MAX_CHANNELS];
 	MusSong *song;
 	Uint8 song_counter;
 	Uint16 song_position;
