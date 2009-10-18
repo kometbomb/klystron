@@ -1,0 +1,86 @@
+#summary Here's how to use klystron to play a song or sound effect made with klystrack
+#labels Phase-Implementation
+
+=Making noise=
+
+<wiki:toc max_depth="1" />
+
+== Playing music ==
+
+=== Initializing ===
+
+At first, we need to open the audio device using SDL_mixer. The output rate should be 44.1 KHz but it can be more or less. However, it is not guaranteed the filter works similarly across different frequencies.
+
+Cyd output is mono/16-bit, so one 16-bit signed channel is enough.
+
+{{{
+Mix_OpenAudio(44100, AUDIO_S16SYS, 1, 2048);
+Mix_AllocateChannels(1);
+}}}
+
+Next, we need a Cyd for the MusEngine and that should have MUS_MAX_CHANNELS channels allocated (since a song might have that many channels). You can use less channels if you know a song doesn't use more than that.
+
+{{{
+Cyd cyd;
+MusEngine mus;
+cyd_init(&cyd, 44100, MUS_MAX_CHANNELS);
+mus_init_engine(&mus, &cyd);
+}}}
+
+Let's load a song. You can either use mus_load_song() or mus_load_song_file() to load the song. The latter can be used to read a song from any FILE* stream, including the klystron bundle.
+
+{{{
+MusSong song;
+mus_load_song("AwesomeTune.sng", &song);
+}}}
+
+Now all that is left is to tell SDL_mixer to use Cyd to output sound. We also need to tell Cyd to update the music state and MusEngine to start playing.
+
+{{{
+cyd_register(&cyd);	
+cyd_set_callback(&cyd, mus_advance_tick, &mus, song.song_rate);
+}}}
+
+cyd_set_callback() can be used to set the playback rate even when playing.
+
+mus_set_reverb() has to be used to set the reverb from the song file.
+
+=== Playing ===
+
+To start playing a loaded song on initialized Cyd and MusEngine starting from position 0:
+
+{{{
+mus_set_song(&mus, &song, 0);
+}}}
+
+As long as Cyd and MusEngine are properly initialized, you can use mus_set_song() to play different songs. A game might play short jingles depending on what is happening on the screen.
+
+To stop playing a song, call mus_set_song() with a NULL pointer to a song.
+
+{{{
+mus_set_song(&mused.mus, NULL, 0);
+}}}
+
+mus_free_song() should be used to free the song after you are done using it.
+
+== Sound effects ==
+
+Sound effects are musical instruments that you need to trigger yourself. That means, you need to set up Cyd and MusEngine as described above and after that you can use mus_trigger_instrument() to trigger sound effects. The sound effects (or instruments) have to be loaded in memory before playing.
+
+{{{
+MusInstrument explosion;
+mus_load_instrument("Explosion.ins", &explosion);
+mus_trigger_instrument(&mus, -1, MusInstrument *ins, Uint8 note);
+}}}
+
+Note that we are triggering the sound effect on any channel (-1) that is currently free. You can alternatively play the sound effect in any set channel. This can be used to stop sounds that are playing (an explosion should stop an enemy sound since the enemy is now destroyed). 
+
+The value mus_trigger_instrument() returns is the channel in which the sound is now playing. mus_release() can be used to stop the sound in that channel.
+
+It is useful to lock the played note of an instrument to a note so that it doesn't matter at which note you trigger the sound effect (unless it is important to change the effect pitch).
+
+==Playing music and sound effects simultaneously==
+
+It is possible to play sound effects while a song is playing. This will however stop currently played notes and effects. It is recommendable to use two Cyds and MusEngines, one for the music and one for the sound effects. This also allows different replay rates for the sound effects and the music.
+
+cyd_register() will simply add the Cyd after the previous SDL_mixer effects, thus they will both be audible and will not interfere with each other. It is not possible to use two MusEngines to drive one Cyd, however.
