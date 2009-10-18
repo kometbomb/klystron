@@ -11,7 +11,7 @@
 
 At first, we need to open the audio device using SDL_mixer. The output rate should be 44.1 KHz but it can be more or less. However, it is not guaranteed the filter works similarly across different frequencies.
 
-Cyd output is mono/16-bit, so one 16-bit signed channel is enough.
+Cyd output is mono/16-bit, so one 16-bit signed channel is enough. Cyd will mix its internal channels into one output channel.
 
 {{{
 Mix_OpenAudio(44100, AUDIO_S16SYS, 1, 2048);
