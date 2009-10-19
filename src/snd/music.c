@@ -154,6 +154,25 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 		}
 		break;
 		
+		case MUS_FX_PAN_RIGHT:
+		case MUS_FX_PAN_LEFT:
+		{
+			int p = cydchn->panning;
+			if ((inst & 0xff00) == MUS_FX_PAN_LEFT) 
+			{
+				p -= inst & 0x00ff;
+			}
+			else
+			{
+				p += inst & 0x00ff;
+			}
+			
+			p = my_min(CYD_PAN_RIGHT, my_max(CYD_PAN_LEFT, p));
+			
+			cyd_set_panning(mus->cyd, cydchn, p);
+		}
+		break;
+		
 		case MUS_FX_EXT:
 		{
 			// Protracker style Exy commands
