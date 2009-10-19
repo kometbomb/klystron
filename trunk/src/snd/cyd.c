@@ -25,6 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 #include "cyd.h"
+#include "macros.h"
 #include <assert.h>
 #include "SDL_mixer.h"
 #include <stdlib.h>
@@ -36,6 +37,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define RANDOM_SEED 0xf31782ce
 #define CLOCK 985250
+#define PRE_GAIN 4
 
 #define envspd(cyd,slope) ((0xff0000 / ((slope + 1) * (slope + 1) * 256)) * CYD_BASE_FREQ / cyd->sample_rate)
 
@@ -59,6 +61,9 @@ static void cyd_init_channel(CydEngine *cyd, CydChannel *chn)
 	chn->random = RANDOM_SEED;
 	chn->pw = 0x400;
 	cyd_set_filter_coeffs(cyd, chn, 2047, 0);
+#ifdef STEREOOUTPUT
+	cyd_set_panning(cyd, chn, CYD_PAN_CENTER);
+#endif
 }
 
 
@@ -304,9 +309,19 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 }
 
 
+#ifdef STEREOOUTPUT
+static void cyd_output(CydEngine *cyd, Sint32 *left, Sint32 *right)
+#else
 static Sint16 cyd_output(CydEngine *cyd)
+#endif
 {
-	Sint32 v = 0, s[CYD_MAX_CHANNELS], rvb_input = 0;
+#ifdef STEREOOUTPUT
+	*left = *right = 0;
+	Sint32 rev_l = 0, rev_r = 0;
+#else
+	Sint32 v = 0, rvb_input = 0;
+#endif
+	Sint32 s[CYD_MAX_CHANNELS];
 	
 	for (int i = 0 ; i < cyd->n_channels ; ++i)
 	{
@@ -345,25 +360,57 @@ static Sint16 cyd_output(CydEngine *cyd)
 				}
 			}
 			
+#ifdef STEREOOUTPUT
+			Sint32 ol = o * chn->gain_left / CYD_STEREO_GAIN, or = o * chn->gain_right / CYD_STEREO_GAIN;
+#endif			
+			
 			if (chn->flags & CYD_CHN_ENABLE_REVERB)
 			{
+#ifdef STEREOOUTPUT
+				rev_l += ol;
+				rev_r += or;
+#else
 				rvb_input += o;
+#endif
 			}
+			
+#ifdef STEREOOUTPUT
+			*left += ol;
+			*right += or;
+#else
+			v += o;
+#endif		
 		}
-		
-		v += o;
+
+
 	}
 	
 	if (cyd->flags & CYD_ENABLE_REVERB)
 	{
+#ifdef STEREOOUTPUT
+		cydrvb_cycle(&cyd->rvb, *left, *right);
+		cydrvb_output(&cyd->rvb, &rev_l, &rev_r);
+		*left += rev_l;
+		*right += rev_r;
+#else
 		cydrvb_cycle(&cyd->rvb, rvb_input);
 		v += cydrvb_output(&cyd->rvb);
+#endif
 	}
 	
 	if (cyd->flags & CYD_ENABLE_CRUSH)
+	{
+#ifdef STEREOOUTPUT
+		*left = *left & 0xfffffff0;
+		*right = *right & 0xfffffff0;
+#else
 		v = v & 0xfffffff0;
-
+#endif
+	}
+	
+#ifndef STEREOOUTPUT
 	return v;
+#endif
 }
 
 
@@ -416,7 +463,15 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 			cyd->callback(cyd->callback_parameter);
 		}
 		
-		Sint32 o = (Sint32)*(Sint16*)stream + cyd_output(cyd) * 4;
+#ifdef STEREOOUTPUT
+		Sint32 output, left, right;
+		cyd_output(cyd, &left, &right);
+		output = (left + right) / 2;
+#else
+		output = cyd_output(cyd);
+#endif
+
+		Sint32 o = (Sint32)*(Sint16*)stream + output * PRE_GAIN;
 		
 		if (o < -32768) o = -32768;
 		else if (o > 32767) o = 32767;
@@ -467,16 +522,22 @@ void cyd_output_buffer_stereo(int chan, void *stream, int len, void *udata)
 			cyd->callback_counter = cyd->callback_period-1;
 			cyd->callback(cyd->callback_parameter);
 		}
-		
-		Sint32 co = cyd_output(cyd) * 4;
-		Sint32 o1 = (Sint32)*(Sint16*)stream + co;
+
+		Sint32 left, right;
+#ifdef STEREOOUTPUT
+		cyd_output(cyd, &left, &right);
+#else
+		left = right = cyd_output(cyd);
+#endif
+
+		Sint32 o1 = (Sint32)*(Sint16*)stream + left;
 		
 		if (o1 < -32768) o1 = -32768;
 		else if (o1 > 32767) o1 = 32767;
 		
 		*(Sint16*)stream = o1;
 		
-		Sint32 o2 = (Sint32)*((Sint16*)stream + 1) + co;
+		Sint32 o2 = (Sint32)*((Sint16*)stream + 1) + right;
 		
 		if (o2 < -32768) o2 = -32768;
 		else if (o2 > 32767) o2 = 32767;
@@ -681,5 +742,17 @@ void cyd_disable_audio_dump(CydEngine *cyd)
 {
 	if (cyd->dump) fclose(cyd->dump);
 	cyd->dump = NULL;
+}
+#endif
+
+#ifdef STEREOOUTPUT
+void cyd_set_panning(CydEngine *cyd, CydChannel *chn, Uint8 panning)
+{
+	if (chn->panning == panning) return;
+	
+	chn->panning = my_min(CYD_PAN_RIGHT, my_max(CYD_PAN_LEFT, panning));
+	float a = M_PI / 2 * (float)(chn->panning - CYD_PAN_LEFT) / (CYD_PAN_RIGHT - CYD_PAN_LEFT);
+	chn->gain_left = cos(a) * CYD_STEREO_GAIN;
+	chn->gain_right = sin(a) * CYD_STEREO_GAIN;
 }
 #endif

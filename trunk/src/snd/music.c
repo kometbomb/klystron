@@ -255,6 +255,12 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			}
 		}
 		break;
+		
+		case MUS_FX_SET_PANNING:
+		{
+			cyd_set_panning(mus->cyd, cydchn, inst & 0xff);
+		}
+		break;
 	
 		case MUS_FX_CUTOFF_SET:
 		{

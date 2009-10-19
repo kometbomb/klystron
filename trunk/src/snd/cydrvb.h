@@ -48,10 +48,19 @@ typedef struct
 	CydTap tap[CYDRVB_TAPS];
 } CydReverb;
 
+#include "cyd.h"
+
 void cydrvb_init(CydReverb *rvb, int rate);
 void cydrvb_deinit(CydReverb *rvb);
+
+#ifdef STEREOOUTPUT
+void cydrvb_cycle(CydReverb *rvb, Sint32 left, Sint32 right);
+void cydrvb_output(CydReverb *rvb, Sint32 *left, Sint32 *right);
+#else
 void cydrvb_cycle(CydReverb *rvb, Sint32 input);
 Sint32 cydrvb_output(CydReverb *rvb);
+#endif
+
 void cydrvb_set_tap(CydReverb *rvb, int idx, int delay_ms, int gain_db);
 
 #endif
