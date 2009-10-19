@@ -887,20 +887,24 @@ int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, M
 }
 
 
-void mus_load_instrument(const char *path, MusInstrument *inst)
+int mus_load_instrument(const char *path, MusInstrument *inst)
 {
 	FILE *f = fopen(path, "rb");
 	
 	if (f)
 	{
-		mus_load_instrument_file2(f, inst);
+		int r = mus_load_instrument_file2(f, inst);
 	
 		fclose(f);
+		
+		return r;
 	}
+	
+	return 0;
 }
 
 
-void mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst)
+int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst)
 {
 	mus_get_default_instrument(inst);
 
@@ -926,10 +930,12 @@ void mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst)
 	VER_READ(version, 1, 0xff, &inst->cutoff, 0);
 	VER_READ(version, 1, 0xff, &inst->resonance, 0);
 	VER_READ(version, 1, 0xff, &inst->flttype, 0);
+	
+	return 1;
 }
 
 
-void mus_load_instrument_file2(FILE *f, MusInstrument *inst)
+int mus_load_instrument_file2(FILE *f, MusInstrument *inst)
 {
 	char id[9];
 				
@@ -943,10 +949,13 @@ void mus_load_instrument_file2(FILE *f, MusInstrument *inst)
 		fread(&version, 1, sizeof(version), f);
 	
 		mus_load_instrument_file(version, f, inst);
+		
+		return 1;
 	}
 	else
 	{
 		debug("Instrument signature does not match");
+		return 0;
 	}
 }
 
@@ -989,7 +998,7 @@ void mus_set_reverb(MusEngine *mus, MusSong *song)
 }
 
 
-void mus_load_song_file(FILE *f, MusSong *song)
+int mus_load_song_file(FILE *f, MusSong *song)
 {
 	char id[9];
 	id[8] = '\0';
@@ -1066,19 +1075,27 @@ void mus_load_song_file(FILE *f, MusSong *song)
 			for (int step = 0 ; step < song->pattern[i].num_steps ; ++step)
 				fread(&song->pattern[i].step[step], 1, s, f);
 		}
+		
+		return 1;
 	}
+	
+	return 0;
 }
 
 
-void mus_load_song(const char *path, MusSong *song)
+int mus_load_song(const char *path, MusSong *song)
 {
 	FILE *f = fopen(path, "rb");
 	
 	if (f)
 	{	
-		mus_load_song_file(f, song);
+		int r = mus_load_song_file(f, song);
 		fclose(f);
+		
+		return r;
 	}
+	
+	return 0;
 }
 
 void mus_free_song(MusSong *song)
