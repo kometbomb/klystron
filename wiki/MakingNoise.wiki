@@ -1,13 +1,11 @@
 #summary Here's how to use klystron to play a song or sound effect made with klystrack
 #labels Phase-Implementation
 
-=Making noise=
-
 <wiki:toc max_depth="2" />
 
-== Playing music ==
+= Playing music =
 
-=== Initializing ===
+== Initializing ==
 
 At first, we need to open the audio device using SDL_mixer. The output rate should be 44.1 KHz but it can be more or less. However, it is not guaranteed the filter works similarly across different frequencies.
 
@@ -45,7 +43,7 @@ cyd_set_callback() can be used to set the playback rate even when playing.
 
 mus_set_reverb() has to be used to set the reverb from the song file.
 
-=== Playing ===
+== Playing and stopping music ==
 
 To start playing a loaded song on initialized Cyd and MusEngine starting from position 0:
 
@@ -63,7 +61,7 @@ mus_set_song(&mused.mus, NULL, 0);
 
 mus_free_song() should be used to free the song after you are done using it.
 
-== Sound effects ==
+= Sound effects =
 
 Sound effects are musical instruments that you need to trigger yourself. That means, you need to set up Cyd and MusEngine as described above and after that you can use mus_trigger_instrument() to trigger sound effects. The sound effects (or instruments) have to be loaded in memory before playing.
 
@@ -79,7 +77,7 @@ The value mus_trigger_instrument() returns is the channel in which the sound is 
 
 It is useful to lock the played note of an instrument to a note so that it doesn't matter at which note you trigger the sound effect (unless it is important to change the effect pitch).
 
-==Playing music and sound effects simultaneously==
+=Playing music and sound effects simultaneously=
 
 It is possible to play sound effects while a song is playing. This will however stop currently played notes and effects. It is recommendable to use two Cyds and MusEngines, one for the music and one for the sound effects. This also allows different replay rates for the sound effects and the music.
 
