@@ -31,6 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define USESDLMUTEXES
 #define ENABLEAUDIODUMP
+#define STEREOOUTPUT
 
 #include <signal.h>
 
@@ -39,6 +40,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define CYD_BASE_FREQ 22050
 #define CYD_MAX_CHANNELS 32
+
+#ifdef STEREOOUTPUT
+#define CYD_PAN_CENTER 64
+#define CYD_PAN_LEFT 0
+#define CYD_PAN_RIGHT 128
+#define CYD_STEREO_GAIN 2048
+#endif
 
 typedef struct
 {
@@ -54,6 +62,10 @@ typedef struct
 	Uint8 flttype;
 	CydAdsr adsr;
 	volatile Uint8 volume; // 0-127
+#ifdef STEREOOUTPUT
+	volatile Uint8 panning; // 0-128, 64 = center
+	volatile Sint32 gain_left, gain_right;
+#endif
 	// ---- internal
 	Uint32 sync_bit;
 	volatile Uint32 frequency;
@@ -155,6 +167,9 @@ void cyd_lock(CydEngine *cyd, Uint8 enable);
 #ifdef ENABLEAUDIODUMP
 void cyd_enable_audio_dump(CydEngine *cyd);
 void cyd_disable_audio_dump(CydEngine *cyd);
+#endif
+#ifdef STEREOOUTPUT
+void cyd_set_panning(CydEngine *cyd, CydChannel *chn, Uint8 panning);
 #endif
 
 #endif
