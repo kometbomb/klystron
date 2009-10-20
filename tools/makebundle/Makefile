@@ -1,9 +1,9 @@
 TARGET = ../bin/makebundle.exe
 
-ifeq ($(PLATFORM),linux)
-SDL = `sdl-config --cflags`
-else
+ifdef COMSPEC
 SDL = -I /mingw/include/sdl 
+else
+SDL = `sdl-config --cflags`
 endif
 
 $(TARGET): makebundle.c ../../src/util/bundle.h
