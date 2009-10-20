@@ -26,7 +26,7 @@ ifneq ($(PLATFORM),linux)
 SDLFLAGS = -I /MingGW/include/sdl
 else
 SDLFLAGS = `sdl-config --cflags`
-REV = 
+REV = echo
 endif
 INCLUDEFLAGS= -I src $(SDLFLAGS) -I src/gfx -I src/snd -I src/util
 
