@@ -22,12 +22,13 @@ CXXDEP = gcc -E -std=gnu99
 CXXFLAGS = $(MACHINE) -ftree-vectorize
 
 # What include flags to pass to the compiler
-ifneq ($(PLATFORM),linux)
+ifdef COMSPEC
 SDLFLAGS = -I /mingw/include/sdl -mthreads 
 else
-SDLFLAGS = `sdl-config --cflags` -U_FORTIFY_SOURCE
 REV = cp -f
+SDLFLAGS = `sdl-config --cflags` -U_FORTIFY_SOURCE
 endif
+
 INCLUDEFLAGS= -I src $(SDLFLAGS) -I src/gfx -I src/snd -I src/util
 
 # Separate compile options per configuration
@@ -136,4 +137,4 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 tools/bin/makebundle.exe: tools/makebundle/*.c
-	make -C tools/makebundle PLATFORM=$(PLATFORM)
+	make -C tools/makebundle 
