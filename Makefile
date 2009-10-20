@@ -19,11 +19,11 @@ Group1_OBJ = $(patsubst %.c, objs.$(CFG)/Group1_%.o, ${Group1_SRC}) $(Group2_OBJ
 CXX = gcc -shared -std=gnu99 --no-strict-aliasing
 CXXDEP = gcc -E -std=gnu99
 
-CXXFLAGS = $(MACHINE) -mthreads -ftree-vectorize
+CXXFLAGS = $(MACHINE) -ftree-vectorize
 
 # What include flags to pass to the compiler
 ifneq ($(PLATFORM),linux)
-SDLFLAGS = -I /MingGW/include/sdl
+SDLFLAGS = -I /MingGW/include/sdl -mthreads 
 else
 SDLFLAGS = `sdl-config --cflags`
 REV = echo
