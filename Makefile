@@ -25,7 +25,7 @@ CXXFLAGS = $(MACHINE) -ftree-vectorize
 ifneq ($(PLATFORM),linux)
 SDLFLAGS = -I /MingGW/include/sdl -mthreads 
 else
-SDLFLAGS = `sdl-config --cflags`
+SDLFLAGS = `sdl-config --cflags` -U_FORTIFY_SOURCE
 REV = echo
 endif
 INCLUDEFLAGS= -I src $(SDLFLAGS) -I src/gfx -I src/snd -I src/util
