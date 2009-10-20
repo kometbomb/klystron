@@ -2,7 +2,7 @@ TARGET=engine
 VPATH=src:src
 ECHO = echo
 CFG = debug
-REV = SubWCRev.exe
+REV = SubWCRev.exe .
 MACHINE = -march=pentium4 -mfpmath=sse -msse3
 
 
@@ -26,7 +26,7 @@ ifneq ($(PLATFORM),linux)
 SDLFLAGS = -I /mingw/include/sdl -mthreads 
 else
 SDLFLAGS = `sdl-config --cflags` -U_FORTIFY_SOURCE
-REV = echo
+REV = cp -f
 endif
 INCLUDEFLAGS= -I src $(SDLFLAGS) -I src/gfx -I src/snd -I src/util
 
@@ -57,7 +57,7 @@ LDFLAGS =
 .PHONY: tools all build
 
 build:
-	$(REV) . ./src/version.in ./src/version.h
+	$(REV) ./src/version.in ./src/version.h
 	make all CFG=$(CFG)
 
 all: bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a tools
