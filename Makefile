@@ -23,7 +23,7 @@ CXXFLAGS = $(MACHINE) -ftree-vectorize
 
 # What include flags to pass to the compiler
 ifneq ($(PLATFORM),linux)
-SDLFLAGS = -I /MingGW/include/sdl -mthreads 
+SDLFLAGS = -I /mingw/include/sdl -mthreads 
 else
 SDLFLAGS = `sdl-config --cflags` -U_FORTIFY_SOURCE
 REV = echo
@@ -136,4 +136,4 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 tools/bin/makebundle.exe: tools/makebundle/*.c
-	make -C tools/makebundle
+	make -C tools/makebundle PLATFORM=$(PLATFORM)
