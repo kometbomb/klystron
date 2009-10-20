@@ -16,10 +16,13 @@ Group1_SRC = $(notdir ${wildcard src/gfx/*.c})
 Group1_DEP = $(patsubst %.c, deps/Group1_$(CFG)_%.d, ${Group1_SRC})
 Group1_OBJ = $(patsubst %.c, objs.$(CFG)/Group1_%.o, ${Group1_SRC}) $(Group2_OBJ)
 	
-CXX = gcc -shared -std=gnu99 --no-strict-aliasing
-CXXDEP = gcc -E -std=gnu99
+CC = gcc -shared -std=gnu99 --no-strict-aliasing
+CDEP = gcc -E -std=gnu99
 
-CXXFLAGS = $(MACHINE) -ftree-vectorize
+ifndef CFLAGS
+CFLAGS = $(MACHINE) -ftree-vectorize
+endif
+
 
 # What include flags to pass to the compiler
 ifdef COMSPEC
@@ -33,13 +36,13 @@ INCLUDEFLAGS= -I src $(SDLFLAGS) -I src/gfx -I src/snd -I src/util
 
 # Separate compile options per configuration
 ifeq ($(CFG),debug)
-CXXFLAGS += -O3 -g -Wall ${INCLUDEFLAGS} -DDEBUG -fno-inline 
+CFLAGS += -O3 -g -Wall ${INCLUDEFLAGS} -DDEBUG -fno-inline 
 else
 ifeq ($(CFG),profile)
-CXXFLAGS += -O3 -pg -Wall ${INCLUDEFLAGS}
+CFLAGS += -O3 -pg -Wall ${INCLUDEFLAGS}
 else
 ifeq ($(CFG),release)
-CXXFLAGS += -O3 -Wall ${INCLUDEFLAGS} -s
+CFLAGS += -O3 -Wall ${INCLUDEFLAGS} -s
 else
 @$(ECHO) "Invalid configuration "$(CFG)" specified."
 @$(ECHO) "You must specify a configuration when "
@@ -58,7 +61,15 @@ LDFLAGS =
 .PHONY: tools all build
 
 build:
+ifdef COMSPEC
 	$(REV) ./src/version.in ./src/version.h
+else
+    echo -n '#ifndef KLYSTRON_VERSION_H' > ./src/version.h
+	echo -n '#define KLYSTRON_VERSION_H' >> ./src/version.h
+	echo -n '#define KLYSTRON_REVISION "`svnversion .`"' >> ./src/version.h
+	echo -n '#define KLYSTRON_VERSION_STRING "klystron " KLYSTRON_REVISION' >> ./src/version.h
+	echo -n '#endif'
+endif
 	make all CFG=$(CFG)
 
 all: bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a tools
@@ -87,22 +98,22 @@ bin.$(CFG)/lib${TARGET}_util.a: ${Group2_OBJ} | inform
 objs.$(CFG)/Group0_%.o: snd/%.c 
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
-	@$(CXX) $(CXXFLAGS) -c $(CXXFLAGS) -o $@ $<
+	@$(CC) $(CFLAGS) -c $(CFLAGS) -o $@ $<
 
 objs.$(CFG)/Group1_%.o: gfx/%.c 
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
-	@$(CXX) $(CXXFLAGS) -c $(CXXFLAGS) -o $@ $<
+	@$(CC) $(CFLAGS) -c $(CFLAGS) -o $@ $<
 
 objs.$(CFG)/Group2_%.o: util/%.c
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
-	@$(CXX) $(CXXFLAGS) -c $(CXXFLAGS) -o $@ $<
+	@$(CC) $(CFLAGS) -c $(CFLAGS) -o $@ $<
 	
 deps/Group0_$(CFG)_%.d: snd/%.c 
 	@mkdir -p deps
 	@$(ECHO) "Generating dependencies for $<"
-	@set -e ; $(CXXDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
+	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/Group0_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
@@ -110,7 +121,7 @@ deps/Group0_$(CFG)_%.d: snd/%.c
 deps/Group1_$(CFG)_%.d: gfx/%.c 
 	@mkdir -p deps
 	@$(ECHO) "Generating dependencies for $<"
-	@set -e ; $(CXXDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
+	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/Group1_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
@@ -118,7 +129,7 @@ deps/Group1_$(CFG)_%.d: gfx/%.c
 deps/Group2_$(CFG)_%.d: util/%.c
 	@mkdir -p deps
 	@$(ECHO) "Generating dependencies for $<"
-	@set -e ; $(CXXDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
+	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/Group2_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
