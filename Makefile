@@ -22,7 +22,12 @@ CXXDEP = gcc -E -std=gnu99
 CXXFLAGS = $(MACHINE) -mthreads -ftree-vectorize
 
 # What include flags to pass to the compiler
-INCLUDEFLAGS= -I src -I /mingw/include/sdl -I src/gfx -I src/snd -I src/util
+ifeq ($(PLATFORM),linux)
+SDLFLAGS = -I /MingGW/include/sdl
+else
+SDLFLAGS = `sdlconfig --cflags`
+endif
+INCLUDEFLAGS= -I src $(SDLFLAGS) -I src/gfx -I src/snd -I src/util
 
 # Separate compile options per configuration
 ifeq ($(CFG),debug)
