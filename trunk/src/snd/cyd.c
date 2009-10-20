@@ -489,11 +489,13 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 }
 
 
-void cyd_output_buffer_stereo(int chan, void *stream, int len, void *udata)
+void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 {
 	CydEngine *cyd = udata;
 	
-	for (int i = 0 ; i < len ; i += sizeof(Sint16)*2, stream += sizeof(Sint16)*2)
+	Sint16 *stream = _stream;
+	
+	for (int i = 0 ; i < len ; i += sizeof(Sint16)*2, stream += 2)
 	{
 #ifndef USESDLMUTEXES
 #ifdef DEBUG
@@ -548,6 +550,10 @@ void cyd_output_buffer_stereo(int chan, void *stream, int len, void *udata)
 
 		cyd_lock(cyd, 0);
 	}
+	
+#ifdef ENABLEAUDIODUMP
+	if (cyd->dump) fwrite(_stream, len, 1, cyd->dump);
+#endif	
 }
 
 
