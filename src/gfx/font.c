@@ -28,8 +28,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "gfx.h"
 #include <string.h>
 
-char * strdup(const char *);
-
 void font_create(Font *font, SDL_Surface *tiles, const int w, const int h, char *charmap)
 {
 	font->tiledescriptor = gfx_build_tiledescriptor(tiles,w,h);
