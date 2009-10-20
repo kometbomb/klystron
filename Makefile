@@ -25,7 +25,7 @@ CXXFLAGS = $(MACHINE) -mthreads -ftree-vectorize
 ifeq ($(PLATFORM),linux)
 SDLFLAGS = -I /MingGW/include/sdl
 else
-SDLFLAGS = `sdlconfig --cflags`
+SDLFLAGS = `sdl-config --cflags`
 endif
 INCLUDEFLAGS= -I src $(SDLFLAGS) -I src/gfx -I src/snd -I src/util
 
