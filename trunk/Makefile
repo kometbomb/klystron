@@ -66,7 +66,7 @@ ifdef COMSPEC
 else
 	echo '#ifndef KLYSTRON_VERSION_H' > ./src/version.h
 	echo '#define KLYSTRON_VERSION_H' >> ./src/version.h
-	echo '#define KLYSTRON_REVISION "' >> ./src/version.h
+	echo -n '#define KLYSTRON_REVISION "' >> ./src/version.h
 	svnversion -n . >> ./src/version.h
 	echo '"' >> ./src/version.h
 	echo '#define KLYSTRON_VERSION_STRING "klystron " KLYSTRON_REVISION' >> ./src/version.h
