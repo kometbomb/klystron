@@ -136,7 +136,7 @@ deps/Group2_$(CFG)_%.d: util/%.c
 	rm -f $@.$$$$
 	
 clean:
-	@rm -rf deps objs.$(CFG) bin.$(CFG)
+	@rm -rf deps objs.release objs.debug objs.profile bin.release bin.debug bin.profile
 
 # Unless "make clean" is called, include the dependency files
 # which are auto-generated. Don't fail if they are missing
