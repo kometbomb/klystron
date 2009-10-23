@@ -39,9 +39,13 @@ void font_create(Font *font, SDL_Surface *tiles, const int w, const int h, char 
 
 void font_destroy(Font *font)
 {
-	free(font->tiledescriptor);
-	free(font->charmap);
+	if (font->tiledescriptor) free(font->tiledescriptor);
+	if (font->charmap) free(font->charmap);
 	if (font->surface) SDL_FreeSurface(font->surface);
+	
+	font->tiledescriptor = NULL;
+	font->charmap = NULL;
+	font->surface = NULL;
 }
 
 
