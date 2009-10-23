@@ -26,33 +26,32 @@ endif
 
 # What include flags to pass to the compiler
 ifdef COMSPEC
-SDLFLAGS = -I /mingw/include/sdl -mthreads 
+	SDLFLAGS = -I /mingw/include/sdl -mthreads 
 else
-REV = cp -f
-SDLFLAGS = `sdl-config --cflags` -U_FORTIFY_SOURCE
+	REV = cp -f
+	SDLFLAGS = `sdl-config --cflags` -U_FORTIFY_SOURCE
 endif
 
-INCLUDEFLAGS= -I src $(SDLFLAGS) -I src/gfx -I src/snd -I src/util
+INCLUDEFLAGS= -I src $(SDLFLAGS) -I src/gfx -I src/snd -I src/util $(EXTFLAGS)
 
 # Separate compile options per configuration
 ifeq ($(CFG),debug)
-CFLAGS += -O3 -g -Wall ${INCLUDEFLAGS} -DDEBUG -fno-inline 
+	CFLAGS += -O3 -g -Wall ${INCLUDEFLAGS} -DDEBUG -fno-inline 
 else
-ifeq ($(CFG),profile)
-CFLAGS += -O3 -pg -Wall ${INCLUDEFLAGS}
-else
-ifeq ($(CFG),release)
-CFLAGS += -O3 -Wall ${INCLUDEFLAGS} -s
-else
-@$(ECHO) "Invalid configuration "$(CFG)" specified."
-@$(ECHO) "You must specify a configuration when "
-@$(ECHO) "running make, e.g. make CFG=debug"
-@$(ECHO) "Possible choices for configuration are "
-@$(ECHO) "'release', 'profile' and 'debug'"
-@exit 1
-exit
-endif
-endif
+	ifeq ($(CFG),profile)
+		CFLAGS += -O3 -pg -Wall ${INCLUDEFLAGS}
+	else
+		ifeq ($(CFG),release)
+			CFLAGS += -O3 -Wall ${INCLUDEFLAGS} -s
+		else
+			@$(ECHO) "Invalid configuration "$(CFG)" specified."
+			@$(ECHO) "You must specify a configuration when "
+			@$(ECHO) "running make, e.g. make CFG=debug"
+			@$(ECHO) "Possible choices for configuration are "
+			@$(ECHO) "'release', 'profile' and 'debug'"
+			@exit 1
+		endif
+	endif
 endif
 
 # A common link flag for all configurations
