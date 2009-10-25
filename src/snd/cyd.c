@@ -38,6 +38,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define RANDOM_SEED 0xf31782ce
 #define CLOCK 985250
 #define PRE_GAIN 4
+#define OUTPUT_BITS 12
+#define ACC_BITS 24
+#define ACC_LENGTH (1 << (ACC_BITS - 1)) // Osc counter length
+#define YM_LENGTH (ACC_LENGTH) // YM envelope counter length
 
 #define envspd(cyd,slope) ((0xff0000 / ((slope + 1) * (slope + 1) * 256)) * CYD_BASE_FREQ / cyd->sample_rate)
 
@@ -67,12 +71,19 @@ static void cyd_init_channel(CydEngine *cyd, CydChannel *chn)
 }
 
 
-static void cyd_init_log_table(CydEngine *cyd)
+static void cyd_init_log_tables(CydEngine *cyd)
 {
 	for (int i = 0 ; i < LUT_SIZE ; ++i)
 	{
 		cyd->lookup_table[i] = i * (i/2) / ((LUT_SIZE*LUT_SIZE / 65536)/2);
 	}
+	
+	for (int i = 0 ; i < YM_LUT_SIZE ; ++i)
+	{
+		cyd->lookup_table_ym[i] = (Uint32)32767 * (Uint32)(i+1) * (Uint32)(i+1) * (Uint32)(i+1) / (Uint32)(YM_LUT_SIZE * YM_LUT_SIZE * YM_LUT_SIZE);
+	}
+	
+	cyd->lookup_table_ym[0] = 0;
 }
 
 
@@ -81,6 +92,7 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	memset(cyd, 0, sizeof(*cyd));
 	cyd->sample_rate = sample_rate;
 	cyd->lookup_table = malloc(sizeof(*cyd->lookup_table) * LUT_SIZE);
+	cyd->lookup_table_ym = malloc(sizeof(*cyd->lookup_table) * YM_LUT_SIZE);
 	cyd->n_channels = channels;
 	
 	if (cyd->n_channels > CYD_MAX_CHANNELS)
@@ -93,7 +105,7 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	cyd->mutex = SDL_CreateMutex();
 #endif
 	
-	cyd_init_log_table(cyd);
+	cyd_init_log_tables(cyd);
 	
 	cydrvb_init(&cyd->rvb, sample_rate);
 	
@@ -105,6 +117,10 @@ void cyd_deinit(CydEngine *cyd)
 {
 	if (cyd->lookup_table)
 		free(cyd->lookup_table);
+	
+	if (cyd->lookup_table_ym)	
+		free(cyd->lookup_table_ym);
+		
 	cyd->lookup_table = NULL;
 	free(cyd->channel);
 	cyd->channel = NULL;
@@ -133,51 +149,111 @@ void cyd_reset(CydEngine *cyd)
 	}
 }
 
+
 static inline void cyd_cycle_adsr(CydEngine *eng, CydChannel *chn)
 {
-	
-	switch (chn->envelope_state)
+	if (!(chn->flags & CYD_CHN_ENABLE_YM_ENV))
 	{
-		case SUSTAIN:
-		case DONE: return; break;
-		
-		case ATTACK:
-		
-		chn->envelope += chn->env_speed;
-		
-		if (chn->envelope >= 0xff0000) 
+		// SID style ADSR envelope
+	
+		switch (chn->envelope_state)
 		{
-			chn->envelope_state = DECAY;
-			chn->envelope=0xff0000;
-			chn->env_speed = envspd(eng, chn->adsr.d);
-		}
-		
-		break;
-		
-		case DECAY:
-		
-			if (chn->envelope > ((Uint32)chn->adsr.s << 19) + chn->env_speed)
-				chn->envelope -= chn->env_speed;
-			else
+			case SUSTAIN:
+			case DONE: return; break;
+			
+			case ATTACK:
+			
+			chn->envelope += chn->env_speed;
+			
+			if (chn->envelope >= 0xff0000) 
 			{
-				chn->envelope = (Uint32)chn->adsr.s << 19;
-				chn->envelope_state = (chn->adsr.s == 0) ? RELEASE : SUSTAIN;
-				chn->env_speed = envspd(eng, chn->adsr.r);;
+				chn->envelope_state = DECAY;
+				chn->envelope=0xff0000;
+				chn->env_speed = envspd(eng, chn->adsr.d);
 			}
-		
-		break;
-		
-		case RELEASE:
-		if (chn->envelope > chn->env_speed)
+			
+			break;
+			
+			case DECAY:
+			
+				if (chn->envelope > ((Uint32)chn->adsr.s << 19) + chn->env_speed)
+					chn->envelope -= chn->env_speed;
+				else
+				{
+					chn->envelope = (Uint32)chn->adsr.s << 19;
+					chn->envelope_state = (chn->adsr.s == 0) ? RELEASE : SUSTAIN;
+					chn->env_speed = envspd(eng, chn->adsr.r);;
+				}
+			
+			break;
+			
+			case RELEASE:
+			if (chn->envelope > chn->env_speed)
+			{
+				chn->envelope -= chn->env_speed;
+			}
+			else {
+				chn->envelope_state = DONE;
+				chn->flags &= ~CYD_CHN_ENABLE_GATE;
+				chn->envelope = 0;
+			}
+			break;
+		}
+	}
+	else
+	{
+		// YM2149 style envelope HOLD is not processed
+	
+		switch (chn->envelope_state)
 		{
-			chn->envelope -= chn->env_speed;
+			case ATTACK:
+			
+				chn->envelope += chn->env_speed;
+				
+				if (chn->envelope >= YM_LENGTH) 
+				{
+					if (chn->ym_env_shape & CYD_YM_ENV_ALT)
+					{
+						chn->envelope = YM_LENGTH - (chn->envelope- YM_LENGTH);
+						chn->envelope_state = DECAY;
+					}
+					else
+					{
+						chn->envelope &= YM_LENGTH - 1;
+						chn->envelope_state = ATTACK;
+					}
+				}
+			
+			break;
+			
+			case DECAY:
+			
+				if (chn->envelope >= chn->env_speed) 
+					chn->envelope -= chn->env_speed;
+				else
+				{
+					if (chn->ym_env_shape & CYD_YM_ENV_ALT)
+					{
+						chn->envelope = (Uint32)chn->env_speed - chn->envelope;
+						chn->envelope_state = ATTACK;
+					}
+					else
+					{
+						chn->envelope &= YM_LENGTH - 1;
+						chn->envelope_state = DECAY;		
+					}
+				}
+			
+			break;
+			
+			case RELEASE:
+				chn->envelope_state = DONE;
+				chn->flags &= ~CYD_CHN_ENABLE_GATE;
+				chn->envelope = 0;
+			break;
+			
+			default: break;
 		}
-		else {
-			chn->envelope_state = DONE;
-			chn->flags &= ~CYD_CHN_ENABLE_GATE;
-			chn->envelope = 0;
-		}
-		break;
 	}
 }
 
@@ -189,10 +265,10 @@ static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
 	
 	Uint32 prev_acc = chn->accumulator;
 	chn->accumulator = (chn->accumulator + (Uint32)chn->frequency);
-	chn->sync_bit = chn->accumulator & 0x1000000;
-	chn->accumulator &= 0xffffff;
+	chn->sync_bit = chn->accumulator & ACC_LENGTH;
+	chn->accumulator &= ACC_LENGTH - 1;
 	
-	if ((prev_acc & 0x80000) != (chn->accumulator & 0x80000))
+	if ((prev_acc & (ACC_LENGTH/2)) != (chn->accumulator & (ACC_LENGTH/2)))
 	{
 		Uint32 bit0 = ((chn->random >> 22) ^ (chn->random >> 17)) & 0x1;
 		chn->random <<= 1;
@@ -214,19 +290,19 @@ static void cyd_sync_channel(CydEngine *cyd, CydChannel *chn)
 
 static inline Uint32 cyd_pulse(Uint32 acc, Uint32 pw) 
 {
-	return (((acc >> 12) >= pw ? 0x0fff : 0));
+	return (((acc >> (ACC_BITS - OUTPUT_BITS)) >= pw ? 0x0fff : 0));
 }
 
 
 static inline Uint32 cyd_saw(Uint32 acc) 
 {
-	return (acc >> 12);
+	return (acc >> (ACC_BITS - OUTPUT_BITS));
 }
 
 
 static inline Uint32 cyd_triangle(Uint32 acc)
 {
-	return (((acc & 0x800000) ? ~acc : acc) >> 11) & 0xfff;
+	return (((acc & (ACC_LENGTH / 2)) ? ~acc : acc) >> (ACC_BITS - OUTPUT_BITS - 1)) & 0xfff;
 }
 
 
@@ -309,6 +385,23 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 }
 
 
+static Sint32 cyd_env_output(CydEngine *cyd, CydChannel *chn, Sint32 input)
+{
+	if (chn->flags & CYD_CHN_ENABLE_YM_ENV)
+	{
+		int idx = chn->envelope * (Uint32)YM_LUT_SIZE / YM_LENGTH;
+		return input * cyd->lookup_table_ym[idx] / 32768;
+	}
+	else
+	{
+		if (chn->envelope_state == ATTACK)
+			return (input * ((Sint32)chn->envelope / 0x10000) / 256) * (Sint32)(chn->volume) / 128;
+		else
+			return (input * (cyd->lookup_table[(chn->envelope / (65536*256 / LUT_SIZE) ) & (LUT_SIZE - 1)]) / 65536) * (Sint32)(chn->volume) / 128;
+	}
+}
+
+
 #ifdef STEREOOUTPUT
 static void cyd_output(CydEngine *cyd, Sint32 *left, Sint32 *right)
 #else
@@ -336,17 +429,11 @@ static Sint16 cyd_output(CydEngine *cyd)
 		{
 			if (chn->flags & CYD_CHN_ENABLE_RING_MODULATION)
 			{
-				if (chn->envelope_state == ATTACK)
-					o = ((s[i] * s[chn->ring_mod] / 0x1000 - 0x800) * ((Sint32)chn->envelope / 0x10000) / 256) * (Sint32)(chn->volume) / 128;
-				else
-					o = ((s[i] * s[chn->ring_mod] / 0x1000 - 0x800) * (cyd->lookup_table[(chn->envelope / (65536*256 / LUT_SIZE) ) & (LUT_SIZE - 1)]) / 65536) * (Sint32)(chn->volume) / 128;
+				o = cyd_env_output(cyd, chn, s[i] * s[chn->ring_mod] / 0x1000 - 0x800);
 			}
 			else
 			{
-				if (chn->envelope_state == ATTACK)
-					o = ((s[i] - 0x800) * ((Sint32)chn->envelope / 0x10000) / 256) * (Sint32)(chn->volume) / 128;
-				else
-					o = ((s[i] -0x800) * (cyd->lookup_table[(chn->envelope / (65536*256 / LUT_SIZE) ) & (LUT_SIZE - 1)]) / 65536) * (Sint32)(chn->volume) / 128;
+				o = cyd_env_output(cyd, chn, s[i] - 0x800);
 			}
 			
 			if (chn->flags & CYD_CHN_ENABLE_FILTER) 
@@ -354,8 +441,8 @@ static Sint16 cyd_output(CydEngine *cyd)
 				cydflt_cycle(&chn->flt, o);
 				switch (chn->flttype)
 				{
-					case FLT_LP:
-					default: o = cydflt_output_lp(&chn->flt); break;
+					case FLT_BP: o = cydflt_output_bp(&chn->flt); break;
+					default: case FLT_LP: o = cydflt_output_lp(&chn->flt); break;
 					case FLT_HP: o = cydflt_output_hp(&chn->flt); break;
 				}
 			}
@@ -557,10 +644,31 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 }
 
 
-
 void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 {
-	chn->frequency = (Uint64)0x100000 * (Uint64)frequency / (Uint64)cyd->sample_rate;
+	chn->frequency = (Uint64)ACC_LENGTH/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
+}
+
+
+void cyd_set_env_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
+{
+	chn->env_speed = (Uint64)YM_LENGTH/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
+}
+
+
+void cyd_set_env_shape(CydChannel *chn, Uint8 shape)
+{
+	chn->ym_env_shape = shape;
+	if (shape & CYD_YM_ENV_ATT)
+	{
+		chn->envelope = 0;
+		chn->envelope_state = ATTACK;
+	}
+	else
+	{
+		chn->envelope = YM_LENGTH;
+		chn->envelope_state = DECAY;
+	}
 }
 
 
@@ -568,16 +676,18 @@ void cyd_enable_gate(CydEngine *cyd, CydChannel *chn, Uint8 enable)
 {
 	if (enable)
 	{
-		chn->envelope_state = ATTACK;
-		chn->envelope = 0x0;
-		chn->env_speed = envspd(cyd, chn->adsr.a);
+		if (!(chn->flags & CYD_CHN_ENABLE_YM_ENV))
+		{
+			chn->envelope_state = ATTACK;
+			chn->envelope = 0x0;
+			chn->env_speed = envspd(cyd, chn->adsr.a);
+			cyd_cycle_adsr(cyd, chn);
+		}
 		
 		if (chn->flags & CYD_CHN_ENABLE_KEY_SYNC)
 		{
 			chn->accumulator = 0;
 		}
-		
-		cyd_cycle_adsr(cyd, chn);
 		
 		chn->flags |= CYD_CHN_ENABLE_GATE;
 	}

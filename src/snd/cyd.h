@@ -61,6 +61,7 @@ typedef struct
 	Uint8 sync_source, ring_mod; // channel
 	Uint8 flttype;
 	CydAdsr adsr;
+	Uint8 ym_env_shape;
 	volatile Uint8 volume; // 0-127
 #ifdef STEREOOUTPUT
 	volatile Uint8 panning; // 0-128, 64 = center
@@ -80,6 +81,7 @@ enum
 {
 	FLT_LP,
 	FLT_HP,
+	FLT_BP,
 	FLT_TYPES
 };
 
@@ -95,7 +97,8 @@ enum
 	CYD_CHN_ENABLE_METAL = 128,
 	CYD_CHN_ENABLE_RING_MODULATION = 256,
 	CYD_CHN_ENABLE_FILTER = 512,
-	CYD_CHN_ENABLE_REVERB = 1024
+	CYD_CHN_ENABLE_REVERB = 1024,
+	CYD_CHN_ENABLE_YM_ENV = 2048
 };
 
 enum {
@@ -117,6 +120,7 @@ enum
 #define WAVEFORMS (CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_SAW)
 
 #define LUT_SIZE 1024
+#define YM_LUT_SIZE 32
 
 typedef struct
 {
@@ -128,7 +132,7 @@ typedef struct
 	void (*callback)(void*);
 	void *callback_parameter;
 	volatile Uint32 callback_period, callback_counter;
-	Uint16 *lookup_table;
+	Uint16 *lookup_table, *lookup_table_ym;
 	CydFilter flt;
 	CydReverb rvb;
 #ifdef USESDLMUTEXES
@@ -149,12 +153,18 @@ enum
 	CYD_ENABLE_CRUSH = 4
 };
 
+// YM2149 envelope shape flags, CONT is assumed to be always set
+
+enum { CYD_YM_ENV_ATT = 1, CYD_YM_ENV_ALT = 2};
+
 /////////////////777
 
 void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels);
 void cyd_deinit(CydEngine *cyd);
 void cyd_reset(CydEngine *cyd);
 void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency);
+void cyd_set_env_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency);
+void cyd_set_env_shape(CydChannel *chn, Uint8 shape);
 void cyd_enable_gate(CydEngine *cyd, CydChannel *chn, Uint8 enable);
 void cyd_set_waveform(CydChannel *chn, Uint32 wave);
 void cyd_set_filter_coeffs(CydEngine * cyd, CydChannel *chn, Uint16 cutoff, Uint8 resonance);
