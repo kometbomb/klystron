@@ -390,14 +390,14 @@ static Sint32 cyd_env_output(CydEngine *cyd, CydChannel *chn, Sint32 input)
 	if (chn->flags & CYD_CHN_ENABLE_YM_ENV)
 	{
 		int idx = chn->envelope * (Uint32)YM_LUT_SIZE / YM_LENGTH;
-		return input * cyd->lookup_table_ym[idx] / 32768 * (Sint32)(chn->volume) / 128;
+		return input * cyd->lookup_table_ym[idx] / 32768 * (Sint32)(chn->volume) / MAX_VOLUME;
 	}
 	else
 	{
 		if (chn->envelope_state == ATTACK)
-			return (input * ((Sint32)chn->envelope / 0x10000) / 256) * (Sint32)(chn->volume) / 128;
+			return (input * ((Sint32)chn->envelope / 0x10000) / 256) * (Sint32)(chn->volume) / MAX_VOLUME;
 		else
-			return (input * (cyd->lookup_table[(chn->envelope / (65536*256 / LUT_SIZE) ) & (LUT_SIZE - 1)]) / 65536) * (Sint32)(chn->volume) / 128;
+			return (input * (cyd->lookup_table[(chn->envelope / (65536*256 / LUT_SIZE) ) & (LUT_SIZE - 1)]) / 65536) * (Sint32)(chn->volume) / MAX_VOLUME;
 	}
 }
 
