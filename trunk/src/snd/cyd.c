@@ -42,6 +42,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define ACC_BITS 24
 #define ACC_LENGTH (1 << (ACC_BITS - 1)) // Osc counter length
 #define YM_LENGTH (ACC_LENGTH) // YM envelope counter length
+#define MAX_VOLUME 128
 
 #define envspd(cyd,slope) ((0xff0000 / ((slope + 1) * (slope + 1) * 256)) * CYD_BASE_FREQ / cyd->sample_rate)
 
@@ -239,6 +240,7 @@ static inline void cyd_cycle_adsr(CydEngine *eng, CydChannel *chn)
 					}
 					else
 					{
+						chn->envelope -= chn->env_speed;
 						chn->envelope &= YM_LENGTH - 1;
 						chn->envelope_state = DECAY;		
 					}
@@ -268,7 +270,7 @@ static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
 	chn->sync_bit = chn->accumulator & ACC_LENGTH;
 	chn->accumulator &= ACC_LENGTH - 1;
 	
-	if ((prev_acc & (ACC_LENGTH/2)) != (chn->accumulator & (ACC_LENGTH/2)))
+	if ((prev_acc & (ACC_LENGTH/32)) != (chn->accumulator & (ACC_LENGTH/32)))
 	{
 		Uint32 bit0 = ((chn->random >> 22) ^ (chn->random >> 17)) & 0x1;
 		chn->random <<= 1;
@@ -290,7 +292,7 @@ static void cyd_sync_channel(CydEngine *cyd, CydChannel *chn)
 
 static inline Uint32 cyd_pulse(Uint32 acc, Uint32 pw) 
 {
-	return (((acc >> (ACC_BITS - OUTPUT_BITS)) >= pw ? 0x0fff : 0));
+	return (((acc >> (ACC_BITS - OUTPUT_BITS - 1)) >= pw ? 0x0fff : 0));
 }
 
 
