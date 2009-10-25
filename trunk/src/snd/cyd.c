@@ -390,7 +390,7 @@ static Sint32 cyd_env_output(CydEngine *cyd, CydChannel *chn, Sint32 input)
 	if (chn->flags & CYD_CHN_ENABLE_YM_ENV)
 	{
 		int idx = chn->envelope * (Uint32)YM_LUT_SIZE / YM_LENGTH;
-		return input * cyd->lookup_table_ym[idx] / 32768;
+		return input * cyd->lookup_table_ym[idx] / 32768 * (Sint32)(chn->volume) / 128;
 	}
 	else
 	{
