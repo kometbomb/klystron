@@ -626,14 +626,14 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 		if (o1 < -32768) o1 = -32768;
 		else if (o1 > 32767) o1 = 32767;
 		
-		*(Sint16*)stream = o1;
+		*(Sint16*)stream = o1 * PRE_GAIN;
 		
 		Sint32 o2 = (Sint32)*((Sint16*)stream + 1) + right;
 		
 		if (o2 < -32768) o2 = -32768;
 		else if (o2 > 32767) o2 = 32767;
 		
-		*((Sint16*)stream + 1) = o2;
+		*((Sint16*)stream + 1) = o2 * PRE_GAIN;
 		
 		cyd_cycle(cyd);
 
