@@ -35,26 +35,43 @@ OTHER DEALINGS IN THE SOFTWARE.
 static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note);
 
 
+static Uint16 get_freq(int note)
+{
+	if ((note & 0xff) == 0)
+	{
+		return frequency_table[(note >> 8) % FREQ_TAB_SIZE];
+	}
+	else
+	{
+		Uint16 f1 = frequency_table[(note >> 8) % FREQ_TAB_SIZE];
+		Uint16 f2 = frequency_table[((note >> 8) + 1) % FREQ_TAB_SIZE];
+		return f1 + ((f2-f1) * (note & 0xff)) / 256;
+	}
+}
+
+
+static void mus_set_buzz_frequency(MusEngine *mus, int chan, Uint16 note)
+{
+	MusChannel *chn = &mus->channel[chan];
+	Uint16 buzz_frequency = get_freq(note + chn->instrument->buzz_note - MIDDLE_C + chn->buzz_offset);
+	cyd_set_env_frequency(mus->cyd, &mus->cyd->channel[chan], buzz_frequency);
+}
+
+
 static void mus_set_note(MusEngine *mus, int chan, Uint16 note, int update_note)
 {
 	MusChannel *chn = &mus->channel[chan];
 	
 	if (update_note) chn->note = note;
 	
-	Uint16 frequency;
-	
-	if ((note & 0xff) == 0)
-	{
-		frequency = frequency_table[(note >> 8) % FREQ_TAB_SIZE];
-	}
-	else
-	{
-		Uint16 f1 = frequency_table[(note >> 8) % FREQ_TAB_SIZE];
-		Uint16 f2 = frequency_table[((note >> 8) + 1) % FREQ_TAB_SIZE];
-		frequency = f1 + ((f2-f1) * (note & 0xff)) / 256;
-	}
-	
+	Uint16 frequency = get_freq(note);
+		
 	cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], frequency);
+	
+	if (chn->instrument->flags & MUS_INST_YM_BUZZ)
+	{
+		mus_set_buzz_frequency(mus, chan, note);
+	}
 }
 
 
@@ -71,7 +88,7 @@ void mus_init_engine(MusEngine *mus, CydEngine *cyd)
 	init_genrand(34);
 	memset(mus, 0, sizeof(*mus));
 	mus->cyd = cyd;
-	mus->volume = 128;
+	mus->volume = MAX_VOLUME;
 }
 
 
@@ -111,7 +128,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			if (mus->song_track[chan].pw > 0x7ff) mus->song_track[chan].pw = 0x7ff;
 		}
 		break;
-				
+		
 		case MUS_FX_CUTOFF_DN:
 		{
 			mus->song_track[chan].filter_cutoff -= inst & 0xff;
@@ -127,10 +144,22 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, 0);
 		}
 		break;
-				
-		case MUS_FX_PW_SET:
+		
+		case MUS_FX_BUZZ_DN:
 		{
-			mus->song_track[chan].pw = inst & 0xff << 4;
+			if (chn->buzz_offset >= -32768 + (inst & 0xff))
+				chn->buzz_offset -= inst & 0xff;
+				
+			mus_set_buzz_frequency(mus, chan, chn->note);
+		}
+		break;
+		
+		case MUS_FX_BUZZ_UP:
+		{
+			if (chn->buzz_offset <= 32767 - (inst & 0xff))
+				chn->buzz_offset += inst & 0xff;
+				
+			mus_set_buzz_frequency(mus, chan, chn->note);
 		}
 		break;
 		
@@ -149,7 +178,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 				if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = 0;
 				mus->song_track[chan].volume += (inst >> 4) & 0xf;
 				if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = MAX_VOLUME;
-				cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / 128;
+				cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
 			}
 		}
 		break;
@@ -204,22 +233,6 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			}
 		}
 		break;
-		
-		case MUS_FX_SET_SPEED:
-		{
-			mus->song->song_speed = inst & 0xf;
-			if ((inst & 0xf0) == 0) mus->song->song_speed2 = mus->song->song_speed;
-			else mus->song->song_speed2 = (inst >> 4) & 0xf;
-		}
-		break;
-		
-		case MUS_FX_SET_RATE:
-		{
-			mus->song->song_rate = inst & 0xff;
-			if (mus->song->song_rate < 1) mus->song->song_rate = 1;
-			cyd_set_callback_rate(mus->cyd, mus->song->song_rate);
-		}
-		break;
 	}
 	
 	if (tick != 0) return;
@@ -240,7 +253,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 					{
 						mus->song_track[chan].volume -= inst & 0xf;
 						if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = 0;
-						cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / 128;
+						cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
 					}
 				}
 				break;
@@ -251,7 +264,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 					{
 						mus->song_track[chan].volume += inst & 0xf;
 						if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = MAX_VOLUME;
-						cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / 128;
+						cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
 					}
 				}
 				break;
@@ -275,24 +288,60 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 		}
 		break;
 		
-		case MUS_FX_SET_PANNING:
-		{
-			cyd_set_panning(mus->cyd, cydchn, inst & 0xff);
-		}
-		break;
-	
-		case MUS_FX_CUTOFF_SET:
-		{
-			mus->song_track[chan].filter_cutoff = (inst & 0xff) << 3;
-			if (mus->song_track[chan].filter_cutoff > 0x7ff) mus->song_track[chan].filter_cutoff = 0x7ff;
-			cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
-		}
-		break;
-		
 		default:
 		
 		switch (inst & 0x7f00)
 		{
+			case MUS_FX_PW_SET:
+			{
+				mus->song_track[chan].pw = inst & 0xff << 4;
+			}
+			break;
+			
+			case MUS_FX_BUZZ_SHAPE:
+			{
+				cyd_set_env_shape(cydchn, inst & 3);
+			}
+			break;
+		
+			case MUS_FX_BUZZ_SET:
+			{
+				chn->buzz_offset = ((inst & 0xff)) - 0x80;
+					
+				mus_set_buzz_frequency(mus, chan, chn->note);
+			}
+			break;
+			
+			case MUS_FX_SET_PANNING:
+			{
+				cyd_set_panning(mus->cyd, cydchn, inst & 0xff);
+			}
+			break;
+		
+			case MUS_FX_CUTOFF_SET:
+			{
+				mus->song_track[chan].filter_cutoff = (inst & 0xff) << 3;
+				if (mus->song_track[chan].filter_cutoff > 0x7ff) mus->song_track[chan].filter_cutoff = 0x7ff;
+				cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
+			}
+			break;
+			
+			case MUS_FX_SET_SPEED:
+			{
+				mus->song->song_speed = inst & 0xf;
+				if ((inst & 0xf0) == 0) mus->song->song_speed2 = mus->song->song_speed;
+				else mus->song->song_speed2 = (inst >> 4) & 0xf;
+			}
+			break;
+			
+			case MUS_FX_SET_RATE:
+			{
+				mus->song->song_rate = inst & 0xff;
+				if (mus->song->song_rate < 1) mus->song->song_rate = 1;
+				cyd_set_callback_rate(mus->cyd, mus->song->song_rate);
+			}
+			break;
+		
 			case MUS_FX_PORTA_UP_SEMI:
 			{
 				Uint16 prev = chn->note;
@@ -323,7 +372,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			case MUS_FX_SET_VOLUME:
 			{
 				mus->song_track[chan].volume = my_min(MAX_VOLUME, inst & 0xff);
-				mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : mus->song_track[chan].volume * (int)mus->volume / 128;
+				mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
 			}
 			break;
 			
@@ -512,7 +561,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	mus->song_track[chan].slide_speed = 0;
 	
 	mus->song_track[chan].volume = ins->volume;
-	mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : mus->song_track[chan].volume * (int)mus->volume / 128;
+	mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
 	
 	mus->cyd->channel[chan].sync_source = ins->sync_source == 0xff? chan : ins->sync_source;
 	mus->cyd->channel[chan].ring_mod = ins->ring_mod == 0xff? chan : ins->ring_mod;
@@ -537,8 +586,17 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 		do_pwm(mus,chan);
 	}
 	
-	
-	memcpy(&mus->cyd->channel[chan].adsr, &ins->adsr, sizeof(ins->adsr));
+	if (ins->flags & MUS_INST_YM_BUZZ)
+	{
+		mus->cyd->channel[chan].flags |= CYD_CHN_ENABLE_YM_ENV;
+		cyd_set_env_shape(&mus->cyd->channel[chan], ins->ym_env_shape);
+		mus->channel[chan].buzz_offset = ins->buzz_offset;
+	}
+	else
+	{
+		mus->cyd->channel[chan].flags &= ~CYD_CHN_ENABLE_YM_ENV;
+		memcpy(&mus->cyd->channel[chan].adsr, &ins->adsr, sizeof(ins->adsr));
+	}
 	
 	//cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], chn->frequency);
 	cyd_enable_gate(mus->cyd, &mus->cyd->channel[chan], 1);
@@ -930,6 +988,9 @@ int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst)
 	VER_READ(version, 1, 0xff, &inst->cutoff, 0);
 	VER_READ(version, 1, 0xff, &inst->resonance, 0);
 	VER_READ(version, 1, 0xff, &inst->flttype, 0);
+	VER_READ(version, 7, 0xff, &inst->ym_env_shape, 0);
+	VER_READ(version, 7, 0xff, &inst->buzz_offset, 0);
+	VER_READ(version, 7, 0xff, &inst->buzz_note, 0);
 	
 	return 1;
 }
@@ -972,6 +1033,7 @@ void mus_get_default_instrument(MusInstrument *inst)
 	inst->base_note = MIDDLE_C;
 	inst->prog_period = 2;
 	inst->cutoff = 2047;
+	inst->buzz_note = MIDDLE_C;
 	
 	for (int p = 0 ; p < MUS_PROG_LEN; ++p)
 		inst->program[p] = MUS_FX_NOP;

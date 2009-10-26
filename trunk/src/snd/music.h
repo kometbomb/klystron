@@ -32,7 +32,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define MUS_PROG_LEN 32
 #define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
 
-#define MUS_VERSION 6
+#define MUS_VERSION 7
 
 #define MUS_TITLE_LEN 16
 
@@ -51,6 +51,9 @@ typedef struct
 	Uint16 cutoff;
 	Uint8 resonance;
 	Uint8 flttype;
+	Uint8 ym_env_shape;
+	Uint8 buzz_note;
+	Sint8 buzz_offset;
 	char name[16];
 } MusInstrument;
 
@@ -62,7 +65,8 @@ enum
 	MUS_INST_INVERT_VIBRATO_BIT = 4,
 	MUS_INST_LOCK_NOTE = 8,
 	MUS_INST_SET_PW = 16,
-	MUS_INST_SET_CUTOFF = 32
+	MUS_INST_SET_CUTOFF = 32,
+	MUS_INST_YM_BUZZ = 64
 };
 
 typedef struct
@@ -75,6 +79,7 @@ typedef struct
 	volatile Uint32 flags;
 	Uint32 current_tick;
 	Uint8 program_counter, program_tick, program_loop;
+	Sint16 buzz_offset;
 } MusChannel;
 
 typedef struct
@@ -194,6 +199,10 @@ enum
 	MUS_FX_CUTOFF_UP = 0x2100,
 	MUS_FX_CUTOFF_DN = 0x2200,
 	MUS_FX_CUTOFF_SET = 0x2900,
+	MUS_FX_BUZZ_UP = 0x3100,
+	MUS_FX_BUZZ_DN = 0x3200,
+	MUS_FX_BUZZ_SHAPE = 0x3f00,
+	MUS_FX_BUZZ_SET = 0x3900,
 	MUS_FX_PW_DN = 0x0700,
 	MUS_FX_PW_UP = 0x0800,
 	MUS_FX_PW_SET = 0x0900,
@@ -202,7 +211,7 @@ enum
 	MUS_FX_JUMP = 0xff00,
 	MUS_FX_LABEL = 0xfd00,
 	MUS_FX_LOOP = 0xfe00,
-	MUS_FX_TRIGGER_RELEASE = 0xfc00,
+	MUS_FX_TRIGGER_RELEASE = 0x7c00,
 	MUS_FX_NOP = 0xfffe
 };
 
