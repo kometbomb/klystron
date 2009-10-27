@@ -52,8 +52,7 @@ typedef struct
 	Uint8 resonance;
 	Uint8 flttype;
 	Uint8 ym_env_shape;
-	Uint8 buzz_note;
-	Sint8 buzz_offset;
+	Sint16 buzz_offset;
 	char name[16];
 } MusInstrument;
 
@@ -203,6 +202,7 @@ enum
 	MUS_FX_BUZZ_DN = 0x3200,
 	MUS_FX_BUZZ_SHAPE = 0x3f00,
 	MUS_FX_BUZZ_SET = 0x3900,
+	MUS_FX_BUZZ_SET_SEMI = 0x3a00,
 	MUS_FX_PW_DN = 0x0700,
 	MUS_FX_PW_UP = 0x0800,
 	MUS_FX_PW_SET = 0x0900,
