@@ -53,8 +53,11 @@ static Uint16 get_freq(int note)
 static void mus_set_buzz_frequency(MusEngine *mus, int chan, Uint16 note)
 {
 	MusChannel *chn = &mus->channel[chan];
-	Uint16 buzz_frequency = get_freq(note + chn->buzz_offset);
-	cyd_set_env_frequency(mus->cyd, &mus->cyd->channel[chan], buzz_frequency);
+	if (chn->instrument->flags & MUS_INST_YM_BUZZ)
+	{
+		Uint16 buzz_frequency = get_freq(note + chn->buzz_offset);
+		cyd_set_env_frequency(mus->cyd, &mus->cyd->channel[chan], buzz_frequency);
+	}
 }
 
 
@@ -68,10 +71,7 @@ static void mus_set_note(MusEngine *mus, int chan, Uint16 note, int update_note)
 		
 	cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], frequency);
 	
-	if (chn->instrument->flags & MUS_INST_YM_BUZZ)
-	{
-		mus_set_buzz_frequency(mus, chan, note);
-	}
+	mus_set_buzz_frequency(mus, chan, note);
 }
 
 
