@@ -104,6 +104,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			Uint16 prev = chn->note;
 			chn->note += ((inst & 0xff) << 2);
 			if (prev > chn->note) chn->note = 0xffff;
+			mus_set_slide(mus, chan, chn->note);
 		}
 		break;
 		
@@ -112,6 +113,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			Uint16 prev = chn->note;
 			chn->note -= ((inst & 0xff) << 2);
 			if (prev < chn->note) chn->note = 0x0;
+			mus_set_slide(mus, chan, chn->note);
 		}
 		break;
 		
@@ -274,6 +276,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 					Uint16 prev = chn->note;
 					chn->note += ((inst & 0x0f));
 					if (prev > chn->note) chn->note = 0xffff;
+					mus_set_slide(mus, chan, chn->note);
 				}
 				break;
 				
@@ -282,6 +285,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 					Uint16 prev = chn->note;
 					chn->note -= ((inst & 0x0f));
 					if (prev < chn->note) chn->note = 0x0;
+					mus_set_slide(mus, chan, chn->note);
 				}
 				break;
 			}
@@ -355,6 +359,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 				Uint16 prev = chn->note;
 				chn->note += (inst&0xff) << 8;
 				if (prev > chn->note || chn->note >= (FREQ_TAB_SIZE << 8)) chn->note = ((FREQ_TAB_SIZE-1) << 8);
+				mus_set_slide(mus, chan, chn->note);
 			}
 			break;
 			
@@ -363,6 +368,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 				Uint16 prev = chn->note;
 				chn->note -= (inst&0xff) << 8;
 				if (prev < chn->note) chn->note = 0x0;
+				mus_set_slide(mus, chan, chn->note);
 			}
 			break;
 			
