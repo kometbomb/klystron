@@ -53,7 +53,7 @@ static Uint16 get_freq(int note)
 static void mus_set_buzz_frequency(MusEngine *mus, int chan, Uint16 note)
 {
 	MusChannel *chn = &mus->channel[chan];
-	Uint16 buzz_frequency = get_freq(note + chn->instrument->buzz_note - MIDDLE_C + chn->buzz_offset);
+	Uint16 buzz_frequency = get_freq(note + chn->buzz_offset);
 	cyd_set_env_frequency(mus->cyd, &mus->cyd->channel[chan], buzz_frequency);
 }
 
@@ -301,6 +301,14 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 			case MUS_FX_BUZZ_SHAPE:
 			{
 				cyd_set_env_shape(cydchn, inst & 3);
+			}
+			break;
+			
+			case MUS_FX_BUZZ_SET_SEMI:
+			{
+				chn->buzz_offset = (((inst & 0xff)) - 0x80) << 8;
+					
+				mus_set_buzz_frequency(mus, chan, chn->note);
 			}
 			break;
 		
@@ -990,7 +998,6 @@ int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst)
 	VER_READ(version, 1, 0xff, &inst->flttype, 0);
 	VER_READ(version, 7, 0xff, &inst->ym_env_shape, 0);
 	VER_READ(version, 7, 0xff, &inst->buzz_offset, 0);
-	VER_READ(version, 7, 0xff, &inst->buzz_note, 0);
 	
 	return 1;
 }
@@ -1033,7 +1040,6 @@ void mus_get_default_instrument(MusInstrument *inst)
 	inst->base_note = MIDDLE_C;
 	inst->prog_period = 2;
 	inst->cutoff = 2047;
-	inst->buzz_note = MIDDLE_C;
 	
 	for (int p = 0 ; p < MUS_PROG_LEN; ++p)
 		inst->program[p] = MUS_FX_NOP;
