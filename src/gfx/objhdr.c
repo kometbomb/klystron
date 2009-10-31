@@ -242,7 +242,7 @@ void objhdr_draw(SDL_Surface *destination, const ObjHdr *object, int xofs, int y
 #endif	
 		if (object->objflags & OBJ_DRAW_RECT)
 		{
-			SDL_FillRect(destination, &dest, (Uint32)object->surface);
+			SDL_FillRect(destination, &dest, *(Uint32*)&object->surface);
 		}
 		else
 		{
