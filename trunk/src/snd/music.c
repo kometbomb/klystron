@@ -298,7 +298,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 		{
 			case MUS_FX_PW_SET:
 			{
-				mus->song_track[chan].pw = inst & 0xff << 4;
+				mus->song_track[chan].pw = (inst & 0xff) << 4;
 			}
 			break;
 			
