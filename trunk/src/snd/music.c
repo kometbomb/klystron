@@ -294,6 +294,17 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 		
 		default:
 		
+		switch (inst & 0xf000)
+		{
+			case MUS_FX_CUTOFF_FINE_SET:
+			{
+				mus->song_track[chan].filter_cutoff = (inst & 0xfff);
+				if (mus->song_track[chan].filter_cutoff > 0x7ff) mus->song_track[chan].filter_cutoff = 0x7ff;
+				cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
+			}
+			break;
+		}
+		
 		switch (inst & 0x7f00)
 		{
 			case MUS_FX_PW_SET:
@@ -806,7 +817,7 @@ void mus_advance_tick(void* udata)
 						{
 							cyd_enable_gate(mus->cyd, &mus->cyd->channel[i], 0);
 						}
-						else if (note != MUS_NOTE_NONE)
+						else if (pinst && note != MUS_NOTE_NONE)
 						{
 							mus->song_track[i].slide_speed = 0;
 							int speed = pinst->slide_speed | 1;

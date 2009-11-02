@@ -44,7 +44,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define YM_LENGTH (ACC_LENGTH) // YM envelope counter length
 #define MAX_VOLUME 128
 
-#define envspd(cyd,slope) (slope!=0?((0xff0000 / ((slope + 1) * (slope + 1) * 256)) * CYD_BASE_FREQ / cyd->sample_rate):0xff0000)
+#define envspd(cyd,slope) (slope!=0?((0xff0000 / ((slope) * (slope) * 256)) * CYD_BASE_FREQ / cyd->sample_rate):0xff0000)
 
 
 static Sint32 inline fastrnd(Uint32 fastrnd_rndi)
