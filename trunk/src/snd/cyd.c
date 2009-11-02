@@ -477,7 +477,7 @@ static Sint16 cyd_output(CydEngine *cyd)
 	if (cyd->flags & CYD_ENABLE_REVERB)
 	{
 #ifdef STEREOOUTPUT
-		cydrvb_cycle(&cyd->rvb, *left, *right);
+		cydrvb_cycle(&cyd->rvb, rev_l, rev_l);
 		cydrvb_output(&cyd->rvb, &rev_l, &rev_r);
 		*left += rev_l;
 		*right += rev_r;
