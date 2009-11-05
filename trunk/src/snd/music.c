@@ -1162,10 +1162,48 @@ int mus_load_song_file(FILE *f, MusSong *song)
 			if (song->pattern[i].step == NULL)
 				song->pattern[i].step = calloc((size_t)song->pattern[i].num_steps, sizeof(song->pattern[i].step[0]));
 			
-			size_t s = (version < 2) ? sizeof(Uint8)*3 : sizeof(song->pattern[i].step[0]);
-			
-			for (int step = 0 ; step < song->pattern[i].num_steps ; ++step)
-				fread(&song->pattern[i].step[step], 1, s, f);
+			if (version < 8)
+			{
+				size_t s = (version < 2) ? sizeof(Uint8)*3 : sizeof(song->pattern[i].step[0]);
+				for (int step = 0 ; step < song->pattern[i].num_steps ; ++step)
+					fread(&song->pattern[i].step[step], 1, s, f);
+			}
+			else
+			{
+				Uint8 *packed = malloc(sizeof(Uint8) * song->pattern[i].num_steps / 2);
+				Uint8 *current = packed;
+				
+				fread(packed, sizeof(Uint8), song->pattern[i].num_steps / 2, f);
+				
+				for (int s = 0 ; s < song->pattern[i].num_steps ; ++s)
+				{
+					Uint8 bits = (s & 1) ? *current & 0xf : *current >> 4;
+					
+					if (bits & MUS_PAK_BIT_NOTE)
+						fread(&song->pattern[i].step[s].note, 1, sizeof(song->pattern[i].step[s].note), f);
+					else
+						song->pattern[i].step[s].note = MUS_NOTE_NONE;
+						
+					if (bits & MUS_PAK_BIT_INST)
+						fread(&song->pattern[i].step[s].instrument, 1, sizeof(song->pattern[i].step[s].instrument), f);
+					else
+						song->pattern[i].step[s].instrument = MUS_NOTE_NO_INSTRUMENT;
+						
+					if (bits & MUS_PAK_BIT_CTRL)
+						fread(&song->pattern[i].step[s].ctrl, 1, sizeof(song->pattern[i].step[s].ctrl), f);
+					else
+						song->pattern[i].step[s].ctrl = 0;
+						
+					if (bits & MUS_PAK_BIT_CMD)
+						fread(&song->pattern[i].step[s].command, 1, sizeof(song->pattern[i].step[s].command), f);
+					else
+						song->pattern[i].step[s].command = 0;
+					
+					if (s & 1) ++current;
+				}
+				
+				free(packed);
+			}
 		}
 		
 		return 1;
