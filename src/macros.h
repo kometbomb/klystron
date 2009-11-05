@@ -28,6 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 #include <stdio.h>
+#include "SDL_endian.h"
 
 #define SQR(x) ((x)*(x))
 #define my_min(a,b) (((a)<(b))?(a):(b))
@@ -52,5 +53,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define warning(...) do { fputs("[WARNING] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
 #define fatal(...) do { fputs("[FATAL] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
+
+#define FIX_ENDIAN(x) x = (sizeof(x) < 2 ? x : (sizeof(x) == 2 ? SDL_SwapLE16(x) : SDL_SwapLE32(x)))
 
 #endif

@@ -25,6 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 #include "util/bundle.h"
+#include "macros.h"
 #include <dirent.h>
 #include <sys/stat.h>
 
@@ -109,6 +110,8 @@ int do_dir(char *dirname, char *basepath, FILE *bundle, FILE *data, Uint32 key)
 			
 				Uint32 o = attribute.st_size;
 				
+				FIX_ENDIAN(o);
+				
 				char wpath[500];
 				strcpy(wpath, apath + strlen(basepath) + 1);
 				
@@ -176,6 +179,7 @@ int main(int argc, char **argv)
 	fwrite(BND_SIG, strlen(BND_SIG), sizeof(char), bundle);
 	
 	Uint32 flags = key != 0 ? BND_FLAG_CRYPTED : 0;
+	FIX_ENDIAN(flags);
 	Uint32 num_files = 0;
 	fwrite(&flags, 1, sizeof(flags), bundle); 
 	
@@ -208,6 +212,7 @@ int main(int argc, char **argv)
 	}
 	
 	fseek(bundle, num_pos, SEEK_SET);
+	FIX_ENDIAN(num_files);
 	fwrite(&num_files, 1, sizeof(num_files), bundle); //write real value
 	
 	fclose(bundle);
