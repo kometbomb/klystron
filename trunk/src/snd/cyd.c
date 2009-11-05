@@ -43,6 +43,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define ACC_LENGTH (1 << (ACC_BITS - 1)) // Osc counter length
 #define YM_LENGTH (ACC_LENGTH) // YM envelope counter length
 #define MAX_VOLUME 128
+#define KRUSH ~0x3f;
 
 #define envspd(cyd,slope) (slope!=0?((0xff0000 / ((slope) * (slope) * 256)) * CYD_BASE_FREQ / cyd->sample_rate):0xff0000)
 
@@ -490,10 +491,10 @@ static Sint16 cyd_output(CydEngine *cyd)
 	if (cyd->flags & CYD_ENABLE_CRUSH)
 	{
 #ifdef STEREOOUTPUT
-		*left = *left & 0xfffffff0;
-		*right = *right & 0xfffffff0;
+		*left = *left & KRUSH;
+		*right = *right & KRUSH;
 #else
-		v = v & 0xfffffff0;
+		v = v & KRUSH;
 #endif
 	}
 	
