@@ -44,6 +44,8 @@ int lev_load(Background *bg, int *n_layers, FILE* data, int (*interpret_event)(v
 		LevOpCode opcode;
 		ptr_read(opcode, data);
 		
+		FIX_ENDIAN(opcode.repeat);
+		
 		for (int di = 0 ; di < opcode.repeat ; ++di)
 		{
 			switch (opcode.opcode)
@@ -78,6 +80,14 @@ int lev_load(Background *bg, int *n_layers, FILE* data, int (*interpret_event)(v
 	
 					ptr_read(header, data);
 					
+					FIX_ENDIAN(header.flags);
+					FIX_ENDIAN(header.w);
+					FIX_ENDIAN(header.h);
+					FIX_ENDIAN(header.prx_mlt_x);
+					FIX_ENDIAN(header.prx_mlt_y);
+					FIX_ENDIAN(header.off_x);
+					FIX_ENDIAN(header.off_y);
+					
 					bg[current_layer].flags = header.flags;
 					bg[current_layer].w = header.w;
 					bg[current_layer].h = header.h;
@@ -96,6 +106,8 @@ int lev_load(Background *bg, int *n_layers, FILE* data, int (*interpret_event)(v
 					
 					ptr_read(tile, data);
 					
+					FIX_ENDIAN(tile.type);
+					
 					cell->tile = tile.type;
 					
 					++cell;
@@ -107,6 +119,9 @@ int lev_load(Background *bg, int *n_layers, FILE* data, int (*interpret_event)(v
 					LevRepTile tile = {0};
 					
 					ptr_read(tile, data);
+					
+					FIX_ENDIAN(tile.type);
+					FIX_ENDIAN(tile.repeat);
 					
 					for (int i = 0 ; i < tile.repeat ; ++i)
 					{

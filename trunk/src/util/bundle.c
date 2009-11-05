@@ -79,10 +79,14 @@ int bnd_open_file(Bundle *bundle, FILE *f, const char * filename)
 	
 	fread(&bundle->flags, 1, sizeof(bundle->flags), f);
 	
+	FIX_ENDIAN(bundle->flags);
+	
 	if (bundle->flags != 0)
 		warning("Unsupported bundle mode");
 	
 	fread(&bundle->n_files, 1, sizeof(bundle->n_files), f);
+	
+	FIX_ENDIAN(bundle->n_files);
 	
 	bundle->file = calloc(sizeof(bundle->file[0]), bundle->n_files);
 	
@@ -109,6 +113,7 @@ int bnd_open_file(Bundle *bundle, FILE *f, const char * filename)
 		
 		bundle->file[i].name = strdup(name);
 		fread(&bundle->file[i].size, 1, sizeof(bundle->file[i].size), f);
+		FIX_ENDIAN(bundle->file[i].size);
 		bundle->file[i].offset = origin;
 		origin += bundle->file[i].size;
 	}

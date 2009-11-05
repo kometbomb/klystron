@@ -31,7 +31,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "macros.h"
 #include "rnd.h"
 
-
 static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note);
 
 
@@ -1016,6 +1015,17 @@ int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst)
 	VER_READ(version, 7, 0xff, &inst->ym_env_shape, 0);
 	VER_READ(version, 7, 0xff, &inst->buzz_offset, 0);
 	
+	/* The file format is little-endian, the following only does something on big-endian machines */
+	
+	FIX_ENDIAN(inst->flags);
+	FIX_ENDIAN(inst->cydflags);
+	FIX_ENDIAN(inst->pw);
+	FIX_ENDIAN(inst->cutoff);
+	FIX_ENDIAN(inst->buzz_offset);
+	
+	for (int i = 0 ; i < progsteps ; ++i)
+		FIX_ENDIAN(inst->program[i]);
+	
 	return 1;
 }
 
@@ -1118,6 +1128,17 @@ int mus_load_song_file(FILE *f, MusSong *song)
 		if (version > 2) fread(&song->flags, 1, sizeof(song->flags), f);
 		else song->flags = 0;
 		
+		/* The file format is little-endian, the following only does something on big-endian machines */
+		
+		FIX_ENDIAN(song->song_length);
+		FIX_ENDIAN(song->loop_point);
+		FIX_ENDIAN(song->time_signature);
+		FIX_ENDIAN(song->num_patterns);
+		FIX_ENDIAN(song->flags);
+		
+		for (int i = 0 ; i < (int)song->num_channels ; ++i)
+			FIX_ENDIAN(song->num_sequences[i]);
+		
 		if (version >= 5) fread(song->title, 1, MUS_TITLE_LEN + 1, f);
 		
 		if (song->flags & MUS_ENABLE_REVERB)
@@ -1126,6 +1147,9 @@ int mus_load_song_file(FILE *f, MusSong *song)
 			{
 				fread(&song->rvbtap[i].gain, 1, sizeof(song->rvbtap[i].gain), f);
 				fread(&song->rvbtap[i].delay, 1, sizeof(song->rvbtap[i].delay), f);
+				
+				FIX_ENDIAN(song->rvbtap[i].gain);
+				FIX_ENDIAN(song->rvbtap[i].delay);
 			}
 		}
 		
@@ -1146,6 +1170,12 @@ int mus_load_song_file(FILE *f, MusSong *song)
 					song->sequence[i] = malloc((size_t)song->num_sequences[i] * sizeof(song->sequence[0][0]));
 			
 				fread(song->sequence[i], song->num_sequences[i], sizeof(song->sequence[i][0]), f);
+				
+				for (int s = 0 ; s < song->num_sequences[i] ; ++s)
+				{
+					FIX_ENDIAN(song->sequence[i][s].position);
+					FIX_ENDIAN(song->sequence[i][s].pattern);
+				}
 			}
 		}
 		
@@ -1160,6 +1190,8 @@ int mus_load_song_file(FILE *f, MusSong *song)
 			Uint16 steps;
 			fread(&steps, 1, sizeof(song->pattern[i].num_steps), f);
 			
+			FIX_ENDIAN(steps);
+			
 			if (song->pattern[i].step == NULL)
 				song->pattern[i].step = calloc((size_t)steps, sizeof(song->pattern[i].step[0]));
 			else if (steps > song->pattern[i].num_steps)
@@ -1171,7 +1203,10 @@ int mus_load_song_file(FILE *f, MusSong *song)
 			{
 				size_t s = (version < 2) ? sizeof(Uint8)*3 : sizeof(song->pattern[i].step[0]);
 				for (int step = 0 ; step < song->pattern[i].num_steps ; ++step)
+				{
 					fread(&song->pattern[i].step[step], 1, s, f);
+					FIX_ENDIAN(song->pattern[i].step[step].command);
+				}
 			}
 			else
 			{
@@ -1205,6 +1240,8 @@ int mus_load_song_file(FILE *f, MusSong *song)
 						fread(&song->pattern[i].step[s].command, 1, sizeof(song->pattern[i].step[s].command), f);
 					else
 						song->pattern[i].step[s].command = 0;
+						
+					FIX_ENDIAN(song->pattern[i].step[s].command);
 					
 					if (s & 1) ++current;
 				}
