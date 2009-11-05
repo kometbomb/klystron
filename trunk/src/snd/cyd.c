@@ -43,7 +43,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define ACC_LENGTH (1 << (ACC_BITS - 1)) // Osc counter length
 #define YM_LENGTH (ACC_LENGTH) // YM envelope counter length
 #define MAX_VOLUME 128
-#define KRUSH ~0x3f;
+#define KRUSH ~0x3f
 
 #define envspd(cyd,slope) (slope!=0?((0xff0000 / ((slope) * (slope) * 256)) * CYD_BASE_FREQ / cyd->sample_rate):0xff0000)
 
