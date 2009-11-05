@@ -1157,10 +1157,15 @@ int mus_load_song_file(FILE *f, MusSong *song)
 		
 		for (int i = 0 ; i < song->num_patterns; ++i)
 		{
-			fread(&song->pattern[i].num_steps, 1, sizeof(song->pattern[i].num_steps), f);
+			Uint16 steps;
+			fread(&steps, 1, sizeof(song->pattern[i].num_steps), f);
 			
 			if (song->pattern[i].step == NULL)
-				song->pattern[i].step = calloc((size_t)song->pattern[i].num_steps, sizeof(song->pattern[i].step[0]));
+				song->pattern[i].step = calloc((size_t)steps, sizeof(song->pattern[i].step[0]));
+			else if (steps > song->pattern[i].num_steps)
+				song->pattern[i].step = realloc(song->pattern[i].step, (size_t)steps * sizeof(song->pattern[i].step[0]));
+				
+			song->pattern[i].num_steps = steps;
 			
 			if (version < 8)
 			{
