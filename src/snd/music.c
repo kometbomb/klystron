@@ -1170,14 +1170,16 @@ int mus_load_song_file(FILE *f, MusSong *song)
 			}
 			else
 			{
-				Uint8 *packed = malloc(sizeof(Uint8) * song->pattern[i].num_steps / 2);
+				int len = song->pattern[i].num_steps / 2 + (song->pattern[i].num_steps & 1);
+				
+				Uint8 *packed = malloc(sizeof(Uint8) * len);
 				Uint8 *current = packed;
 				
-				fread(packed, sizeof(Uint8), song->pattern[i].num_steps / 2, f);
+				fread(packed, sizeof(Uint8), len, f);
 				
 				for (int s = 0 ; s < song->pattern[i].num_steps ; ++s)
 				{
-					Uint8 bits = (s & 1) ? *current & 0xf : *current >> 4;
+					Uint8 bits = (s & 1 || s == song->pattern[i].num_steps - 1) ? (*current & 0xf) : (*current >> 4);
 					
 					if (bits & MUS_PAK_BIT_NOTE)
 						fread(&song->pattern[i].step[s].note, 1, sizeof(song->pattern[i].step[s].note), f);
