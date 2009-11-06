@@ -1169,7 +1169,19 @@ int mus_load_song_file(FILE *f, MusSong *song)
 				if (song->sequence[i] == NULL)
 					song->sequence[i] = malloc((size_t)song->num_sequences[i] * sizeof(song->sequence[0][0]));
 			
-				fread(song->sequence[i], song->num_sequences[i], sizeof(song->sequence[i][0]), f);
+				if (version < 8)
+				{
+					fread(song->sequence[i], song->num_sequences[i], sizeof(song->sequence[i][0]), f);
+				}
+				else
+				{
+					for (int s = 0 ; s < song->num_sequences[i] ; ++s)
+					{
+						fread(&song->sequence[i][s].position, 1, sizeof(song->sequence[i][s].position), f);
+						fread(&song->sequence[i][s].pattern, 1, sizeof(song->sequence[i][s].pattern), f);
+						fread(&song->sequence[i][s].note_offset, 1, sizeof(song->sequence[i][s].note_offset), f);
+					}
+				}
 				
 				for (int s = 0 ; s < song->num_sequences[i] ; ++s)
 				{
