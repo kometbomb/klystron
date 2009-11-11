@@ -1105,6 +1105,9 @@ int mus_load_song_file(FILE *f, MusSong *song)
 		Uint8 version = 0;
 		fread(&version, 1, sizeof(version), f);
 		
+		if (version > MUS_VERSION)
+			return 0;
+		
 		if (version >= 6) 
 			fread(&song->num_channels, 1, sizeof(song->num_channels), f);
 		else 
