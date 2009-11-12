@@ -1042,6 +1042,9 @@ int mus_load_instrument_file2(FILE *f, MusInstrument *inst)
 	{
 		Uint8 version = 0;
 		fread(&version, 1, sizeof(version), f);
+		
+		if (version > MUS_VERSION)
+			return 0;
 	
 		mus_load_instrument_file(version, f, inst);
 		
@@ -1067,6 +1070,9 @@ void mus_get_default_instrument(MusInstrument *inst)
 	inst->base_note = MIDDLE_C;
 	inst->prog_period = 2;
 	inst->cutoff = 2047;
+	inst->slide_speed = 0x80;
+	inst->vibrato_speed = 0x20;
+	inst->vibrato_depth = 0x20;
 	
 	for (int p = 0 ; p < MUS_PROG_LEN; ++p)
 		inst->program[p] = MUS_FX_NOP;
