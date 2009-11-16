@@ -224,9 +224,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 					if ((inst & 0xf) > 0 && (tick % (inst & 0xf)) == 0)
 					{
 						Uint8 prev_vol = mus->song_track[chan].volume;
-						Uint16 note = chn->note;
-						mus_trigger_instrument_internal(mus, chan, chn->instrument, chn->note);
-						mus_set_note(mus, chan, note, 1);
+						mus_trigger_instrument_internal(mus, chan, chn->instrument, chn->last_note);
 						mus->song_track[chan].volume = prev_vol;
 					}
 				}
@@ -579,7 +577,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	}
 	
 	mus_set_note(mus, chan, (Uint16)note << 8, 1);
-	chn->target_note = (Uint16)note << 8;
+	chn->last_note = chn->target_note = (Uint16)note << 8;
 	chn->current_tick = 0;
 	mus->song_track[chan].vibrato_position = 0;
 	mus->song_track[chan].slide_speed = 0;
@@ -766,7 +764,7 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 	Sint32 note = mus->channel[chan].note + vib + ((Uint16)mus->channel[chan].arpeggio_note << 8);
 	
 	if (note < 0) note = 0;
-	if (note > FREQ_TAB_SIZE << 8) note = (FREQ_TAB_SIZE << 8) - 1;
+	if (note > FREQ_TAB_SIZE << 8) note = (FREQ_TAB_SIZE - 1) << 8;
 	
 	mus_set_note(mus, chan, note, 0);
 }

@@ -74,7 +74,7 @@ typedef struct
 	Uint16 note;
 	// ------
 	Uint8 arpeggio_note;
-	Uint16 target_note;
+	Uint16 target_note, last_note;
 	volatile Uint32 flags;
 	Uint32 current_tick;
 	Uint8 program_counter, program_tick, program_loop;
