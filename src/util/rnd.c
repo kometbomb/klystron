@@ -113,7 +113,7 @@ unsigned int rndu()
 
 int rnd(int min_val,int max_val) {
 	if (min_val==max_val) return min_val;
-	return (unsigned int)rndu()%(unsigned int)(max_val-min_val)+(unsigned int)min_val;
+	return (unsigned int)rndu()%(unsigned int)(max_val-min_val+1)+(unsigned int)min_val;
 }
 
 float rndf() {
