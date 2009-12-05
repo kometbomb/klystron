@@ -59,6 +59,17 @@ int lev_load(Background *bg, int *n_layers, FILE* data, int (*interpret_event)(v
 				{
 					LevEvent event = {0};
 					ptr_read(event, data);
+					
+					FIX_ENDIAN(event.x);
+					FIX_ENDIAN(event.y);
+					FIX_ENDIAN(event.w);
+					FIX_ENDIAN(event.h);
+					
+					for (int i = 0 ; i < EV_PARAMS ; ++i)
+					{
+						FIX_ENDIAN(event.param[i]);
+					}
+					
 					if (!interpret_event(pdata, &event)) 
 					{
 						warning("Unknown event %d\n", event.param[0]);
