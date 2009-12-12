@@ -170,3 +170,12 @@ int bg_create_tile_objhdr(ObjHdr* object_array, const Background *bg, int x, int
 	
 	return items;
 }
+
+
+void bg_create(Background *bg, int w, int h)
+{
+	memset(bg, 0, sizeof(*bg));
+	bg->data = calloc(w * h, sizeof(bg->data[0]));
+	bg->w = w;
+	bg->h = h;
+}
