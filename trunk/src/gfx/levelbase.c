@@ -60,6 +60,8 @@ int lev_load(Background *bg, int *n_layers, FILE* data, int (*interpret_event)(v
 					LevEvent event = {0};
 					ptr_read(event, data);
 					
+					if (!interpret_event) break;
+					
 					FIX_ENDIAN(event.x);
 					FIX_ENDIAN(event.y);
 					FIX_ENDIAN(event.w);
@@ -99,14 +101,12 @@ int lev_load(Background *bg, int *n_layers, FILE* data, int (*interpret_event)(v
 					FIX_ENDIAN(header.off_x);
 					FIX_ENDIAN(header.off_y);
 					
+					bg_create(&bg[current_layer], header.w, header.h);
 					bg[current_layer].flags = header.flags;
-					bg[current_layer].w = header.w;
-					bg[current_layer].h = header.h;
 					bg[current_layer].prx_mlt_x = header.prx_mlt_x;
 					bg[current_layer].prx_mlt_y = header.prx_mlt_y;
 					bg[current_layer].off_x = header.off_x;
 					bg[current_layer].off_y = header.off_y;
-					bg[current_layer].data = calloc(sizeof(*bg[current_layer].data), header.w * header.h);
 					cell = bg[current_layer].data;
 				}
 				break;
