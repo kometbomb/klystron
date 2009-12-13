@@ -1,5 +1,5 @@
-#ifndef FONT_H
-#define FONT_H
+#ifndef BEVEL_H
+#define BEVEL_H
 
 /*
 Copyright (c) 2009 Tero Lindeman (kometbomb)
@@ -26,27 +26,12 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include "SDL.h"
 
-#include "tiledescriptor.h"
-#include "../util/bundle.h"
+#include "gfx/font.h"
 
-#include <stdio.h>
-
-typedef struct
-{
-	char *charmap;
-	TileDescriptor *tiledescriptor;
-	SDL_Surface * surface;
-	int w, h;
-} Font;
-
-int font_load(Font *font, Bundle *b, char *name);
-void font_create(Font *font, SDL_Surface *tiles, const int w, const int h, char *charmap);
-void font_destroy(Font *font);
-void font_write_cursor(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text);
-void font_write_va(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text, va_list va);
-void font_write_cursor_args(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text, ...) __attribute__ ((format (printf, 6, 7)));
-void font_write(const Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text);
-void font_write_args(const Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...) __attribute__ ((format (printf, 4, 5)));
+void bevel(SDL_Surface *screen, const SDL_Rect *area, SDL_Surface *gfx, int offset);
+void button(SDL_Surface *screen, const SDL_Rect *area, SDL_Surface *gfx, int offset, int decal);
+void button_text(SDL_Surface *screen, const SDL_Rect *area, SDL_Surface *gfx, int offset, const Font *font, const char *label);
 
 #endif

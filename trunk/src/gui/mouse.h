@@ -1,5 +1,5 @@
-#ifndef FONT_H
-#define FONT_H
+#ifndef MOUSE_H
+#define MOUSE_H
 
 /*
 Copyright (c) 2009 Tero Lindeman (kometbomb)
@@ -26,27 +26,12 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include "SDL.h"
 
-#include "tiledescriptor.h"
-#include "../util/bundle.h"
-
-#include <stdio.h>
-
-typedef struct
-{
-	char *charmap;
-	TileDescriptor *tiledescriptor;
-	SDL_Surface * surface;
-	int w, h;
-} Font;
-
-int font_load(Font *font, Bundle *b, char *name);
-void font_create(Font *font, SDL_Surface *tiles, const int w, const int h, char *charmap);
-void font_destroy(Font *font);
-void font_write_cursor(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text);
-void font_write_va(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text, va_list va);
-void font_write_cursor_args(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text, ...) __attribute__ ((format (printf, 6, 7)));
-void font_write(const Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text);
-void font_write_args(const Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...) __attribute__ ((format (printf, 4, 5)));
+void mouse_released(const SDL_Event *event);
+void set_motion_target(void (*action)(int,int,void*), void *param);
+int check_event(const SDL_Event *event, const SDL_Rect *rect, void (*action)(void*,void*,void*), void *param1, void *param2, void *param3);
+int check_drag_event(const SDL_Event *event, const SDL_Rect *rect, void (*action)(int,int,void*), void *param);
+void set_repeat_timer(const SDL_Event *event);
 
 #endif
