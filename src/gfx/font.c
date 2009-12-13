@@ -68,7 +68,7 @@ static const TileDescriptor * findchar(const Font *font, char c)
 }
 
 
-static void inner_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text)
+static void inner_write(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text)
 {
 	const char *c = text;
 	int x = (*cursor & 0xff) * font->w, y = ((*cursor >> 8) & 0xff) * font->h, cr = 0, right = dest->w;
@@ -143,7 +143,7 @@ static void inner_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16
 }
 
 
-void font_write_va(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text, va_list va)
+void font_write_va(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text, va_list va)
 {
 	int len = vsnprintf(NULL, 0, text, va) + 1;
 	char * formatted = malloc(len * sizeof(*formatted));
@@ -230,7 +230,7 @@ int font_load(Font *font, Bundle *bundle, char *name)
 }
 
 
-void font_write_cursor_args(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text, ...)
+void font_write_cursor_args(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text, ...)
 {
 	va_list va;
 	va_start(va, text);
@@ -241,20 +241,20 @@ void font_write_cursor_args(Font *font, SDL_Surface *dest, const SDL_Rect *r, Ui
 }
 
 
-void font_write_cursor(Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text)
+void font_write_cursor(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text)
 {
 	inner_write(font, dest, r, cursor, bounds, text);
 }
 
 
-void font_write(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text)
+void font_write(const Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text)
 {
 	Uint16 cursor = 0;
 	inner_write(font, dest, r, &cursor, NULL, text);
 }
 
 
-void font_write_args(Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...)
+void font_write_args(const Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...)
 {
 	Uint16 cursor = 0;
 	
