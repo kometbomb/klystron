@@ -152,7 +152,7 @@ void file_list_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_E
 		else
 			font_write_args(data.largefont, dest_surface, &pos, "½%s", data.files[i].display_name);
 		
-		if (pos.y + pos.h <= content.h + content.y) slider_set_params(&data.scrollbar, 0, data.n_files - 1, data.list_position, i, &data.list_position, 1, SLIDER_VERTICAL);
+		if (pos.y + pos.h <= content.h + content.y) slider_set_params(&data.scrollbar, 0, data.n_files - 1, data.list_position, i, &data.list_position, 1, SLIDER_VERTICAL, data.gfx);
 		
 		check_event(event, &pos, pick_file_action, MAKEPTR(i), 0, 0);
 		
@@ -291,7 +291,7 @@ static int populate_files(GfxDomain *domain, SDL_Surface *gfx, const Font *font,
 	
 	free_files();
 	
-	slider_set_params(&data.scrollbar, 0, 0, 0, 0, &data.list_position, 1, SLIDER_VERTICAL);
+	slider_set_params(&data.scrollbar, 0, 0, 0, 0, &data.list_position, 1, SLIDER_VERTICAL, gfx);
 		
 	while ((de = readdir(dir)) != NULL)
 	{
