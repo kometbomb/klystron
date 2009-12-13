@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FILEBOX_H
+#define FILEBOX_H
 
 /*
 Copyright (c) 2009 Tero Lindeman (kometbomb)
@@ -25,26 +26,14 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-struct menu_t
-{
-	int flags;
-	const struct menu_t *parent;
-	const char * text;
-	const struct menu_t *submenu;
-	void (*action)(void*, void*, void *);
-	void *p1, *p2, *p3;
-} menu_t;
+enum { FB_CANCEL = 1, FB_OK = 2 };
+enum { FB_SAVE, FB_OPEN };
 
-enum { MENU_BULLET = 1 };
-#define MENU_CHECK (void*)1
-#define MENU_CHECK_NOSET (void*)2
-
-typedef struct menu_t Menu;
-
+#include <stdlib.h>
 #include "SDL.h"
-#include "shortcuts.h"
+#include "gfx/gfx.h"
 #include "gfx/font.h"
 
-void open_menu(const Menu *mainmenu, void (*close_hook)(void), const KeyShortcut *_shortcuts, const Font *menufont, const Font *shortcutfont, SDL_Surface *gfx);
-void close_menu();
-void draw_menu(SDL_Surface *dest, const SDL_Event *e);
+int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const char *extension, GfxDomain *domain, SDL_Surface *gfx, const Font *smallfont, const Font *largefont);
+
+#endif
