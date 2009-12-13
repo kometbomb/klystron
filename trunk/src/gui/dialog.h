@@ -25,26 +25,12 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-struct menu_t
-{
-	int flags;
-	const struct menu_t *parent;
-	const char * text;
-	const struct menu_t *submenu;
-	void (*action)(void*, void*, void *);
-	void *p1, *p2, *p3;
-} menu_t;
-
-enum { MENU_BULLET = 1 };
-#define MENU_CHECK (void*)1
-#define MENU_CHECK_NOSET (void*)2
-
-typedef struct menu_t Menu;
-
 #include "SDL.h"
-#include "shortcuts.h"
+#include "gui/bevdefs.h"
 #include "gfx/font.h"
 
-void open_menu(const Menu *mainmenu, void (*close_hook)(void), const KeyShortcut *_shortcuts, const Font *menufont, const Font *shortcutfont, SDL_Surface *gfx);
-void close_menu();
-void draw_menu(SDL_Surface *dest, const SDL_Event *e);
+int checkbox(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, const Font * font, const char* label, Uint32 *flags, Uint32 mask);
+int spinner(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, int param);
+int button_event(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, int offset, int offset_pressed, int decal, void (*action)(void*,void*,void*), void *param1, void *param2, void *param3);
+int button_text_event(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, const Font *font, int offset, int offset_pressed, const char *label, void (*action)(void*,void*,void*), void *param1, void *param2, void *param3);
+int generic_edit_text(SDL_Event *e, char *edit_buffer, size_t edit_buffer_size, int *editpos);

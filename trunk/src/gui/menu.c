@@ -3,6 +3,7 @@
 #include "gfx/font.h"
 #include "gui/view.h"
 #include "shortcuts.h"
+#include "bevdefs.h"
 
 #define SC_SIZE 64
 
@@ -12,24 +13,15 @@ static void (*menu_close_hook)(void)  = NULL;
 static const Menu *current_menu = NULL;
 static const Menu *current_menu_action = NULL;
 static const KeyShortcut *shortcuts = NULL;
-static char menu_tick = ' ';
-static char menu_bullet = ' ';
-static int menu_bevel_menubar, menu_bevel_menu, menu_bevel_selected, menu_bevel_separator;
 static SDL_Surface *menu_gfx = NULL;
 static const Font * menu_font, *shortcut_font;
 
-void open_menu(const Menu *mainmenu, void (*close_hook)(void), const KeyShortcut *_shortcuts, const Font *menufont, const Font *shortcutfont, SDL_Surface *gfx, int menubar, int submenu, int selected, int separator, char tick, char bullet)
+void open_menu(const Menu *mainmenu, void (*close_hook)(void), const KeyShortcut *_shortcuts, const Font *menufont, const Font *shortcutfont, SDL_Surface *gfx)
 {
 	current_menu = mainmenu;
 	current_menu_action = NULL;
 	menu_close_hook = close_hook;
 	shortcuts = _shortcuts;
-	menu_bevel_menubar = menubar;
-	menu_bevel_menu = submenu;
-	menu_bevel_selected = selected;
-	menu_tick = tick;
-	menu_bullet = bullet;
-	menu_bevel_separator = separator;
 	menu_gfx = gfx;
 	menu_font = menufont;
 	shortcut_font = shortcutfont;
@@ -169,13 +161,13 @@ static void draw_submenu(SDL_Surface *menu_dest, const SDL_Event *event, const M
 			copy_rect(&bev, &area);
 			adjust_rect(&bev, -6);
 			
-			if (pass == DRAW) bevel(menu_dest, &bev, menu_gfx, menu_bevel_menu);
+			if (pass == DRAW) bevel(menu_dest, &bev, menu_gfx, BEV_MENU);
 			
 			r.h = font->h + 1;
 		}
 		else
 		{
-			if (pass == DRAW) bevel(menu_dest, &area, menu_gfx, menu_bevel_menubar);
+			if (pass == DRAW) bevel(menu_dest, &area, menu_gfx, BEV_MENUBAR);
 			
 			copy_rect(&r, &area);
 			adjust_rect(&r, 2);
@@ -236,7 +228,7 @@ static void draw_submenu(SDL_Surface *menu_dest, const SDL_Event *event, const M
 					copy_rect(&bar, &r);
 					adjust_rect(&bar, -1);
 					bar.h --;
-					bevel(menu_dest, &bar, menu_gfx, menu_bevel_selected);
+					bevel(menu_dest, &bar, menu_gfx, BEV_MENU_SELECTED);
 				}
 				
 				if (pass == DRAW) 
@@ -250,9 +242,9 @@ static void draw_submenu(SDL_Surface *menu_dest, const SDL_Event *event, const M
 					char tick_char[2] = { 0 };
 					
 					if ((item->action == MENU_CHECK || item->action == MENU_CHECK_NOSET) && (*(int*)item->p1 & CASTPTR(int,item->p2)))
-						*tick_char = menu_tick;
+						*tick_char = '§';
 					else if (item->flags & MENU_BULLET)
-						*tick_char = menu_bullet;
+						*tick_char = '^';
 					
 					if (tick_char[0] != 0)
 					{
@@ -280,7 +272,7 @@ static void draw_submenu(SDL_Surface *menu_dest, const SDL_Event *event, const M
 			}
 			else
 			{
-				separator(menu_dest, &area, &r, menu_gfx, menu_bevel_separator);
+				separator(menu_dest, &area, &r, menu_gfx, BEV_SEPARATOR);
 			}
 		}
 	}

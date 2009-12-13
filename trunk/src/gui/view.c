@@ -1,5 +1,8 @@
 #include "view.h"
 
+extern int event_hit;
+
+
 void update_rect(const SDL_Rect *parent, SDL_Rect *rect)
 {
 	rect->x += rect->w + ELEMENT_MARGIN;
@@ -33,4 +36,28 @@ void clip_rect(SDL_Rect *rect, const SDL_Rect *limits)
 	if (rect->y < limits->y) { rect->h -= limits->y - rect->y; rect->y = limits->y; }
 	if (rect->w + rect->x > limits->w + limits->x) { rect->w = limits->w + limits->x - rect->x; }
 	if (rect->h + rect->y > limits->h + limits->y) { rect->h = limits->h + limits->y - rect->y; }
+}
+
+
+void draw_view(SDL_Surface *dest, const View* views, const SDL_Event *_event)
+{
+	SDL_Event event;
+	memcpy(&event, _event, sizeof(event));
+	for (int i = 0 ; views[i].handler ; ++i)
+	{
+		const View *view = &views[i];
+
+		int iter = 0;
+		do
+		{
+			event_hit = 0;
+			view->handler(dest, &view->position, &event, view->param);
+			if (event_hit) 
+			{
+				event.type = SDL_USEREVENT + 1;
+				++iter;
+			}
+		}
+		while (event_hit && iter <= 1);
+	}
 }
