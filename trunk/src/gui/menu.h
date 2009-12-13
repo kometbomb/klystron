@@ -25,10 +25,26 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "SDL.h"
+struct menu_t
+{
+	int flags;
+	const struct menu_t *parent;
+	const char * text;
+	const struct menu_t *submenu;
+	void (*action)(void*, void*, void *);
+	void *p1, *p2, *p3;
+} menu_t;
 
-void mouse_released(const SDL_Event *event);
-void set_motion_target(void (*action)(int,int,void*), void *param);
-int check_event(const SDL_Event *event, const SDL_Rect *rect, void (*action)(void*,void*,void*), void *param1, void *param2, void *param3);
-int check_drag_event(const SDL_Event *event, const SDL_Rect *rect, void (*action)(int,int,void*), void *param);
-void set_repeat_timer(const SDL_Event *event);
+enum { MENU_BULLET = 1 };
+#define MENU_CHECK (void*)1
+#define MENU_CHECK_NOSET (void*)2
+
+typedef struct menu_t Menu;
+
+#include "SDL.h"
+#include "shortcuts.h"
+#include "gfx/font.h"
+
+void open_menu(const Menu *mainmenu, void (*close_hook)(void), const KeyShortcut *_shortcuts, const Font *menufont, const Font *shortcutfont, SDL_Surface *gfx, int menubar, int submenu, int selected, int separator, char tick, char bullet);
+void close_menu();
+void draw_menu(SDL_Surface *dest, const SDL_Event *e);

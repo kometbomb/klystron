@@ -33,5 +33,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 void bevel(SDL_Surface *screen, const SDL_Rect *area, SDL_Surface *gfx, int offset);
 void button(SDL_Surface *screen, const SDL_Rect *area, SDL_Surface *gfx, int offset, int decal);
 void button_text(SDL_Surface *screen, const SDL_Rect *area, SDL_Surface *gfx, int offset, const Font *font, const char *label);
+void separator(SDL_Surface *dest, const SDL_Rect *parent, SDL_Rect *rect, SDL_Surface *gfx, int offset);
 
 #endif
