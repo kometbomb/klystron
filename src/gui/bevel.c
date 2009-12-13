@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include "bevel.h"
+#include "view.h"
 
 void bevel(SDL_Surface *screen, const SDL_Rect *area, SDL_Surface *gfx, int offset)
 {
@@ -119,4 +120,22 @@ void button_text(SDL_Surface *screen, const SDL_Rect *area, SDL_Surface *gfx, in
 	
 	SDL_Rect dest = { area->x + area->w / 2 - (font->w*strlen(label)) / 2, area->y + area->h / 2 - font->h / 2, 1000, 1000 };
 	font_write(font, screen, &dest, label);
+}
+
+
+void separator(SDL_Surface *dest, const SDL_Rect *parent, SDL_Rect *rect, SDL_Surface *gfx, int offset)
+{
+	while (rect->x > parent->x) update_rect(parent, rect);
+	
+	SDL_Rect r;
+	copy_rect(&r, rect);
+	
+	rect->x = parent->x;
+	rect->y += SEPARATOR_HEIGHT;
+	
+	r.y += SEPARATOR_HEIGHT/3;
+	r.h = SEPARATOR_HEIGHT/2;
+	r.w = parent->w;
+	
+	bevel(dest, &r, gfx, offset);
 }

@@ -11,10 +11,13 @@ Group2_DEP = $(patsubst %.c, deps/Group2_$(CFG)_%.d, ${Group2_SRC})
 Group2_OBJ = $(patsubst %.c, objs.$(CFG)/Group2_%.o, ${Group2_SRC})
 Group0_SRC = $(notdir ${wildcard src/snd/*.c}) 
 Group0_DEP = $(patsubst %.c, deps/Group0_$(CFG)_%.d, ${Group0_SRC})
-Group0_OBJ = $(patsubst %.c, objs.$(CFG)/Group0_%.o, ${Group0_SRC}) $(Group2_OBJ)
+Group0_OBJ = $(patsubst %.c, objs.$(CFG)/Group0_%.o, ${Group0_SRC}) 
 Group1_SRC = $(notdir ${wildcard src/gfx/*.c}) 
 Group1_DEP = $(patsubst %.c, deps/Group1_$(CFG)_%.d, ${Group1_SRC})
-Group1_OBJ = $(patsubst %.c, objs.$(CFG)/Group1_%.o, ${Group1_SRC}) $(Group2_OBJ)
+Group1_OBJ = $(patsubst %.c, objs.$(CFG)/Group1_%.o, ${Group1_SRC}) 
+Group3_SRC = $(notdir ${wildcard src/gui/*.c}) 
+Group3_DEP = $(patsubst %.c, deps/Group3_$(CFG)_%.d, ${Group3_SRC})
+Group3_OBJ = $(patsubst %.c, objs.$(CFG)/Group3_%.o, ${Group3_SRC}) 
 	
 CC = gcc -shared -std=gnu99 --no-strict-aliasing
 CDEP = gcc -E -std=gnu99
@@ -73,7 +76,7 @@ else
 endif
 	make all CFG=$(CFG)
 
-all: bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a tools
+all: bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a bin.$(CFG)/lib${TARGET}_gui.a tools
 
 tools: tools/bin/makebundle.exe
 
@@ -96,6 +99,11 @@ bin.$(CFG)/lib${TARGET}_util.a: ${Group2_OBJ} | inform
 	@mkdir -p bin.$(CFG)
 	@ar rcs $@ $^
 	
+bin.$(CFG)/lib${TARGET}_gui.a: ${Group3_OBJ} | inform
+	@$(ECHO) "Linking "$(TARGET)"..."
+	@mkdir -p bin.$(CFG)
+	@ar rcs $@ $^
+	
 objs.$(CFG)/Group0_%.o: snd/%.c 
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
@@ -110,7 +118,12 @@ objs.$(CFG)/Group2_%.o: util/%.c
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
 	@$(CC) $(CFLAGS) -c $(CFLAGS) -o $@ $<
-	
+
+objs.$(CFG)/Group3_%.o: gui/%.c
+	@$(ECHO) "Compiling "$(notdir $<)"..."
+	@mkdir -p objs.$(CFG)
+	@$(CC) $(CFLAGS) -c $(CFLAGS) -o $@ $<
+
 deps/Group0_$(CFG)_%.d: snd/%.c 
 	@mkdir -p deps
 	@$(ECHO) "Generating dependencies for $<"
