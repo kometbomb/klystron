@@ -72,6 +72,8 @@ const char *upcase(char *str)
 
 static const char * get_shortcut_key(const Menu *item)
 {
+	if (!shortcuts) return NULL;
+
 	static char buffer[100];
 	
 	for (int i = 0 ; shortcuts[i].action ; ++i)
