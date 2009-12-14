@@ -155,78 +155,104 @@ void font_write_va(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint1
 }
 
 
-int font_load(Font *font, Bundle *bundle, char *name)
+static int font_load_inner(Font *font, Bundle *fb)
 {
-	debug("Loading font '%s'",name);
-
-	Bundle fb;
-	FILE *f = bnd_locate(bundle, name, 0);
-	
-	if (f && bnd_open_file(&fb, f, bundle->path))
+	SDL_RWops *rw = SDL_RWFromBundle(fb, "font.bmp");
+	if (rw)
 	{
-		SDL_RWops *rw = SDL_RWFromBundle(&fb, "font.bmp");
-		if (rw)
-		{
-			SDL_Surface * s= gfx_load_surface_RW(rw, GFX_KEYED);
-			
-			char map[1000];
-			memset(map, 0, sizeof(map));
-			
-			{
-				SDL_RWops *rw = SDL_RWFromBundle(&fb, "charmap.txt");
-				if (rw)
-				{
-					rw->read(rw, map, 1, sizeof(map)-1);
-					SDL_RWclose(rw);
-				}
-				else
-				{
-					strcpy(map, "ABCDEFGHIJKLMNOPQRSTUVWXYZ≈ƒ÷…abcdefghijklmnopqrstuvwxyzÂ‰ˆÈ!\"%&/()=?+-_.:,;`~[]{}*'<>    0123456789\\|^@");
-					debug("Charmap not found in font file");
-				}
-			}
-			
-			int w, h;
-			
-			{
-				SDL_RWops *rw = SDL_RWFromBundle(&fb, "res.txt");
-				char res[10] = { 0 };
-				
-				if (rw)
-				{
-					rw->read(rw, res, 1, sizeof(res)-1);
-					SDL_RWclose(rw);
-					
-					sscanf(res, "%d %d", &w, &h);
-				}
-				else
-				{
-					w = 8;
-					h = 9;
-				}
-			}
-			
-			font_create(font, s, w, h, map);
+		SDL_Surface * s= gfx_load_surface_RW(rw, GFX_KEYED);
 		
-			font->surface = s;
-			
-			fclose(f);
-			bnd_free(&fb);
-			
-			return 1;
-		}
-		else
+		char map[1000];
+		memset(map, 0, sizeof(map));
+		
 		{
-			fclose(f);
-			bnd_free(&fb);
-			
-			return 0;
+			SDL_RWops *rw = SDL_RWFromBundle(fb, "charmap.txt");
+			if (rw)
+			{
+				rw->read(rw, map, 1, sizeof(map)-1);
+				SDL_RWclose(rw);
+			}
+			else
+			{
+				strcpy(map, "ABCDEFGHIJKLMNOPQRSTUVWXYZ≈ƒ÷…abcdefghijklmnopqrstuvwxyzÂ‰ˆÈ!\"%&/()=?+-_.:,;`~[]{}*'<>    0123456789\\|^@");
+				debug("Charmap not found in font file");
+			}
 		}
+		
+		int w, h;
+		
+		{
+			SDL_RWops *rw = SDL_RWFromBundle(fb, "res.txt");
+			char res[10] = { 0 };
+			
+			if (rw)
+			{
+				rw->read(rw, res, 1, sizeof(res)-1);
+				SDL_RWclose(rw);
+				
+				sscanf(res, "%d %d", &w, &h);
+			}
+			else
+			{
+				w = 8;
+				h = 9;
+			}
+		}
+		
+		font_create(font, s, w, h, map);
+	
+		font->surface = s;
+		
+		bnd_free(fb);
+		
+		return 1;
 	}
 	else
 	{
+		bnd_free(fb);
+		
 		return 0;
 	}
+}
+
+
+int font_load_file(Font *font, char *filename)
+{
+	debug("Loading font '%s'", filename);
+	
+	Bundle fb; 
+	if (bnd_open(&fb, filename))
+	{
+		return font_load_inner(font, &fb);
+	}
+	
+	return 0;
+}
+
+
+int font_load(Font *font, Bundle *bundle, char *name)
+{
+	debug("Loading font '%s'", name);
+
+	FILE *f = bnd_locate(bundle, name, 0);
+	
+	if (f)
+	{
+		int r = 0;
+		
+		Bundle fb;
+		
+		if (bnd_open_file(&fb, f, bundle->path))
+		{
+			r = font_load_inner(font, &fb);
+		}
+		
+		fclose(f);
+		
+		return r;
+	}
+	else
+		return 0;
 }
 
 
