@@ -3,21 +3,23 @@ VPATH=src:src
 ECHO = echo
 CFG = debug
 REV = SubWCRev.exe .
-MACHINE = -march=pentium4 -mfpmath=sse -msse3
-
+MACHINE = -march=pentium2 
 
 Group2_SRC = $(notdir ${wildcard src/util/*.c}) 
 Group2_DEP = $(patsubst %.c, deps/Group2_$(CFG)_%.d, ${Group2_SRC})
 Group2_OBJ = $(patsubst %.c, objs.$(CFG)/Group2_%.o, ${Group2_SRC})
+
 Group0_SRC = $(notdir ${wildcard src/snd/*.c}) 
 Group0_DEP = $(patsubst %.c, deps/Group0_$(CFG)_%.d, ${Group0_SRC})
 Group0_OBJ = $(patsubst %.c, objs.$(CFG)/Group0_%.o, ${Group0_SRC}) 
+
 Group1_SRC = $(notdir ${wildcard src/gfx/*.c}) 
 Group1_DEP = $(patsubst %.c, deps/Group1_$(CFG)_%.d, ${Group1_SRC})
 Group1_OBJ = $(patsubst %.c, objs.$(CFG)/Group1_%.o, ${Group1_SRC}) 
+
 Group3_SRC = $(notdir ${wildcard src/gui/*.c}) 
 Group3_DEP = $(patsubst %.c, deps/Group3_$(CFG)_%.d, ${Group3_SRC})
-Group3_OBJ = $(patsubst %.c, objs.$(CFG)/Group3_%.o, ${Group3_SRC}) 
+Group3_OBJ = $(patsubst %.c, objs.$(CFG)/Group3_%.o, ${Group3_SRC}) $(Group2_OBJ) $(Group1_OBJ)
 	
 CC = gcc -shared -std=gnu99 --no-strict-aliasing
 CDEP = gcc -E -std=gnu99
@@ -35,7 +37,7 @@ else
 	SDLFLAGS = `sdl-config --cflags` -U_FORTIFY_SOURCE
 endif
 
-INCLUDEFLAGS= -I src $(SDLFLAGS) -I src/gfx -I src/snd -I src/util $(EXTFLAGS)
+INCLUDEFLAGS= -I ../Common -I src $(SDLFLAGS) -I src/gfx -I src/snd -I src/util -I src/gui $(EXTFLAGS)
 
 # Separate compile options per configuration
 ifeq ($(CFG),debug)
@@ -147,6 +149,14 @@ deps/Group2_$(CFG)_%.d: util/%.c
 	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/Group2_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
+
+deps/Group3_$(CFG)_%.d: gui/%.c
+	@mkdir -p deps
+	@$(ECHO) "Generating dependencies for $<"
+	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/Group3_\1.o $@ : ,g' \
+		< $@.$$$$ > $@; \
+	rm -f $@.$$$$
 	
 clean:
 	@rm -rf deps objs.release objs.debug objs.profile bin.release bin.debug bin.profile
@@ -159,6 +169,7 @@ ifneq ($(MAKECMDGOALS),clean)
 -include ${Group0_DEP}
 -include ${Group1_DEP}
 -include ${Group2_DEP}
+-include ${Group3_DEP}
 endif
 
 tools/bin/makebundle.exe: tools/makebundle/*.c
