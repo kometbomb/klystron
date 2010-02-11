@@ -302,7 +302,7 @@ void objhdr_advance_animation(ObjHdr *obj)
 {
 	if (obj->anim == NULL) return;
 	
-	obj->objflags &= ~OBJ_ANIM_COMPLETE;
+	obj->objflags &= ~(OBJ_ANIM_FINISHED|OBJ_ANIM_LOOPED);
 	
 	if (obj->frame_delay-- == 0)
 	{
@@ -311,8 +311,15 @@ void objhdr_advance_animation(ObjHdr *obj)
 		{
 			case ANIM_JUMP:
 			{
-			obj->anim_frame = obj->anim[obj->anim_frame].delay;
-			obj->objflags |= OBJ_ANIM_COMPLETE;
+				obj->anim_frame = obj->anim[obj->anim_frame].delay;
+				obj->objflags |= OBJ_ANIM_LOOPED;
+			}
+			break;
+			
+			case ANIM_END:
+			{
+				obj->anim_frame = 0;
+				obj->objflags |= OBJ_ANIM_FINISHED;
 			}
 			break;
 		}
