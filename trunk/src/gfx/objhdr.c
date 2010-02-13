@@ -289,12 +289,13 @@ void objhdr_draw_chained(SDL_Surface *destination, const ObjHdr *head, int xofs,
 }
 
 
-void objhdr_set_animation(ObjHdr *obj, const AnimFrame *anim)
+void objhdr_set_animation(ObjHdr *obj, const AnimFrame *anim, int anim_speed_fine)
 {
 	obj->anim = anim;
 	obj->anim_frame = 0;
+	obj->anim_speed_fine = anim_speed_fine;
 	obj->current_frame = obj->anim[0].frame;
-	obj->frame_delay = obj->anim[0].delay;
+	obj->frame_delay = obj->anim[0].delay * OBJHDR_ANIM_SPEED_NORMAL;
 }
 
 
@@ -304,7 +305,7 @@ void objhdr_advance_animation(ObjHdr *obj)
 	
 	obj->objflags &= ~(OBJ_ANIM_FINISHED|OBJ_ANIM_LOOPED);
 	
-	if (obj->frame_delay-- == 0)
+	if (obj->frame_delay <= 0)
 	{
 		++obj->anim_frame;
 		switch (obj->anim[obj->anim_frame].frame) 
@@ -325,8 +326,10 @@ void objhdr_advance_animation(ObjHdr *obj)
 		}
 		
 		obj->current_frame = obj->anim[obj->anim_frame].frame;
-		obj->frame_delay = obj->anim[obj->anim_frame].delay;
+		obj->frame_delay += obj->anim[obj->anim_frame].delay * OBJHDR_ANIM_SPEED_NORMAL;
 	}
+	
+	obj->frame_delay -= obj->anim_speed_fine;
 }
 
 
