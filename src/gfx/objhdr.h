@@ -56,6 +56,8 @@ typedef struct
 	int delay;
 } AnimFrame;
 
+#define OBJHDR_ANIM_SPEED_NORMAL 256
+
 #define OBJHDR \
 	SLLHDR;\
 	Uint32 objid; \
@@ -66,7 +68,7 @@ typedef struct
 	SDL_Rect colrect;\
 	SDL_Surface *surface;\
 	const AnimFrame *anim;\
-	Sint32 current_frame, anim_frame, frame_delay;\
+	Sint32 current_frame, anim_frame, frame_delay, anim_speed_fine;\
 	
 
 typedef struct
@@ -80,7 +82,7 @@ const ObjHdr * objhdr_check_collision_chained(const ObjHdr *a, const ObjHdr *hea
 const ObjHdr * objhdr_check_collision_chained2(const ObjHdr *head1, const ObjHdr *head2);
 void objhdr_draw(SDL_Surface *destination, const ObjHdr *object, int xofs, int yofs);
 void objhdr_draw_chained(SDL_Surface *destination, const ObjHdr *head, int xofs, int yofs);
-void objhdr_set_animation(ObjHdr *obj, const AnimFrame *anim);
+void objhdr_set_animation(ObjHdr *obj, const AnimFrame *anim, int anim_speed_fine);
 void objhdr_advance_animation(ObjHdr *obj);
 void objhdr_advance_animation_chained(ObjHdr *head);
 
