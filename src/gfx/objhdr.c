@@ -297,7 +297,7 @@ void objhdr_set_animation(ObjHdr *obj, const AnimFrame *anim, int anim_speed_fin
 	if (anim)
 	{
 		obj->current_frame = obj->anim[0].frame;
-		obj->frame_delay = obj->anim[0].delay * anim_speed_fine;
+		obj->frame_delay = obj->anim[0].delay * OBJHDR_ANIM_SPEED_NORMAL;
 	}
 }
 
