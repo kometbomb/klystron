@@ -214,7 +214,10 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 					if (!(chn->flags & MUS_CHN_DISABLED))
 					{
 						if ((inst & 0xf) <= tick)
-						cydchn->volume = 0;
+						{
+							cydchn->volume = 0;
+							mus->song_track[chan].volume = 0;
+						}
 					}
 				}
 				break;
@@ -234,179 +237,179 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 		break;
 	}
 	
-	if (tick != 0) return;
-	
-	// --- commands that run only on tick 0
-	
-	switch (inst & 0xff00)
+	if (tick == 0) 
 	{
-		case MUS_FX_EXT:
-		{
-			// Protracker style Exy commands
+		// --- commands that run only on tick 0
 		
-			switch (inst & 0xfff0)
+		switch (inst & 0xff00)
+		{
+			case MUS_FX_EXT:
 			{
-				case MUS_FX_EXT_FADE_VOLUME_DN:
+				// Protracker style Exy commands
+			
+				switch (inst & 0xfff0)
 				{
-					if (!(chn->flags & MUS_CHN_DISABLED))
+					case MUS_FX_EXT_FADE_VOLUME_DN:
 					{
-						mus->song_track[chan].volume -= inst & 0xf;
-						if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = 0;
-						cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
+						if (!(chn->flags & MUS_CHN_DISABLED))
+						{
+							mus->song_track[chan].volume -= inst & 0xf;
+							if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = 0;
+							cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
+						}
 					}
+					break;
+					
+					case MUS_FX_EXT_FADE_VOLUME_UP:
+					{
+						if (!(chn->flags & MUS_CHN_DISABLED))
+						{
+							mus->song_track[chan].volume += inst & 0xf;
+							if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = MAX_VOLUME;
+							cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
+						}
+					}
+					break;
+					
+					case MUS_FX_EXT_PORTA_UP:
+					{
+						Uint16 prev = chn->note;
+						chn->note += ((inst & 0x0f));
+						if (prev > chn->note) chn->note = 0xffff;
+						mus_set_slide(mus, chan, chn->note);
+					}
+					break;
+					
+					case MUS_FX_EXT_PORTA_DN:
+					{
+						Uint16 prev = chn->note;
+						chn->note -= ((inst & 0x0f));
+						if (prev < chn->note) chn->note = 0x0;
+						mus_set_slide(mus, chan, chn->note);
+					}
+					break;
+				}
+			}
+			break;
+			
+			default:
+			
+			switch (inst & 0xf000)
+			{
+				case MUS_FX_CUTOFF_FINE_SET:
+				{
+					mus->song_track[chan].filter_cutoff = (inst & 0xfff);
+					if (mus->song_track[chan].filter_cutoff > 0x7ff) mus->song_track[chan].filter_cutoff = 0x7ff;
+					cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
+				}
+				break;
+			}
+			
+			switch (inst & 0x7f00)
+			{
+				case MUS_FX_PW_SET:
+				{
+					mus->song_track[chan].pw = (inst & 0xff) << 4;
 				}
 				break;
 				
-				case MUS_FX_EXT_FADE_VOLUME_UP:
+				case MUS_FX_BUZZ_SHAPE:
 				{
-					if (!(chn->flags & MUS_CHN_DISABLED))
-					{
-						mus->song_track[chan].volume += inst & 0xf;
-						if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = MAX_VOLUME;
-						cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
-					}
+					cyd_set_env_shape(cydchn, inst & 3);
 				}
 				break;
 				
-				case MUS_FX_EXT_PORTA_UP:
+				case MUS_FX_BUZZ_SET_SEMI:
+				{
+					chn->buzz_offset = (((inst & 0xff)) - 0x80) << 8;
+						
+					mus_set_buzz_frequency(mus, chan, chn->note);
+				}
+				break;
+			
+				case MUS_FX_BUZZ_SET:
+				{
+					chn->buzz_offset = ((inst & 0xff)) - 0x80;
+						
+					mus_set_buzz_frequency(mus, chan, chn->note);
+				}
+				break;
+				
+				case MUS_FX_SET_PANNING:
+				{
+					cyd_set_panning(mus->cyd, cydchn, inst & 0xff);
+				}
+				break;
+			
+				case MUS_FX_CUTOFF_SET:
+				{
+					mus->song_track[chan].filter_cutoff = (inst & 0xff) << 3;
+					if (mus->song_track[chan].filter_cutoff > 0x7ff) mus->song_track[chan].filter_cutoff = 0x7ff;
+					cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
+				}
+				break;
+				
+				case MUS_FX_SET_SPEED:
+				{
+					mus->song->song_speed = inst & 0xf;
+					if ((inst & 0xf0) == 0) mus->song->song_speed2 = mus->song->song_speed;
+					else mus->song->song_speed2 = (inst >> 4) & 0xf;
+				}
+				break;
+				
+				case MUS_FX_SET_RATE:
+				{
+					mus->song->song_rate = inst & 0xff;
+					if (mus->song->song_rate < 1) mus->song->song_rate = 1;
+					cyd_set_callback_rate(mus->cyd, mus->song->song_rate);
+				}
+				break;
+			
+				case MUS_FX_PORTA_UP_SEMI:
 				{
 					Uint16 prev = chn->note;
-					chn->note += ((inst & 0x0f));
-					if (prev > chn->note) chn->note = 0xffff;
+					chn->note += (inst&0xff) << 8;
+					if (prev > chn->note || chn->note >= (FREQ_TAB_SIZE << 8)) chn->note = ((FREQ_TAB_SIZE-1) << 8);
 					mus_set_slide(mus, chan, chn->note);
 				}
 				break;
 				
-				case MUS_FX_EXT_PORTA_DN:
+				case MUS_FX_PORTA_DN_SEMI:
 				{
 					Uint16 prev = chn->note;
-					chn->note -= ((inst & 0x0f));
+					chn->note -= (inst&0xff) << 8;
 					if (prev < chn->note) chn->note = 0x0;
 					mus_set_slide(mus, chan, chn->note);
 				}
 				break;
+				
+				case MUS_FX_ARPEGGIO:
+				{
+					if ((inst & 0xff) == 0xf0)
+						chn->arpeggio_note = mus->song_track[chan].extarp1;
+					else if ((inst & 0xff) == 0xf1)
+						chn->arpeggio_note = mus->song_track[chan].extarp2;
+					else
+						chn->arpeggio_note = inst & 0xff;
+				}
+				break;
+				
+				case MUS_FX_SET_VOLUME:
+				{
+					mus->song_track[chan].volume = my_min(MAX_VOLUME, inst & 0xff);
+					mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
+				}
+				break;
+				
+				case MUS_FX_SET_WAVEFORM:
+				{
+					cyd_set_waveform(&mus->cyd->channel[chan], inst & 0xff);
+				}
+				break;
 			}
-		}
-		break;
-		
-		default:
-		
-		switch (inst & 0xf000)
-		{
-			case MUS_FX_CUTOFF_FINE_SET:
-			{
-				mus->song_track[chan].filter_cutoff = (inst & 0xfff);
-				if (mus->song_track[chan].filter_cutoff > 0x7ff) mus->song_track[chan].filter_cutoff = 0x7ff;
-				cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
-			}
-			break;
-		}
-		
-		switch (inst & 0x7f00)
-		{
-			case MUS_FX_PW_SET:
-			{
-				mus->song_track[chan].pw = (inst & 0xff) << 4;
-			}
-			break;
 			
-			case MUS_FX_BUZZ_SHAPE:
-			{
-				cyd_set_env_shape(cydchn, inst & 3);
-			}
-			break;
-			
-			case MUS_FX_BUZZ_SET_SEMI:
-			{
-				chn->buzz_offset = (((inst & 0xff)) - 0x80) << 8;
-					
-				mus_set_buzz_frequency(mus, chan, chn->note);
-			}
-			break;
-		
-			case MUS_FX_BUZZ_SET:
-			{
-				chn->buzz_offset = ((inst & 0xff)) - 0x80;
-					
-				mus_set_buzz_frequency(mus, chan, chn->note);
-			}
-			break;
-			
-			case MUS_FX_SET_PANNING:
-			{
-				cyd_set_panning(mus->cyd, cydchn, inst & 0xff);
-			}
-			break;
-		
-			case MUS_FX_CUTOFF_SET:
-			{
-				mus->song_track[chan].filter_cutoff = (inst & 0xff) << 3;
-				if (mus->song_track[chan].filter_cutoff > 0x7ff) mus->song_track[chan].filter_cutoff = 0x7ff;
-				cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
-			}
-			break;
-			
-			case MUS_FX_SET_SPEED:
-			{
-				mus->song->song_speed = inst & 0xf;
-				if ((inst & 0xf0) == 0) mus->song->song_speed2 = mus->song->song_speed;
-				else mus->song->song_speed2 = (inst >> 4) & 0xf;
-			}
-			break;
-			
-			case MUS_FX_SET_RATE:
-			{
-				mus->song->song_rate = inst & 0xff;
-				if (mus->song->song_rate < 1) mus->song->song_rate = 1;
-				cyd_set_callback_rate(mus->cyd, mus->song->song_rate);
-			}
-			break;
-		
-			case MUS_FX_PORTA_UP_SEMI:
-			{
-				Uint16 prev = chn->note;
-				chn->note += (inst&0xff) << 8;
-				if (prev > chn->note || chn->note >= (FREQ_TAB_SIZE << 8)) chn->note = ((FREQ_TAB_SIZE-1) << 8);
-				mus_set_slide(mus, chan, chn->note);
-			}
-			break;
-			
-			case MUS_FX_PORTA_DN_SEMI:
-			{
-				Uint16 prev = chn->note;
-				chn->note -= (inst&0xff) << 8;
-				if (prev < chn->note) chn->note = 0x0;
-				mus_set_slide(mus, chan, chn->note);
-			}
-			break;
-			
-			case MUS_FX_ARPEGGIO:
-			{
-				if ((inst & 0xff) == 0xf0)
-					chn->arpeggio_note = mus->song_track[chan].extarp1;
-				else if ((inst & 0xff) == 0xf1)
-					chn->arpeggio_note = mus->song_track[chan].extarp2;
-				else
-					chn->arpeggio_note = inst & 0xff;
-			}
-			break;
-			
-			case MUS_FX_SET_VOLUME:
-			{
-				mus->song_track[chan].volume = my_min(MAX_VOLUME, inst & 0xff);
-				mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
-			}
-			break;
-			
-			case MUS_FX_SET_WAVEFORM:
-			{
-				cyd_set_waveform(&mus->cyd->channel[chan], inst & 0xff);
-			}
 			break;
 		}
-		
-		break;
-		
 	}
 }
 
@@ -907,6 +910,21 @@ void mus_advance_tick(void* udata)
 			mus_advance_channel(mus, i);
 		}
 	}
+	
+	if (mus->song && (mus->song->flags & MUS_ENABLE_MULTIPLEX) && mus->song->multiplex_period > 0)
+	{
+		for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
+		{
+			CydChannel *cydchn = &mus->cyd->channel[i];
+			if ((mus->multiplex_ctr / mus->song->multiplex_period) == i)
+				cydchn->volume = mus->song_track[i].volume * (int)mus->volume / MAX_VOLUME;
+			else
+				cydchn->volume = 0;
+		}
+		
+		if (++mus->multiplex_ctr >= mus->song->num_channels * mus->song->multiplex_period)
+			mus->multiplex_ctr = 0;
+	}
 }
 
 
@@ -917,8 +935,11 @@ void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position)
 	mus->song = song;
 	
 	if (song != NULL)
+	{
 		mus->song_counter = 0;
-		
+		mus->multiplex_ctr = 0;
+	}
+	
 	mus->song_position = position;
 	
 	for (int i = 0 ; i < MUS_MAX_CHANNELS ; ++i)
@@ -1134,6 +1155,9 @@ int mus_load_song_file(FILE *f, MusSong *song)
 		
 		if (version > 2) fread(&song->flags, 1, sizeof(song->flags), f);
 		else song->flags = 0;
+		
+		if (version >= 9) fread(&song->multiplex_period, 1, sizeof(song->multiplex_period), f);
+		else song->multiplex_period = 3;
 		
 		/* The file format is little-endian, the following only does something on big-endian machines */
 		

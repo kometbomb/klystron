@@ -32,7 +32,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define MUS_PROG_LEN 32
 #define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
 
-#define MUS_VERSION 8
+#define MUS_VERSION 9
 
 #define MUS_TITLE_LEN 16
 
@@ -113,6 +113,7 @@ typedef struct
 	Uint16 time_signature;
 	Uint32 flags;
 	Uint8 num_channels;
+	Uint8 multiplex_period;
 	char title[MUS_TITLE_LEN + 1];
 	struct { int delay, gain; } rvbtap[CYDRVB_TAPS];
 } MusSong;
@@ -150,6 +151,7 @@ typedef struct
 	CydEngine *cyd;
 	Uint8 current_tick;
 	Uint8 volume; // 0..128
+	Uint8 multiplex_ctr;
 } MusEngine;
 
 
@@ -235,7 +237,8 @@ enum
 enum
 {
 	MUS_ENABLE_REVERB = 1,
-	MUS_ENABLE_CRUSH = 2
+	MUS_ENABLE_CRUSH = 2,
+	MUS_ENABLE_MULTIPLEX = 4
 };
 
 #define MUS_INST_SIG "cyd!inst"
