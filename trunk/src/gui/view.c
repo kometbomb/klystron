@@ -61,3 +61,12 @@ void draw_view(SDL_Surface *dest, const View* views, const SDL_Event *_event)
 		while (event_hit && iter <= 1);
 	}
 }
+
+
+
+void center_rect(const SDL_Rect *parent, SDL_Rect *rect)
+{
+	rect->x = (parent->w - rect->w) / 2;
+	rect->y = (parent->h - rect->h) / 2;
+}
+
