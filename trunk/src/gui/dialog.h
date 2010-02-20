@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "gui/bevdefs.h"
 #include "gfx/font.h"
 
-int checkbox(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, const Font * font, const char* label, Uint32 *flags, Uint32 mask);
+int checkbox(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, const Font * font, int offset, int offset_pressed, int decal, const char* label, Uint32 *flags, Uint32 mask);
 int spinner(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, int param);
 int button_event(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, int offset, int offset_pressed, int decal, void (*action)(void*,void*,void*), void *param1, void *param2, void *param3);
 int button_text_event(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, const Font *font, int offset, int offset_pressed, const char *label, void (*action)(void*,void*,void*), void *param1, void *param2, void *param3);

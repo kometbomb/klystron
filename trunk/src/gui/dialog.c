@@ -37,7 +37,7 @@ static void flip(void *bits, void *mask, void *unused)
 }
 
 
-int checkbox(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, const Font * font, const char* _label, Uint32 *flags, Uint32 mask)
+int checkbox(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, const Font * font,  int offset, int offset_pressed, int decal, const char* _label, Uint32 *flags, Uint32 mask)
 {
 	SDL_Rect tick, label;
 	copy_rect(&tick, area);
@@ -47,7 +47,7 @@ int checkbox(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SD
 	label.x += tick.w + 4;
 	label.y += 1;
 	label.h -= 1;
-	int pressed = button_event(dest, event, &tick, gfx, BEV_BUTTON, BEV_BUTTON_ACTIVE, (*flags & mask) ? DECAL_TICK : -1, flip, flags, MAKEPTR(mask), 0);
+	int pressed = button_event(dest, event, &tick, gfx, offset, offset_pressed, (*flags & mask) ? decal : -1, flip, flags, MAKEPTR(mask), 0);
 	font_write(font, dest, &label, _label);
 	pressed |= check_event(event, &label, flip, flags, MAKEPTR(mask), 0);
 	
