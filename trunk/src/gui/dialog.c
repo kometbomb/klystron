@@ -117,6 +117,14 @@ int generic_edit_text(SDL_Event *e, char *edit_buffer, size_t edit_buffer_size, 
 				return -1;
 			break;
 			
+			case SDLK_HOME:
+				*editpos = 0;
+			break;
+			
+			case SDLK_END:
+				*editpos = strlen(edit_buffer);
+			break;
+			
 			case SDLK_RETURN:
 				return 1;
 			break;
@@ -130,9 +138,14 @@ int generic_edit_text(SDL_Event *e, char *edit_buffer, size_t edit_buffer_size, 
 			break;
 		
 			case SDLK_LEFT:
+			{
+				if (*editpos > 0) --*editpos;
+			}
+			break;
+			
 			case SDLK_RIGHT:
 			{ 
-				clamp(*editpos, e->key.keysym.sym == SDLK_LEFT ? -1 : +1, 0, my_min(edit_buffer_size-1, strlen(edit_buffer)));
+				if (*editpos < strlen(edit_buffer) && *editpos < edit_buffer_size - 1) ++*editpos;
 			}
 			break;
 		
