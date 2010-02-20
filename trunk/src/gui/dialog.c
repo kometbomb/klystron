@@ -130,7 +130,7 @@ int generic_edit_text(SDL_Event *e, char *edit_buffer, size_t edit_buffer_size, 
 			break;
 		
 			case SDLK_BACKSPACE:
-				clamp(*editpos, -1, 0, edit_buffer_size - 1);
+				if (*editpos > 0) --*editpos;
 				/* Fallthru */
 			case SDLK_DELETE:
 				memmove(&edit_buffer[*editpos], &edit_buffer[*editpos + 1], edit_buffer_size - *editpos);
@@ -151,11 +151,11 @@ int generic_edit_text(SDL_Event *e, char *edit_buffer, size_t edit_buffer_size, 
 		
 			default:
 			{
-				if (*editpos < edit_buffer_size && isprint(e->key.keysym.unicode))
+				if (*editpos < (edit_buffer_size - 1) && isprint(e->key.keysym.unicode))
 				{
-					memmove(&edit_buffer[*editpos + 1], &edit_buffer[*editpos], edit_buffer_size - *editpos);
+					memmove(&edit_buffer[*editpos + 1], &edit_buffer[*editpos], edit_buffer_size - *editpos - 1);
 					edit_buffer[*editpos] = e->key.keysym.unicode;
-					clamp(*editpos, +1, 0,edit_buffer_size);
+					clamp(*editpos, +1, 0,edit_buffer_size-1);
 				}
 			}
 			break;
