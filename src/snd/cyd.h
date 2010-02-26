@@ -182,4 +182,6 @@ void cyd_disable_audio_dump(CydEngine *cyd);
 void cyd_set_panning(CydEngine *cyd, CydChannel *chn, Uint8 panning);
 #endif
 
+void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata);
+
 #endif
