@@ -51,6 +51,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 # define debug(...) do {} while(0)
 #endif
 
+# define dumpvar(x) debug(#x " = %d", x)
+
 #define warning(...) do { fputs("[WARNING] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
 #define fatal(...) do { fputs("[FATAL] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
 
