@@ -326,7 +326,8 @@ void draw(SDL_Surface *screen, int mouse_x, int mouse_y, int draw_all)
 		}
 	}
 	
-	draw_rect(screen, screen->w / 2 - pf_width / 2, screen->h / 2 - pf_height / 2, screen->w / 2 + pf_width / 2, screen->h / 2 + pf_height / 2, 0xffffff);
+	if (current_layer < MAGICK_LAYER) 
+		draw_rect(screen, screen->w / 2 - pf_width / 2, screen->h / 2 - pf_height / 2, screen->w / 2 + pf_width / 2, screen->h / 2 + pf_height / 2, 0xffffff);
 }
 
 
