@@ -47,33 +47,33 @@ The *playfield* setting defines an area that is drawn over the main map view tha
 
 Left click selects/draws tiles, right drag scrolls the map.
 
-|*Cursor keys*|Scroll screen|
-|*Ctrl+O*|Open a map file|
-|*Ctrl+S*|Save map file|
-|*Ctrl+F9*|Export the map and events to a packed klystron level file|
-|*E*|Switch between event/map editing|
+||*Cursor keys*||Scroll screen||
+||*Ctrl+O*||Open a map file||
+||*Ctrl+S*||Save map file||
+||*Ctrl+F9*||Export the map and events to a packed klystron level file||
+||*E*||Switch between event/map editing||
 
 ==Tile editing==
 
-|*Alt*|Hold down to display the tile palette|
-|*Shift+Left Click*|Drag to select an area and use that as a brush|
-|*A*|Hold down to display all layers simultaneously|
-|*B*|Edit brush|
-|*P*|Toggle parallax for current layer|
-|*N/M*|Adjust X/Y parallax scale|
-|*X/Y*|Toggle X/Y repeat for current layer|
-|*1-8*|Select layer|
-|*PgUp/PgDown*|Move current layer up or down|
-|*Ctrl+Cursor keys*|Resize current layer|
-|*Ctrl+F10*|Clear current layer|
+||*Alt*||Hold down to display the tile palette||
+||*Shift+Left Click*||Drag to select an area and use that as a brush||
+||*A*||Hold down to display all layers simultaneously||
+||*B*||Edit brush||
+||*P*||Toggle parallax for current layer||
+||*N/M*||Adjust X/Y parallax scale||
+||*X/Y*||Toggle X/Y repeat for current layer||
+||*1-8*||Select layer||
+||*PgUp/PgDown*||Move current layer up or down||
+||*Ctrl+Cursor keys*||Resize current layer||
+||*Ctrl+F10*||Clear current layer||
 
 ==Event editing==
 
 Use mouse to select and move events.
 
-|*Insert*|Add new event. If an event is selected, the new event will be a clone of the selected event.|
-|*Delete*|Delete selected event|
-|*PgUp/PgDown*|Select event parameter|
-|*Comma/Period*|Adjust selected parameter|
-|*Ctrl+Left Click*|Link the currently selected event to another event (EV_NEXT link)|
-|*Ctrl+Shift+Left Click*|Link the currently selected event to another event (EV_TRGPARENT link)|
+||*Insert*||Add new event. If an event is selected, the new event will be a clone of the selected event.||
+||*Delete*||Delete selected event||
+||*PgUp/PgDown*||Select event parameter||
+||*Comma/Period*||Adjust selected parameter||
+||*Ctrl+Left Click*||Link the currently selected event to another event (EV_NEXT link)||
+||*Ctrl+Shift+Left Click*||Link the currently selected event to another event (EV_TRGPARENT link)||
