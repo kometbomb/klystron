@@ -698,8 +698,8 @@ int main(int argc, char **argv)
 	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 	SDL_EnableUNICODE(1);
 	
-	gfx = gfx_load_surface("/code/googlecode/klystrack/temp/bevel.bmp", GFX_KEYED);
-	font_load_file(&font, "/code/googlecode/klystrack/temp/8x8.fnt");
+	gfx = gfx_load_surface("../klystrack/temp/bevel.bmp", GFX_KEYED);
+	font_load_file(&font, "../klystrack/temp/8x8.fnt");
 	
 	config_init(&cfg);
 	
