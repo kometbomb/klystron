@@ -110,9 +110,9 @@ void load()
 }
 
 
-void load_defs()
+void load_defs(const char *fn)
 {
-	FILE *f = open_dialog("r", "Load project defs", "cfg", domain, gfx, &font, &font);
+	FILE *f = fn ? fopen(fn, "r") : open_dialog("r", "Load project defs", "cfg", domain, gfx, &font, &font);
 	if (f)
 	{
 		int r = config_read(&cfg, f);
@@ -307,19 +307,17 @@ void draw(SDL_Surface *screen, int mouse_x, int mouse_y, int draw_all)
 		
 		mouse_x = (mouse_x + ((_scroll_x) & (CELLSIZE-1))) / CELLSIZE;
 		mouse_y = (mouse_y + ((_scroll_y) & (CELLSIZE-1))) / CELLSIZE;
-		_drag_x = (_drag_x + ((_scroll_x) & (CELLSIZE-1))) / CELLSIZE / domain->scale;
-		_drag_y = (_drag_y + ((_scroll_y) & (CELLSIZE-1))) / CELLSIZE / domain->scale;
+		_drag_x = (_drag_x + ((_scroll_x) & (CELLSIZE-1))) / CELLSIZE;
+		_drag_y = (_drag_y + ((_scroll_y) & (CELLSIZE-1))) / CELLSIZE;
 		
 		bg_draw(screen, NULL, &level.layer[current_layer], _scroll_x, _scroll_y);
 		draw_rect(screen, -_scroll_x-1, -_scroll_y-1, -_scroll_x + level.layer[current_layer].w*CELLSIZE, -_scroll_y + level.layer[current_layer].h*CELLSIZE, 0xffffff);
 		
 		if (edit_mode == EM_LEVEL) 
 		{
-			
-		
 			if (drag_x != -1)
 			{
-				draw_rect(screen, (_drag_x)*CELLSIZE - ((_scroll_x) & (CELLSIZE-1)), (_drag_y)*CELLSIZE - ((_scroll_x) & (CELLSIZE-1)), 
+				draw_rect(screen, (_drag_x)*CELLSIZE - ((_scroll_x) & (CELLSIZE-1)), (_drag_y)*CELLSIZE - ((_scroll_y) & (CELLSIZE-1)), 
 					(mouse_x+1)*CELLSIZE - ((_scroll_x) & (CELLSIZE-1)), (mouse_y+1)*CELLSIZE - ((_scroll_y) & (CELLSIZE-1)), 0xffffff);
 			}
 			else
@@ -352,7 +350,7 @@ void draw(SDL_Surface *screen, int mouse_x, int mouse_y, int draw_all)
 	}
 	
 	if (current_layer < MAGICK_LAYER) 
-		draw_rect(screen, screen->w / 2 - pf_width / 2, screen->h / 2 - pf_height / 2, screen->w / 2 + pf_width / 2, screen->h / 2 + pf_height / 2, 0xffffff);
+		draw_rect(screen, screen->w / 2 - pf_width / 2, screen->h / 2 - pf_height / 2, screen->w / 2 + pf_width / 2, screen->h / 2 + pf_height / 2, 0xa0a040);
 }
 
 
@@ -405,12 +403,12 @@ void get_tile(int x, int y)
 {
 	if (current_layer != MAGICK_LAYER)
 	{
-		x += scroll_x*domain->scale;
-		y += scroll_y*domain->scale;
+		x += scroll_x;
+		y += scroll_y;
 	}
 
-	x /= CELLSIZE*domain->scale;
-	y /= CELLSIZE*domain->scale;
+	x /= CELLSIZE;
+	y /= CELLSIZE;
 	
 	if (saved_layer == BRUSH_LAYER || current_layer == BRUSH_LAYER)
 	{
@@ -443,8 +441,8 @@ void set_tile(int ax, int ay)
 	
 	if (current_layer == BRUSH_LAYER)
 	{
-		ax /= CELLSIZE*domain->scale;
-		ay /= CELLSIZE*domain->scale;
+		ax /= CELLSIZE;
+		ay /= CELLSIZE;
 	
 		if (!(ax >= level.layer[current_layer].w || ax < 0 || ay >= level.layer[current_layer].h || ay < 0))
 			level.layer[current_layer].data[ax + ay*level.layer[current_layer].w].tile = selected_tile;
@@ -453,15 +451,15 @@ void set_tile(int ax, int ay)
 	}
 	
 	
-	ax += scroll_x*domain->scale;
-	ay += scroll_y*domain->scale;
+	ax += scroll_x;
+	ay += scroll_y;
 	
 	int fx = ax < 0;
 	int fy = ay < 0;
 	
 	
-	ax /= CELLSIZE*domain->scale;
-	ay /= CELLSIZE*domain->scale;
+	ax /= CELLSIZE;
+	ay /= CELLSIZE;
 	
 	for (int y = 0 ; y < level.layer[BRUSH_LAYER].h ; ++y)
 	{
@@ -544,16 +542,16 @@ void get_brush(int x1, int y1, int x2, int y2)
 
 	if (current_layer < MAGICK_LAYER)
 	{
-		x1 += scroll_x*domain->scale;
-		y1 += scroll_y*domain->scale;
-		x2 += scroll_x*domain->scale;
-		y2 += scroll_y*domain->scale;
+		x1 += scroll_x;
+		y1 += scroll_y;
+		x2 += scroll_x;
+		y2 += scroll_y;
 	}
 	
-	x1 /= CELLSIZE*domain->scale;
-	y1 /= CELLSIZE*domain->scale;
-	x2 /= CELLSIZE*domain->scale;
-	y2 /= CELLSIZE*domain->scale;
+	x1 /= CELLSIZE;
+	y1 /= CELLSIZE;
+	x2 /= CELLSIZE;
+	y2 /= CELLSIZE;
 	
 	if (x1 > x2) { int temp = x2; x2 = x1; x1 = temp; }
 	if (y1 > y2) { int temp = y2; y2 = y1; y1 = temp; }
@@ -597,14 +595,14 @@ void swap(void *a, void *b, size_t size)
 
 int get_event(int x, int y)
 {
-	x += scroll_x*domain->scale;
-	y += scroll_y*domain->scale;
+	x += scroll_x;
+	y += scroll_y;
 	
 	if (x < 0) x-=CELLSIZE;
 	if (y < 0) y-=CELLSIZE;
 		
-	x /= CELLSIZE*domain->scale;
-	y /= CELLSIZE*domain->scale;
+	x /= CELLSIZE;
+	y /= CELLSIZE;
 		
 	for (int i = 0 ; i < level.n_events ; ++i)
 	{
@@ -629,11 +627,11 @@ void add_event(int x, int y)
 {
 	level.event = realloc(level.event, (level.n_events + 1) * sizeof(*level.event));
 	
-	x += scroll_x*domain->scale;
-	y += scroll_y*domain->scale;
+	x += scroll_x;
+	y += scroll_y;
 	
-	x /= CELLSIZE*domain->scale;
-	y /= CELLSIZE*domain->scale;
+	x /= CELLSIZE;
+	y /= CELLSIZE;
 	
 	level.event[level.n_events].x = x;
 	level.event[level.n_events].y = y;
@@ -729,7 +727,7 @@ int main(int argc, char **argv)
 	
 	config_init(&cfg);
 	
-	load_defs();
+	load_defs(argc > 1 ? argv[1] : NULL);
 	
 	if (strcmp(tileset,"") == 0) 
 	{
@@ -791,13 +789,13 @@ int main(int argc, char **argv)
 			
 					if (edit_mode == EM_LEVEL && e.motion.state & SDL_BUTTON(SDL_BUTTON_LEFT) && drag_x == -1)
 					{
-						set_tile(e.motion.x, e.motion.y);
+						set_tile(e.motion.x / domain->scale, e.motion.y / domain->scale);
 					}
 					else if (edit_mode == EM_EVENTS && e.motion.state & SDL_BUTTON(SDL_BUTTON_LEFT) && drag_event != -1)
 					{
-						move_ev_pos(e.motion.x / CELLSIZE*domain->scale - ev_drag_start_x, e.motion.y/ CELLSIZE*domain->scale - ev_drag_start_y);
-						ev_drag_start_x = e.motion.x / CELLSIZE*domain->scale;
-						ev_drag_start_y = e.motion.y / CELLSIZE*domain->scale;
+						move_ev_pos(e.motion.x / CELLSIZE / domain->scale - ev_drag_start_x, e.motion.y / CELLSIZE / domain->scale - ev_drag_start_y);
+						ev_drag_start_x = e.motion.x / CELLSIZE / domain->scale;
+						ev_drag_start_y = e.motion.y / CELLSIZE / domain->scale;
 					}
 				}
 				break;
@@ -806,7 +804,7 @@ int main(int argc, char **argv)
 				{
 					if (edit_mode == EM_LEVEL && drag_x != -1)
 					{
-						get_brush(drag_x, drag_y, e.button.x, e.button.y);
+						get_brush(drag_x, drag_y, e.button.x / domain->scale, e.button.y / domain->scale);
 						drag_x = -1;
 						selected_event = drag_event = -1;
 					}
@@ -828,17 +826,17 @@ int main(int argc, char **argv)
 							Uint8 * keys = SDL_GetKeyState(NULL);
 							if (keys[SDLK_LSHIFT]||keys[SDLK_RSHIFT])
 							{
-								drag_x = e.button.x;
-								drag_y = e.button.y;
+								drag_x = e.button.x / domain->scale;
+								drag_y = e.button.y / domain->scale;
 							}
 							else
 							{
-								set_tile(e.button.x, e.button.y);
+								set_tile(e.button.x / domain->scale, e.button.y / domain->scale);
 							}
 						}
 						if ((e.button.button == (SDL_BUTTON_LEFT) && current_layer == MAGICK_LAYER))
 						{
-							get_tile(e.button.x, e.button.y);
+							get_tile(e.button.x / domain->scale, e.button.y / domain->scale);
 						}
 					}
 					else
@@ -846,13 +844,13 @@ int main(int argc, char **argv)
 						Uint8 * keys = SDL_GetKeyState(NULL);
 						if (selected_event != -1 && (keys[SDLK_LCTRL]||keys[SDLK_RCTRL]))
 						{
-							level.event[selected_event].param[(keys[SDLK_LSHIFT]||keys[SDLK_RSHIFT])?EV_TRGPARENT:EV_NEXT] = get_event(e.button.x, e.button.y);
+							level.event[selected_event].param[(keys[SDLK_LSHIFT]||keys[SDLK_RSHIFT])?EV_TRGPARENT:EV_NEXT] = get_event(e.button.x / domain->scale, e.button.y / domain->scale);
 						}
 						else
 						{
-							drag_event = selected_event = get_event(e.button.x, e.button.y);
-							ev_drag_start_x = e.button.x / CELLSIZE*domain->scale;
-							ev_drag_start_y = e.button.y / CELLSIZE*domain->scale;
+							drag_event = selected_event = get_event(e.button.x / domain->scale, e.button.y / domain->scale);
+							ev_drag_start_x = e.button.x / CELLSIZE / domain->scale;
+							ev_drag_start_y = e.button.y / CELLSIZE / domain->scale;
 						}
 					}
 				break;
@@ -1061,9 +1059,9 @@ int main(int argc, char **argv)
 									
 									case SDLK_INSERT:
 									{
-									int x,y;
-									SDL_GetMouseState(&x, &y);
-									add_event(x,y);
+										int x,y;
+										SDL_GetMouseState(&x, &y);
+										add_event(x / domain->scale, y / domain->scale);
 									}
 									break;
 									
@@ -1174,11 +1172,11 @@ int main(int argc, char **argv)
 			
 			
 			char text[100], si[10];
-			SDL_Rect textpos = {gfx_domain_get_surface(domain)->w - 300,0, 1000, 1000};
+			SDL_Rect textpos = {gfx_domain_get_surface(domain)->w - 400,0, 1000, 1000};
 			
 			if (edit_mode == EM_LEVEL)
 			{
-				if (current_layer < MAGICK_LAYER)
+				//if (current_layer < MAGICK_LAYER)
 				{
 					sprintf(si, "%d", current_layer);
 					sprintf(text, "[L %s] prx(%s) pos(%d,%d) size(%dx%d,%dx%d)\n", show_all_layers?"All":(current_layer>=MAGICK_LAYER?layer_names[current_layer-MAGICK_LAYER]:si), level.layer[current_layer].flags&BG_PARALLAX?"ON":"OFF", scroll_x/CELLSIZE, scroll_y/CELLSIZE, level.layer[current_layer].w, level.layer[current_layer].prx_mlt_x, level.layer[current_layer].h, level.layer[current_layer].prx_mlt_y);
