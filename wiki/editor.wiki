@@ -18,7 +18,7 @@ events =
 	{ 
 		name = "Path";
 		color = 0xff00ff; 		     
-		params = ( { name = "Curve"; enum = [ "Sharp", "Hermite" ]; }, { name = "Speed"; range = [ 0, 255 ]; default = 128; }  );
+		params = ( { name = "Curve"; enum = [ "Linear", "Hermite" ]; }, { name = "Speed"; range = [ 0, 255 ]; default = 128; }  );
 	},
 	{
 		name = "Enemy";
