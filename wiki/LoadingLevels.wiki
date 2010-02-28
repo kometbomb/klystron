@@ -22,7 +22,8 @@ typedef struct
 void interpret(void *data, const LevEvent *event)
 {
   Game *game = data;
-  if (event->param[0] == 7)
+
+  if (event->param[0] == 7) // Let's say 7 means "stuff"
     add_stuff(game, event->x, event->y);
 
   return 1; // All ok
