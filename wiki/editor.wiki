@@ -75,5 +75,18 @@ Use mouse to select and move events.
 ||*Delete*||Delete selected event||
 ||*PgUp/PgDown*||Select event parameter||
 ||*Comma/Period*||Adjust selected parameter||
+||*Ctrl+Cursor keys*||Resize selected event||
 ||*Ctrl+Left Click*||Link the currently selected event to another event (EV_NEXT link)||
 ||*Ctrl+Shift+Left Click*||Link the currently selected event to another event (EV_TRGPARENT link)||
+
+=About events=
+
+The "events" (or, entities, objects, whatever) in klystron are very relaxed in that they can represent anything. They simply have a position, size and a few parameters. It is the job of the level loader to interpret these events into game specific objects. This is so that there is no limit in what the events can be used.
+
+However, inside _editor_ some event parameters are used for linking events together as this is something most games will need. For example, events can be used to define paths other game objects will follow. The first parameter tells editor the basic type of the event and also enables differently named paremeters for different event types. 
+
+The last two parameters called EV_NEXT and EV_TRGPARENT are used to link to the next event in the series (think a path with a next waypoint) and also to set the "trigger parent" which could be used to spawn enemies when the player crosses the parent "trigger" type event.
+
+_editor_ will draw an arrow from an event to the event pointed by EV_NEXT and EV_TRGPARENT.
+
+These are merely suggestions in that your game can do whatever it likes with the values. 
