@@ -1,0 +1,46 @@
+#summary Level editor help
+
+=Project files=
+
+_editor_ needs basic project information that is described in .CFG files. The main file structure is of [http://www.hyperrealm.com/libconfig/ libconfig] format.
+
+Here's a project definition for an imaginary game:
+
+{{{
+tileset = "/path/to/tiles.bmp";
+screen : { width = 640; height = 480; scale = 2; };
+playfield : { width = 240; height = 320; };
+bg_color = 0x0;
+events = 
+(
+	{ 
+		name = "Path";
+		color = 0xff00ff; 		     
+		params = ( { name = "Curve"; enum = [ "Sharp", "Hermite" ]; }, { name = "Speed"; range = [ 0, 255 ]; default = 128; }  );
+	},
+	{
+		name = "Enemy";
+		color = 0xff0000;
+		params = ( { name = "Type"; enum = [ "Bug", "Lazers" ]; } );
+	}
+	
+);
+}}}
+
+*tileset* is a path to an image which will be split into 8x8 tiles.
+
+*screen* tells the main window size. If *scale* is 2, the actual window will be twice that size (2x2 pixels).
+
+The *playfield* setting defines an area that is drawn over the main map view that can be used to simulate the actual resolution of the game. It is useful so that you can see what would be outside the visible screen.
+
+*bg_color* is a hexadecimal RGB value, e.g. 0xFF0000 is red.
+
+==Events==
+
+*events* describes the different entities that can be placed on the map. Each klystron event has 16 parameters, the level editor uses three of them for its own uses (param 0 becomes the event type and the last two parameters are used to link events together). The rest of the events can be defined for each project. In the above example, two different event types are declared (in the editor, the parameter 0 will select the event type). Each event type can have its own set of parameters, each of which can be either an integer value or an enumerated value.
+
+*name* is the name of the event type and *color* is an RGB value that specifies the color events of this type are drawn on the map.
+
+*params* is a _list_ of _groups_, each group having a *name* setting and either an *enum* or a *range* setting. *default* is the default value for the parameter (for enumerations, *default* is the index of the value). 
+
+=Using _editor_=
