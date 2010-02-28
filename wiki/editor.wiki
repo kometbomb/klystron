@@ -99,6 +99,6 @@ Parallax is the phenomenon of faraway things moving less than nearfield things w
 
 Parallax scrolling exploits this illusion by scrolling two or more layers at different speeds, lower layers should scroll slower when compared to layers on top. The bottom layer can even stay completely motionless. In klystron, the main factor that tells how "far" a background layer is, is its size. Obviously, it would be impractical to have huge layers when you can simply fake the layer dimensions.
 
-The parallax scale factors multiply the actual layer width and height. Essentially, if you have a small background layer, say, 100x100, and the foreground layer is 1000x1000, you'll want the background layer to move 1/100th pixel for every whole foreground pixel. This is achieved by setting the foreground layer multipliers to 1 and the background layer multipliers to 10. 
+The parallax scale factors multiply the actual layer width and height. Essentially, if you have a small background layer, say, 100x100, and the foreground layer is 1000x1000, you'll want the background layer to move a tenth of a pixel for every whole foreground pixel. This is achieved by setting the foreground layer multipliers to 1 and the background layer multipliers to 10. 
 
 If you now scroll the layers (hold down A key to display all layers) until it disappears off screen, it should be the exact same moment when the background layer moves out of the screen. The illusion is that the smaller background layer looks like it's actually exactly the same size as the foreground layer, but far away.
