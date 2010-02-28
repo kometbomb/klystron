@@ -80,7 +80,7 @@ endif
 
 all: bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a bin.$(CFG)/lib${TARGET}_gui.a tools
 
-tools: tools/bin/makebundle.exe
+tools: tools/bin/makebundle.exe tools/bin/editor.exe
 
 inform:
 	@echo "Configuration "$(CFG)
@@ -174,3 +174,8 @@ endif
 
 tools/bin/makebundle.exe: tools/makebundle/*.c
 	make -C tools/makebundle 
+
+tools/bin/editor.exe: tools/editor/src/*
+	make -C tools/editor
+	cp tools/editor/bin.$(CFG)/editor.exe tools/bin/editor.exe
+	
