@@ -522,8 +522,9 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 {
 	CydEngine *cyd = udata;
 	Sint16 * stream = _stream;
+	cyd->samples_output = 0;
 	
-	for (int i = 0 ; i < len ; i += sizeof(Sint16), ++stream)
+	for (int i = 0 ; i < len ; i += sizeof(Sint16), ++stream, ++cyd->samples_output)
 	{
 #ifndef USESDLMUTEXES
 #ifdef DEBUG
@@ -550,7 +551,11 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 		if (cyd->callback && cyd->callback_counter-- == 0)
 		{
 			cyd->callback_counter = cyd->callback_period-1;
-			cyd->callback(cyd->callback_parameter);
+			if (!cyd->callback(cyd->callback_parameter))
+			{
+				cyd_lock(cyd, 0);
+				return;
+			}
 		}
 		
 #ifdef STEREOOUTPUT
@@ -582,10 +587,10 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 {
 	CydEngine *cyd = udata;
-	
 	Sint16 *stream = _stream;
+	cyd->samples_output = 0;
 	
-	for (int i = 0 ; i < len ; i += sizeof(Sint16)*2, stream += 2)
+	for (int i = 0 ; i < len ; i += sizeof(Sint16)*2, stream += 2, ++cyd->samples_output)
 	{
 #ifndef USESDLMUTEXES
 #ifdef DEBUG
@@ -708,7 +713,7 @@ void cyd_set_waveform(CydChannel *chn, Uint32 wave)
 }
 
 
-void cyd_set_callback(CydEngine *cyd, void (*callback)(void*), void*param, Uint16 period)
+void cyd_set_callback(CydEngine *cyd, int (*callback)(void*), void*param, Uint16 period)
 {
 	cyd_lock(cyd, 1);
 	

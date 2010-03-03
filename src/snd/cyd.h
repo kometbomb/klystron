@@ -129,11 +129,10 @@ typedef struct
 	Uint32 sample_rate;
 	// ----- internal
 	volatile Uint32 flags;
-	void (*callback)(void*);
+	int (*callback)(void*);
 	void *callback_parameter;
 	volatile Uint32 callback_period, callback_counter;
 	Uint16 *lookup_table, *lookup_table_ym;
-	CydFilter flt;
 	CydReverb rvb;
 #ifdef USESDLMUTEXES
 	SDL_mutex *mutex;	
@@ -144,6 +143,7 @@ typedef struct
 #ifdef ENABLEAUDIODUMP
 	FILE *dump;
 #endif
+	size_t samples_output; // bytes in last cyd_output_buffer
 } CydEngine;
 
 enum
@@ -169,7 +169,7 @@ void cyd_enable_gate(CydEngine *cyd, CydChannel *chn, Uint8 enable);
 void cyd_set_waveform(CydChannel *chn, Uint32 wave);
 void cyd_set_filter_coeffs(CydEngine * cyd, CydChannel *chn, Uint16 cutoff, Uint8 resonance);
 void cyd_pause(CydEngine *cyd, Uint8 enable);
-void cyd_set_callback(CydEngine *cyd, void (*callback)(void*), void*param, Uint16 period);
+void cyd_set_callback(CydEngine *cyd, int (*callback)(void*), void*param, Uint16 period);
 void cyd_set_callback_rate(CydEngine *cyd, Uint16 period);
 int cyd_register(CydEngine * cyd);
 int cyd_unregister(CydEngine * cyd);

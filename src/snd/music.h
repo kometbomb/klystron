@@ -238,13 +238,14 @@ enum
 {
 	MUS_ENABLE_REVERB = 1,
 	MUS_ENABLE_CRUSH = 2,
-	MUS_ENABLE_MULTIPLEX = 4
+	MUS_ENABLE_MULTIPLEX = 4,
+	MUS_NO_REPEAT = 8
 };
 
 #define MUS_INST_SIG "cyd!inst"
 #define MUS_SONG_SIG "cyd!song"
 
-void mus_advance_tick(void* udata);
+int mus_advance_tick(void* udata);
 int mus_trigger_instrument(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note);
 void mus_release(MusEngine* mus, int chan);
 void mus_init_engine(MusEngine *mus, CydEngine *cyd);
