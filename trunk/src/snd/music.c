@@ -773,7 +773,7 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 }
 
 
-void mus_advance_tick(void* udata)
+int mus_advance_tick(void* udata)
 {
 	MusEngine *mus = udata;
 	
@@ -891,6 +891,8 @@ void mus_advance_tick(void* udata)
 			++mus->song_position;
 			if (mus->song_position >= mus->song->song_length)
 			{
+				if (mus->song->flags & MUS_NO_REPEAT)
+					return 0;
 				
 				mus->song_position = mus->song->loop_point;
 				for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
@@ -925,6 +927,8 @@ void mus_advance_tick(void* udata)
 		if (++mus->multiplex_ctr >= mus->song->num_channels * mus->song->multiplex_period)
 			mus->multiplex_ctr = 0;
 	}
+	
+	return 1;
 }
 
 
