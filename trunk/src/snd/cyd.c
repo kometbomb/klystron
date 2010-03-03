@@ -810,6 +810,8 @@ void cyd_set_filter_coeffs(CydEngine * cyd, CydChannel *chn, Uint16 cutoff, Uint
 
 void cyd_lock(CydEngine *cyd, Uint8 enable)
 {
+	if (cyd->flags & CYD_SINGLE_THREAD) return; // For export, mainly
+
 #ifndef USESDLMUTEXES
 	 if (enable)
 	{
