@@ -150,7 +150,8 @@ enum
 {
 	CYD_PAUSED = 1,
 	CYD_ENABLE_REVERB = 2,
-	CYD_ENABLE_CRUSH = 4
+	CYD_ENABLE_CRUSH = 4,
+	CYD_SINGLE_THREAD = 8
 };
 
 // YM2149 envelope shape flags, CONT is assumed to be always set
