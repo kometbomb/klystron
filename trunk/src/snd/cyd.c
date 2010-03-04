@@ -299,13 +299,13 @@ static inline Uint32 cyd_pulse(Uint32 acc, Uint32 pw)
 
 static inline Uint32 cyd_saw(Uint32 acc) 
 {
-	return (acc >> (ACC_BITS - OUTPUT_BITS));
+	return (acc >> (ACC_BITS - OUTPUT_BITS - 1)) & 0xfff;
 }
 
 
 static inline Uint32 cyd_triangle(Uint32 acc)
 {
-	return (((acc & (ACC_LENGTH / 2)) ? ~acc : acc) >> (ACC_BITS - OUTPUT_BITS - 1)) & 0xfff;
+	return ((((acc & (ACC_LENGTH / 2)) ? ~acc : acc) >> (ACC_BITS - OUTPUT_BITS - 2)) & 0x1fff) + 0xfff;
 }
 
 
