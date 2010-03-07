@@ -88,7 +88,7 @@ static const char *tileset = "";
 TileDescriptor *descriptor;
 config_t cfg;
 
-void load()
+void load_dialog()
 {
 	FILE *f = open_dialog("rb", "Load level", "lev", domain, gfx, &font, &font);
 	if (f)
@@ -102,10 +102,22 @@ void load()
 			level.layer[i].tiles = descriptor;
 		}
 	}
-	else
+}
+
+
+void load_level(const char *path)
+{
+	FILE *f = fopen(path, "rb");
+	if (f)
 	{
-		memset(&level, 0, sizeof(level));
-		level.n_layers = MAX_LAYERS;
+	
+		level_load(&level, f);
+		fclose(f);
+		
+		for (int i = 0 ; i < MAX_LAYERS+2 ; ++i)
+		{
+			level.layer[i].tiles = descriptor;
+		}
 	}
 }
 
@@ -210,7 +222,7 @@ void load_defs(const char *fn)
 }
 
 
-int save()
+int save_dialog()
 {
 	FILE *f = open_dialog("wb", "Save level", "lev", domain, gfx, &font, &font);
 	if (f)
@@ -735,6 +747,8 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	
+	if (argc > 2) load_level(argv[2]);
+	
 	domain->screen_w = screen_width;
 	domain->screen_h = screen_height;
 	domain->scale = screen_scale;
@@ -863,9 +877,9 @@ int main(int argc, char **argv)
 						if (e.key.keysym.sym == SDLK_F9)
 							level_export(&level);
 						else if (e.key.keysym.sym == SDLK_s)
-							save();
+							save_dialog();
 						else if (e.key.keysym.sym == SDLK_o)
-							load();
+							load_dialog();
 						else if (edit_mode == EM_EVENTS)
 						{
 							switch (e.key.keysym.sym)
@@ -1246,7 +1260,7 @@ int main(int argc, char **argv)
 			
 			if (r == 0) done = 0;
 			if (r == -1) goto out;
-			if (r == 1) { if (!save()) done = 0; else break; }
+			if (r == 1) { if (!save_dialog()) done = 0; else break; }
 		}
 	}
 	
