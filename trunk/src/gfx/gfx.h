@@ -57,6 +57,7 @@ typedef struct
 	int scale, fullscreen, fps;
 	GfxScaleType scale_type;
 	FramerateTimer last_ticks, frame_time, clock_resolution;
+	int flags;
 } GfxDomain;
 
 SDL_Surface* gfx_load_surface(const char* filename, const int flags);
