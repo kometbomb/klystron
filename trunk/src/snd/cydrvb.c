@@ -95,8 +95,11 @@ void cydrvb_output(CydReverb *rvb, Sint32 *left, Sint32 *right)
 	
 	for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
 	{
-		*left += rvb->tap[i].gain * rvb->buffer[rvb->tap[i].position * 2] / CYDRVB_0dB;
-		*right += rvb->tap[i].gain * rvb->buffer[rvb->tap[i].position * 2 + 1] / CYDRVB_0dB;
+		if (rvb->tap[i].gain != 0)
+		{
+			*left += rvb->tap[i].gain * rvb->buffer[rvb->tap[i].position * 2] / CYDRVB_0dB;
+			*right += rvb->tap[i].gain * rvb->buffer[rvb->tap[i].position * 2 + 1] / CYDRVB_0dB;
+		}
 	}
 }
 
@@ -108,7 +111,10 @@ Sint32 cydrvb_output(CydReverb *rvb)
 	
 	for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
 	{
-		o += rvb->tap[i].gain * rvb->buffer[rvb->tap[i].position] / CYDRVB_0dB;
+		if (rvb->tap[i].gain != 0)
+		{
+			o += rvb->tap[i].gain * rvb->buffer[rvb->tap[i].position] / CYDRVB_0dB;
+		}
 	}
 	
 	return o;
