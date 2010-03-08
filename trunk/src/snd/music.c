@@ -780,9 +780,9 @@ int mus_advance_tick(void* udata)
 	
 	if (mus->song)
 	{
-		if	(mus->song_counter == 0)
+		for (int i = 0 ; i < mus->song->num_channels ; ++i)
 		{
-			for (int i = 0 ; i < mus->song->num_channels ; ++i)
+			if (mus->song_counter == 0)
 			{
 				while (mus->song_track[i].sequence_position < mus->song->num_sequences[i] && mus->song->sequence[i][mus->song_track[i].sequence_position].position <= mus->song_position)
 				{
@@ -793,7 +793,18 @@ int mus_advance_tick(void* udata)
 					mus->song_track[i].note_offset = mus->song->sequence[i][mus->song_track[i].sequence_position].note_offset;
 					++mus->song_track[i].sequence_position;
 				}
-				
+			}
+			
+			int delay = 0;
+			
+			if (mus->song_track[i].pattern)
+			{
+				if ((mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command & 0x7FF0) == MUS_FX_EXT_NOTE_DELAY)
+					delay = mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command & 0xf;
+			}
+			
+			if (mus->song_counter == delay)
+			{			
 				if (mus->song_track[i].pattern)
 				{
 					
@@ -863,8 +874,6 @@ int mus_advance_tick(void* udata)
 						}
 					}
 				}
-				
-				
 			}
 		}
 		
