@@ -29,24 +29,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "SDL.h"
 
-#define USESDLMUTEXES
-#define ENABLEAUDIODUMP
-#define STEREOOUTPUT
-
 #include <signal.h>
 
 #include "cydflt.h"
-#include "cydrvb.h"
+#include "cydfx.h"
 
 #define CYD_BASE_FREQ 22050
 #define CYD_MAX_CHANNELS 32
+#define CYD_MAX_FX_CHANNELS 4
 
-#ifdef STEREOOUTPUT
 #define CYD_PAN_CENTER 64
 #define CYD_PAN_LEFT 0
 #define CYD_PAN_RIGHT 128
 #define CYD_STEREO_GAIN 2048
-#endif
 
 typedef struct
 {
@@ -75,6 +70,7 @@ typedef struct
 	volatile Uint32 envelope, env_speed;
 	volatile Uint8 envelope_state;
 	CydFilter flt;
+	int fx_bus;
 } CydChannel;
 
 enum
@@ -97,7 +93,7 @@ enum
 	CYD_CHN_ENABLE_METAL = 128,
 	CYD_CHN_ENABLE_RING_MODULATION = 256,
 	CYD_CHN_ENABLE_FILTER = 512,
-	CYD_CHN_ENABLE_REVERB = 1024,
+	CYD_CHN_ENABLE_FX = 1024,
 	CYD_CHN_ENABLE_YM_ENV = 2048
 };
 
@@ -133,7 +129,7 @@ typedef struct
 	void *callback_parameter;
 	volatile Uint32 callback_period, callback_counter;
 	Uint16 *lookup_table, *lookup_table_ym;
-	CydReverb rvb;
+	CydFx fx[CYD_MAX_FX_CHANNELS];
 #ifdef USESDLMUTEXES
 	SDL_mutex *mutex;	
 #else
@@ -149,8 +145,6 @@ typedef struct
 enum
 {
 	CYD_PAUSED = 1,
-	CYD_ENABLE_REVERB = 2,
-	CYD_ENABLE_CRUSH = 4,
 	CYD_SINGLE_THREAD = 8
 };
 
