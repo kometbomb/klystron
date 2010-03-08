@@ -1,5 +1,5 @@
-#ifndef CYDRVB_H
-#define CYDRVB_H
+#ifndef CYDFX_H
+#define CYDFX_H
 
 /*
 Copyright (c) 2009-2010 Tero Lindeman (kometbomb)
@@ -26,39 +26,26 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "SDL.h"
-#include <math.h>
-
-// Max delay length in milliseconds
-#define CYDRVB_SIZE 2000
-#define CYDRVB_TAPS 8
-#define CYDRVB_0dB 2048
-#define CYDRVB_LOW_LIMIT (int)(100.0 * log(1.0 / (double)CYDRVB_0dB))
+#include "cydrvb.h"
 
 typedef struct
 {
-	int position, gain, delay;
-} CydTap;
-
-typedef struct
-{
-	Sint32 *buffer;
-	int size, rate;
-	int position;
-	CydTap tap[CYDRVB_TAPS];
-} CydReverb;
-
-void cydrvb_init(CydReverb *rvb, int rate);
-void cydrvb_deinit(CydReverb *rvb);
+	Uint32 flags;
+	CydReverb rvb;
+} CydFx;
 
 #ifdef STEREOOUTPUT
-void cydrvb_cycle(CydReverb *rvb, Sint32 left, Sint32 right);
-void cydrvb_output(CydReverb *rvb, Sint32 *left, Sint32 *right);
+void cydfx_output(CydFx *fx, Sint32 fx_l, Sint32 fx_r, Sint32 *left, Sint32 *right);
 #else
-void cydrvb_cycle(CydReverb *rvb, Sint32 input);
-Sint32 cydrvb_output(CydReverb *rvb);
+int cydfx_output(CydFx *fx, int fx_input);
 #endif
+void cydfx_init(CydFx *fx, int rate);
+void cydfx_deinit(CydFx *fx);
 
-void cydrvb_set_tap(CydReverb *rvb, int idx, int delay_ms, int gain_db);
+enum
+{
+	CYDFX_ENABLE_REVERB = 1,
+	CYDFX_ENABLE_CRUSH = 2
+};
 
 #endif

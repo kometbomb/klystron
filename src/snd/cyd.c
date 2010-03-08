@@ -43,7 +43,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define ACC_LENGTH (1 << (ACC_BITS - 1)) // Osc counter length
 #define YM_LENGTH (ACC_LENGTH) // YM envelope counter length
 #define MAX_VOLUME 128
-#define KRUSH ~0x3f
 
 #define envspd(cyd,slope) (slope!=0?((0xff0000 / ((slope) * (slope) * 256)) * CYD_BASE_FREQ / cyd->sample_rate):0xff0000)
 
@@ -109,7 +108,9 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	
 	cyd_init_log_tables(cyd);
 	
-	cydrvb_init(&cyd->rvb, sample_rate);
+	for (int i = 0 ; i < CYD_MAX_FX_CHANNELS ; ++i)
+		cydfx_init(&cyd->fx[i], sample_rate);
+	
 	
 	cyd_reset(cyd);
 }
@@ -127,7 +128,8 @@ void cyd_deinit(CydEngine *cyd)
 	free(cyd->channel);
 	cyd->channel = NULL;
 	
-	cydrvb_deinit(&cyd->rvb);
+	for (int i = 0 ; i < CYD_MAX_FX_CHANNELS ; ++i)
+		cydfx_deinit(&cyd->fx[i]);
 	
 #ifdef USESDLMUTEXES
 	if (cyd->mutex)
@@ -413,9 +415,9 @@ static Sint16 cyd_output(CydEngine *cyd)
 {
 #ifdef STEREOOUTPUT
 	*left = *right = 0;
-	Sint32 rev_l = 0, rev_r = 0;
+	Sint32 fx_l[CYD_MAX_FX_CHANNELS] = {0}, fx_r[CYD_MAX_FX_CHANNELS] = {0};
 #else
-	Sint32 v = 0, rvb_input = 0;
+	Sint32 v = 0, fx_input[CYD_MAX_FX_CHANNELS] = {0};
 #endif
 	Sint32 s[CYD_MAX_CHANNELS];
 	
@@ -454,13 +456,13 @@ static Sint16 cyd_output(CydEngine *cyd)
 			Sint32 ol = o * chn->gain_left / CYD_STEREO_GAIN, or = o * chn->gain_right / CYD_STEREO_GAIN;
 #endif			
 			
-			if (chn->flags & CYD_CHN_ENABLE_REVERB)
+			if (chn->flags & CYD_CHN_ENABLE_FX)
 			{
 #ifdef STEREOOUTPUT
-				rev_l += ol;
-				rev_r += or;
+				fx_l[chn->fx_bus] += ol;
+				fx_r[chn->fx_bus] += or;
 #else
-				rvb_input += o;
+				fx_input[chn->fx_bus] += o;
 #endif
 			}
 			
@@ -471,30 +473,14 @@ static Sint16 cyd_output(CydEngine *cyd)
 			v += o;
 #endif		
 		}
-
-
 	}
 	
-	if (cyd->flags & CYD_ENABLE_REVERB)
+	for (int i = 0 ; i < CYD_MAX_FX_CHANNELS ; ++i)
 	{
 #ifdef STEREOOUTPUT
-		cydrvb_cycle(&cyd->rvb, rev_l, rev_l);
-		cydrvb_output(&cyd->rvb, &rev_l, &rev_r);
-		*left += rev_l;
-		*right += rev_r;
+		cydfx_output(&cyd->fx[i], fx_l[i], fx_r[i], left, right);
 #else
-		cydrvb_cycle(&cyd->rvb, rvb_input);
-		v += cydrvb_output(&cyd->rvb);
-#endif
-	}
-	
-	if (cyd->flags & CYD_ENABLE_CRUSH)
-	{
-#ifdef STEREOOUTPUT
-		*left = *left & KRUSH;
-		*right = *right & KRUSH;
-#else
-		v = v & KRUSH;
+		v += cydfx_output(&cyd->fx[i], fx_input[i]);
 #endif
 	}
 	

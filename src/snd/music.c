@@ -564,6 +564,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	chn->program_loop = 1;
 	mus->cyd->channel[chan].flags = ins->cydflags;
 	chn->arpeggio_note = 0;
+	mus->cyd->channel[chan].fx_bus = ins->fx_bus;
 	
 	if (ins->flags & MUS_INST_DRUM)
 	{
@@ -1037,6 +1038,7 @@ int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst)
 	VER_READ(version, 1, 0xff, &inst->flttype, 0);
 	VER_READ(version, 7, 0xff, &inst->ym_env_shape, 0);
 	VER_READ(version, 7, 0xff, &inst->buzz_offset, 0);
+	VER_READ(version, 10, 0xff, &inst->fx_bus, 0);
 	
 	/* The file format is little-endian, the following only does something on big-endian machines */
 	
@@ -1102,21 +1104,17 @@ void mus_get_default_instrument(MusInstrument *inst)
 }
 
 
-void mus_set_reverb(MusEngine *mus, MusSong *song)
+void mus_set_fx(MusEngine *mus, MusSong *song)
 {
 	cyd_lock(mus->cyd, 1);
-	if (song->flags & MUS_ENABLE_REVERB)
+	for(int f = 0 ; f < CYD_MAX_FX_CHANNELS ; ++f)
 	{
 		for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
 		{
-			cydrvb_set_tap(&mus->cyd->rvb, i, song->rvbtap[i].delay, song->rvbtap[i].gain);
+			cydrvb_set_tap(&mus->cyd->fx[f].rvb, i, song->fx[f].rvbtap[i].delay, song->fx[f].rvbtap[i].gain);
 		}
 		
-		mus->cyd->flags |= CYD_ENABLE_REVERB;
-	}
-	else
-	{
-		mus->cyd->flags &= ~CYD_ENABLE_REVERB;
+		mus->cyd->fx[f].flags = song->fx[f].flags;
 	}
 	cyd_lock(mus->cyd, 0);
 }
@@ -1176,15 +1174,31 @@ int mus_load_song_file(FILE *f, MusSong *song)
 		
 		if (version >= 5) fread(song->title, 1, MUS_TITLE_LEN + 1, f);
 		
-		if (song->flags & MUS_ENABLE_REVERB)
+		Uint8 n_fx = 0;
+		
+		if (version >= 10)
+			fread(&n_fx, 1, sizeof(n_fx), f);
+		else if (song->flags & MUS_ENABLE_REVERB)
+			n_fx = 1;
+		
+		if (n_fx > 0)
 		{
-			for (int i = 0 ; i < CYDRVB_TAPS ; ++i)	
+			for (int fx = 0 ; fx < n_fx ; ++fx)
 			{
-				fread(&song->rvbtap[i].gain, 1, sizeof(song->rvbtap[i].gain), f);
-				fread(&song->rvbtap[i].delay, 1, sizeof(song->rvbtap[i].delay), f);
-				
-				FIX_ENDIAN(song->rvbtap[i].gain);
-				FIX_ENDIAN(song->rvbtap[i].delay);
+				if (version >= 10) fread(&song->fx[fx].flags, 1, sizeof(song->fx[fx].flags), f);
+				else song->fx[fx].flags |= CYDFX_ENABLE_REVERB;
+			
+				if (song->fx[fx].flags & CYDFX_ENABLE_REVERB)
+				{
+					for (int i = 0 ; i < CYDRVB_TAPS ; ++i)	
+					{
+						fread(&song->fx[fx].rvbtap[i].gain, 1, sizeof(song->fx[fx].rvbtap[i].gain), f);
+						fread(&song->fx[fx].rvbtap[i].delay, 1, sizeof(song->fx[fx].rvbtap[i].delay), f);
+						
+						FIX_ENDIAN(song->fx[fx].rvbtap[i].gain);
+						FIX_ENDIAN(song->fx[fx].rvbtap[i].delay);
+					}
+				}
 			}
 		}
 		

@@ -32,7 +32,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define MUS_PROG_LEN 32
 #define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
 
-#define MUS_VERSION 9
+#define MUS_VERSION 10
 
 #define MUS_TITLE_LEN 16
 
@@ -53,6 +53,7 @@ typedef struct
 	Uint8 flttype;
 	Uint8 ym_env_shape;
 	Sint16 buzz_offset;
+	Uint8 fx_bus;
 	char name[16];
 } MusInstrument;
 
@@ -115,7 +116,11 @@ typedef struct
 	Uint8 num_channels;
 	Uint8 multiplex_period;
 	char title[MUS_TITLE_LEN + 1];
-	struct { int delay, gain; } rvbtap[CYDRVB_TAPS];
+	struct
+	{
+		Uint32 flags;
+		struct { int delay, gain; } rvbtap[CYDRVB_TAPS];
+	} fx[CYD_MAX_FX_CHANNELS];
 } MusSong;
 
 
@@ -258,6 +263,6 @@ void mus_get_default_instrument(MusInstrument *inst);
 int mus_load_song(const char *path, MusSong *song);
 int mus_load_song_file(FILE *f, MusSong *song);
 void mus_free_song(MusSong *song);
-void mus_set_reverb(MusEngine *mus, MusSong *song);
+void mus_set_fx(MusEngine *mus, MusSong *song);
 
 #endif

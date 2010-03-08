@@ -28,6 +28,8 @@ ifndef CFLAGS
 CFLAGS = $(MACHINE) -ftree-vectorize
 endif
 
+CFGFLAGS = -DUSESDLMUTEXES -DENABLEAUDIODUMP -DSTEREOOUTPUT
+CFLAGS += $(CFGFLAGS)
 
 # What include flags to pass to the compiler
 ifdef COMSPEC
