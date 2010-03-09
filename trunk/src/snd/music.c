@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <stdio.h>
 #include "freqs.h"
 #include "macros.h"
-#include "rnd.h"
+
 
 static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note);
 
@@ -99,7 +99,6 @@ static void mus_set_slide(MusEngine *mus, int chan, Uint16 note)
 
 void mus_init_engine(MusEngine *mus, CydEngine *cyd)
 {
-	init_genrand(34);
 	memset(mus, 0, sizeof(*mus));
 	mus->cyd = cyd;
 	mus->volume = MAX_VOLUME;
