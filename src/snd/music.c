@@ -38,7 +38,7 @@ static void update_volumes(MusEngine *mus, MusTrackStatus *ts, MusChannel *chn, 
 {
 	if (chn->instrument && chn->instrument->flags & MUS_INST_RELATIVE_VOLUME)
 	{
-		ts->volume = MAX_VOLUME;
+		ts->volume = volume;
 		cydchn->volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : (int)chn->instrument->volume * volume / MAX_VOLUME * (int)mus->volume / MAX_VOLUME;
 	}
 	else
@@ -616,7 +616,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	mus->song_track[chan].vibrato_position = 0;
 	mus->song_track[chan].slide_speed = 0;
 	
-	update_volumes(mus, &mus->song_track[chan], chn, &mus->cyd->channel[chan], MAX_VOLUME);
+	update_volumes(mus, &mus->song_track[chan], chn, &mus->cyd->channel[chan], ins->flags & MUS_INST_RELATIVE_VOLUME ? MAX_VOLUME : ins->volume);
 	
 	mus->cyd->channel[chan].sync_source = ins->sync_source == 0xff? chan : ins->sync_source;
 	mus->cyd->channel[chan].ring_mod = ins->ring_mod == 0xff? chan : ins->ring_mod;
