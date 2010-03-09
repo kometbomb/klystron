@@ -383,8 +383,16 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 				}
 				break;
 				
+				case MUS_FX_ARPEGGIO_ABS:
+				{	
+					chn->arpeggio_note = 0;
+					chn->fixed_note = (inst & 0xff) << 8;
+				}
+				break;
+				
 				case MUS_FX_ARPEGGIO:
 				{
+					chn->fixed_note = 0xffff;
 					if ((inst & 0xff) == 0xf0)
 						chn->arpeggio_note = mus->song_track[chan].extarp1;
 					else if ((inst & 0xff) == 0xf1)
@@ -564,6 +572,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	chn->program_loop = 1;
 	mus->cyd->channel[chan].flags = ins->cydflags;
 	chn->arpeggio_note = 0;
+	chn->fixed_note = 0xffff;
 	mus->cyd->channel[chan].fx_bus = ins->fx_bus;
 	
 	if (ins->flags & MUS_INST_DRUM)
@@ -741,6 +750,11 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 			{
 				vibdep = (mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].command & 0xf) << 2;
 				vibspd = (mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].command & 0xf0) >> 2;
+				
+				if (!vibspd)
+					vibspd = ins->vibrato_speed;
+				if (!vibdep)
+					vibdep = ins->vibrato_depth;
 			}
 		}
 			
@@ -765,7 +779,7 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 	
 	do_pwm(mus, chan);
 	
-	Sint32 note = mus->channel[chan].note + vib + ((Uint16)mus->channel[chan].arpeggio_note << 8);
+	Sint32 note = (mus->channel[chan].fixed_note != 0xffff ? mus->channel[chan].fixed_note : mus->channel[chan].note) + vib + ((Uint16)mus->channel[chan].arpeggio_note << 8);
 	
 	if (note < 0) note = 0;
 	if (note > FREQ_TAB_SIZE << 8) note = (FREQ_TAB_SIZE - 1) << 8;
@@ -857,7 +871,7 @@ int mus_advance_tick(void* udata)
 							}
 							else if (ctrl & MUS_CTRL_LEGATO)
 							{
-								mus_set_note(mus, i, (Uint16)note << 8, 1);
+								mus_set_note(mus, i, ((Uint16)note + pinst->base_note - MIDDLE_C) << 8, 1);
 								mus->channel[i].target_note = ((Uint16)note + pinst->base_note - MIDDLE_C) << 8;
 							}
 							else 

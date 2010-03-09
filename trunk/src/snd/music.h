@@ -75,7 +75,7 @@ typedef struct
 	Uint16 note;
 	// ------
 	Uint8 arpeggio_note;
-	Uint16 target_note, last_note;
+	Uint16 target_note, last_note, fixed_note;
 	volatile Uint32 flags;
 	Uint32 current_tick;
 	Uint8 program_counter, program_tick, program_loop;
@@ -189,6 +189,7 @@ enum
 enum
 {
 	MUS_FX_ARPEGGIO = 0x0000,
+	MUS_FX_ARPEGGIO_ABS = 0x4000,
 	MUS_FX_SET_EXT_ARP = 0x1000,
 	MUS_FX_PORTA_UP = 0x0100,
 	MUS_FX_PORTA_DN = 0x0200,
