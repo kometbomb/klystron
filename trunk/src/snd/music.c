@@ -106,7 +106,7 @@ void mus_init_engine(MusEngine *mus, CydEngine *cyd)
 }
 
 
-static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
+static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from_program)
 {
 	MusChannel *chn = &mus->channel[chan];
 	CydChannel *cydchn = &mus->cyd->channel[chan];
@@ -377,9 +377,16 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 				
 				case MUS_FX_SET_SPEED:
 				{
-					mus->song->song_speed = inst & 0xf;
-					if ((inst & 0xf0) == 0) mus->song->song_speed2 = mus->song->song_speed;
-					else mus->song->song_speed2 = (inst >> 4) & 0xf;
+					if (from_program)
+					{
+						chn->prog_period = inst & 0xff;
+					}
+					else
+					{
+						mus->song->song_speed = inst & 0xf;
+						if ((inst & 0xf0) == 0) mus->song->song_speed2 = mus->song->song_speed;
+						else mus->song->song_speed2 = (inst >> 4) & 0xf;
+					}
 				}
 				break;
 				
@@ -465,7 +472,7 @@ static void mus_exec_track_command(MusEngine *mus, int chan)
 		break;
 		
 		default:
-		do_command(mus, chan, mus->song_counter, inst);
+		do_command(mus, chan, mus->song_counter, inst, 0);
 		break;
 	}
 	
@@ -535,7 +542,7 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan, int advance)
 			
 			default:
 			
-			do_command(mus, chan, chn->program_counter, inst);
+			do_command(mus, chan, chn->program_counter, inst, 1);
 			
 			break;
 		}
@@ -593,6 +600,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 
 	chn->flags = MUS_CHN_PLAYING | (chn->flags & MUS_CHN_DISABLED);
 	if (ins->prog_period > 0) chn->flags |= MUS_CHN_PROGRAM_RUNNING;
+	chn->prog_period = ins->prog_period;
 	chn->instrument = ins;
 	chn->program_counter = 0;
 	chn->program_tick = 0;
@@ -744,7 +752,7 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 	
 	if (mus->channel[chan].flags & MUS_CHN_PROGRAM_RUNNING)
 	{
-		int u = (chn->program_counter + 1) >= chn->instrument->prog_period;
+		int u = (chn->program_counter + 1) >= chn->prog_period;
 		mus_exec_prog_tick(mus, chan, u);
 		++chn->program_counter;
 		if (u) chn->program_counter = 0;
