@@ -36,7 +36,7 @@ static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrume
 
 static void update_volumes(MusEngine *mus, MusTrackStatus *ts, MusChannel *chn, CydChannel *cydchn, int volume)
 {
-	if (chn->instrument && chn->instrument->flags & MUS_INST_RELATIVE_VOLUME)
+	if (chn->instrument && (chn->instrument->flags & MUS_INST_RELATIVE_VOLUME))
 	{
 		ts->volume = volume;
 		cydchn->volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : (int)chn->instrument->volume * volume / MAX_VOLUME * (int)mus->volume / MAX_VOLUME;
@@ -358,6 +358,12 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 				case MUS_FX_SET_PANNING:
 				{
 					cyd_set_panning(mus->cyd, cydchn, inst & 0xff);
+				}
+				break;
+				
+				case MUS_FX_FILTER_TYPE:
+				{
+					cydchn->flttype = (inst & 0xf) % FLT_TYPES;
 				}
 				break;
 			
