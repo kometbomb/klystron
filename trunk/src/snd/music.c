@@ -34,6 +34,21 @@ OTHER DEALINGS IN THE SOFTWARE.
 static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note);
 
 
+static void update_volumes(MusEngine *mus, MusTrackStatus *ts, MusChannel *chn, CydChannel *cydchn, int volume)
+{
+	if (chn->instrument && chn->instrument->flags & MUS_INST_RELATIVE_VOLUME)
+	{
+		ts->volume = MAX_VOLUME;
+		cydchn->volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : (int)chn->instrument->volume * volume / MAX_VOLUME * (int)mus->volume / MAX_VOLUME;
+	}
+	else
+	{
+		ts->volume = volume;
+		cydchn->volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : ts->volume * (int)mus->volume / MAX_VOLUME;
+	}
+}
+
+
 static Uint16 get_freq(int note)
 {
 	if ((note & 0xff) == 0)
@@ -180,14 +195,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 				mus->song_track[chan].volume += (inst >> 4) & 0xf;
 				if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = MAX_VOLUME;
 				
-				if (chn->instrument && chn->instrument->flags & MUS_INST_RELATIVE_VOLUME)
-				{
-					cydchn->volume = mus->song_track[chan].volume * (int) chn->instrument->volume / MAX_VOLUME * (int)mus->volume / MAX_VOLUME;
-				}
-				else
-				{
-					cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
-				}
+				update_volumes(mus, &mus->song_track[chan], chn, cydchn, mus->song_track[chan].volume);
 			}
 		}
 		break;
@@ -266,10 +274,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 							mus->song_track[chan].volume -= inst & 0xf;
 							if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = 0;
 							
-							if (chn->instrument && chn->instrument->flags & MUS_INST_RELATIVE_VOLUME)
-								cydchn->volume = mus->song_track[chan].volume * (int)chn->instrument->volume / MAX_VOLUME * (int)mus->volume / MAX_VOLUME;
-							else
-								cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
+							update_volumes(mus, &mus->song_track[chan], chn, cydchn, mus->song_track[chan].volume);
 						}
 					}
 					break;
@@ -281,10 +286,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 							mus->song_track[chan].volume += inst & 0xf;
 							if (mus->song_track[chan].volume > MAX_VOLUME) mus->song_track[chan].volume = MAX_VOLUME;
 							
-							if (chn->instrument && chn->instrument->flags & MUS_INST_RELATIVE_VOLUME)
-								cydchn->volume = mus->song_track[chan].volume * (int)chn->instrument->volume / MAX_VOLUME * (int)mus->volume / MAX_VOLUME;
-							else
-								cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
+							update_volumes(mus, &mus->song_track[chan], chn, cydchn, mus->song_track[chan].volume);
 						}
 					}
 					break;
@@ -424,10 +426,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst)
 				{
 					mus->song_track[chan].volume = my_min(MAX_VOLUME, inst & 0xff);
 					
-					if (chn->instrument && chn->instrument->flags & MUS_INST_RELATIVE_VOLUME)
-						cydchn->volume = mus->song_track[chan].volume * (int)chn->instrument->volume / MAX_VOLUME * (int)mus->volume / MAX_VOLUME;
-					else
-						cydchn->volume = mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
+					update_volumes(mus, &mus->song_track[chan], chn, cydchn, mus->song_track[chan].volume);
 				}
 				break;
 				
@@ -617,17 +616,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	mus->song_track[chan].vibrato_position = 0;
 	mus->song_track[chan].slide_speed = 0;
 	
-	
-	if (ins->flags & MUS_INST_RELATIVE_VOLUME)
-	{
-		mus->song_track[chan].volume = MAX_VOLUME;
-		mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : (int)ins->volume * (int)mus->volume / MAX_VOLUME;
-	}
-	else
-	{
-		mus->song_track[chan].volume = ins->volume;
-		mus->cyd->channel[chan].volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : mus->song_track[chan].volume * (int)mus->volume / MAX_VOLUME;
-	}
+	update_volumes(mus, &mus->song_track[chan], chn, &mus->cyd->channel[chan], MAX_VOLUME);
 	
 	mus->cyd->channel[chan].sync_source = ins->sync_source == 0xff? chan : ins->sync_source;
 	mus->cyd->channel[chan].ring_mod = ins->ring_mod == 0xff? chan : ins->ring_mod;
@@ -917,6 +906,8 @@ int mus_advance_tick(void* udata)
 									mus->cyd->channel[i].volume = prev_vol_cyd;
 								}
 							}
+							
+							update_volumes(mus, &mus->song_track[i], &mus->channel[i], &mus->cyd->channel[i], MAX_VOLUME);
 						}
 					}
 				}
@@ -977,10 +968,7 @@ int mus_advance_tick(void* udata)
 			
 			if ((mus->multiplex_ctr / mus->song->multiplex_period) == i)
 			{
-				if (mus->channel[i].instrument && mus->channel[i].instrument->flags & MUS_INST_RELATIVE_VOLUME)
-					cydchn->volume = mus->song_track[i].volume * (int)mus->channel[i].instrument->volume / MAX_VOLUME * (int)mus->volume / MAX_VOLUME;
-				else
-					cydchn->volume = mus->song_track[i].volume * (int)mus->volume / MAX_VOLUME;
+				update_volumes(mus, &mus->song_track[i], &mus->channel[i], cydchn, mus->song_track[i].volume);
 			}
 			else
 			{
