@@ -79,7 +79,7 @@ typedef struct
 	Uint16 target_note, last_note, fixed_note;
 	volatile Uint32 flags;
 	Uint32 current_tick;
-	Uint8 program_counter, program_tick, program_loop;
+	Uint8 program_counter, program_tick, program_loop, prog_period;
 	Sint16 buzz_offset;
 } MusChannel;
 
