@@ -906,6 +906,7 @@ int mus_advance_tick(void* udata)
 								Uint8 prev_vol_cyd = mus->cyd->channel[i].volume;
 								mus_trigger_instrument_internal(mus, i, pinst, note);
 								mus->channel[i].target_note = ((Uint16)note + pinst->base_note - MIDDLE_C) << 8;
+								
 								if (inst == MUS_NOTE_NO_INSTRUMENT)
 								{
 									mus->song_track[i].volume = prev_vol_track;
@@ -913,7 +914,8 @@ int mus_advance_tick(void* udata)
 								}
 							}
 							
-							update_volumes(mus, &mus->song_track[i], &mus->channel[i], &mus->cyd->channel[i], MAX_VOLUME);
+							if (inst != MUS_NOTE_NO_INSTRUMENT)
+								update_volumes(mus, &mus->song_track[i], &mus->channel[i], &mus->cyd->channel[i], MAX_VOLUME);
 						}
 					}
 				}
