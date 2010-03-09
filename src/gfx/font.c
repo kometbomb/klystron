@@ -164,12 +164,37 @@ static int font_load_inner(Font *font, Bundle *fb)
 			SDL_RWops *rw = SDL_RWFromBundle(fb, "charmap.txt");
 			if (rw)
 			{
-				rw->read(rw, map, 1, sizeof(map)-1);
+				char temp[1000];
+				memset(temp, 0, sizeof(temp));
+				rw->read(rw, temp, 1, sizeof(temp)-1);
 				SDL_RWclose(rw);
+				
+				size_t len = strlen(temp);
+				const char *c = temp;
+				char *m = map;
+				while (*c)
+				{
+					if (*c == '\\' && len > 1)
+					{
+						char hex = tolower(*(c + 1));
+						
+						if (!((hex >= '0' && hex <= '9') || (hex >= 'a' && hex <= 'f'))) goto not_hex;
+						
+						*(m++) = hex >= 'a' ? hex - 'a' + 10 : hex - '0';
+						c += 2;
+						len -= 2;
+					}
+					else
+					{	
+					not_hex:
+						*(m++) = *(c++);
+						--len;
+					}
+				}
 			}
 			else
 			{
-				strcpy(map, "ABCDEFGHIJKLMNOPQRSTUVWXYZ≈ƒ÷…abcdefghijklmnopqrstuvwxyzÂ‰ˆÈ!\"%&/()=?+-_.:,;`~[]{}*'<>    0123456789\\|^@");
+				strcpy(map, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 				debug("Charmap not found in font file");
 			}
 		}
