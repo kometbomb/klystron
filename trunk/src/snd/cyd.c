@@ -465,20 +465,25 @@ static Sint16 cyd_output(CydEngine *cyd)
 				fx_input[chn->fx_bus] += o;
 #endif
 			}
-			
+			else
+			{
 #ifdef STEREOOUTPUT
-			*left += ol;
-			*right += or;
+				*left += ol;
+				*right += or;
 #else
-			v += o;
+				v += o;
 #endif		
+			}
 		}
 	}
 	
 	for (int i = 0 ; i < CYD_MAX_FX_CHANNELS ; ++i)
 	{
 #ifdef STEREOOUTPUT
-		cydfx_output(&cyd->fx[i], fx_l[i], fx_r[i], left, right);
+		Sint32 l, r;
+		cydfx_output(&cyd->fx[i], fx_l[i], fx_r[i], &l, &r);
+		*left += l;
+		*right += r;
 #else
 		v += cydfx_output(&cyd->fx[i], fx_input[i]);
 #endif

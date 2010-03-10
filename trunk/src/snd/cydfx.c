@@ -31,10 +31,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 #ifdef STEREOOUTPUT
 void cydfx_output(CydFx *fx, Sint32 fx_l, Sint32 fx_r, Sint32 *left, Sint32 *right)
 {
+	*left = fx_l;
+	*right = fx_r;
 #else
 int cydfx_output(CydFx *fx, int fx_input)
 {
-	Sint32 v = 0;
+	Sint32 v = fx_input;
 #endif
 	if (fx->flags & CYDFX_ENABLE_REVERB)
 	{
