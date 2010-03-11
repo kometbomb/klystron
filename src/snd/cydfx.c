@@ -34,7 +34,7 @@ void cydfx_output(CydFx *fx, Sint32 fx_l, Sint32 fx_r, Sint32 *left, Sint32 *rig
 	*left = fx_l;
 	*right = fx_r;
 #else
-int cydfx_output(CydFx *fx, int fx_input)
+Sint32 cydfx_output(CydFx *fx, Sint32 fx_input)
 {
 	Sint32 v = fx_input;
 #endif

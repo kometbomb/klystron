@@ -1175,6 +1175,7 @@ void mus_set_fx(MusEngine *mus, MusSong *song)
 	cyd_lock(mus->cyd, 1);
 	for(int f = 0 ; f < CYD_MAX_FX_CHANNELS ; ++f)
 	{
+		cydrvb_set_stereo_spread(&mus->cyd->fx[f].rvb, song->fx[f].rvb_spread);
 		for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
 		{
 			cydrvb_set_tap(&mus->cyd->fx[f].rvb, i, song->fx[f].rvbtap[i].delay, song->fx[f].rvbtap[i].gain);
@@ -1256,6 +1257,7 @@ int mus_load_song_file(FILE *f, MusSong *song)
 			
 				if (song->fx[fx].flags & CYDFX_ENABLE_REVERB)
 				{
+					fread(&song->fx[fx].rvb_spread, 1, 1, f);
 					for (int i = 0 ; i < CYDRVB_TAPS ; ++i)	
 					{
 						fread(&song->fx[fx].rvbtap[i].gain, 1, sizeof(song->fx[fx].rvbtap[i].gain), f);
