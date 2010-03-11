@@ -37,13 +37,21 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 typedef struct
 {
-	int position, gain, delay;
+#ifdef STEREOOUTPUT	
+	int position_l, position_r;
+#else
+	int position;
+#endif
+	int gain, delay;
 } CydTap;
 
 typedef struct
 {
 	Sint32 *buffer;
 	int size, rate;
+#ifdef STEREOOUTPUT	
+	int spread;
+#endif
 	int position;
 	CydTap tap[CYDRVB_TAPS];
 } CydReverb;
@@ -54,6 +62,7 @@ void cydrvb_deinit(CydReverb *rvb);
 #ifdef STEREOOUTPUT
 void cydrvb_cycle(CydReverb *rvb, Sint32 left, Sint32 right);
 void cydrvb_output(CydReverb *rvb, Sint32 *left, Sint32 *right);
+void cydrvb_set_stereo_spread(CydReverb *rvb, int spread);
 #else
 void cydrvb_cycle(CydReverb *rvb, Sint32 input);
 Sint32 cydrvb_output(CydReverb *rvb);

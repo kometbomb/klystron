@@ -37,7 +37,7 @@ typedef struct
 #ifdef STEREOOUTPUT
 void cydfx_output(CydFx *fx, Sint32 fx_l, Sint32 fx_r, Sint32 *left, Sint32 *right);
 #else
-int cydfx_output(CydFx *fx, int fx_input);
+Sint32 cydfx_output(CydFx *fx, Sint32 fx_input);
 #endif
 void cydfx_init(CydFx *fx, int rate);
 void cydfx_deinit(CydFx *fx);

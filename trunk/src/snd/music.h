@@ -120,6 +120,7 @@ typedef struct
 	struct
 	{
 		Uint32 flags;
+		Uint8 rvb_spread;
 		struct { int delay, gain; } rvbtap[CYDRVB_TAPS];
 	} fx[CYD_MAX_FX_CHANNELS];
 } MusSong;
