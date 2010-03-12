@@ -77,3 +77,16 @@ void cydfx_deinit(CydFx *fx)
 {
 	cydrvb_deinit(&fx->rvb);
 }
+
+
+void cydfx_set(CydFx *fx, const CydFxSerialized *ser)
+{
+	cydrvb_set_stereo_spread(&fx->rvb, ser->rvb.spread);
+	
+	for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
+	{
+		cydrvb_set_tap(&fx->rvb, i, ser->rvb.tap[i].delay, ser->rvb.tap[i].gain);
+	}
+	
+	fx->flags = ser->flags;
+}
