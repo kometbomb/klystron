@@ -1,5 +1,5 @@
-#ifndef CYDFX_H
-#define CYDFX_H
+#ifndef CYDCHR_H
+#define CYDCHR_H
 
 /*
 Copyright (c) 2009-2010 Tero Lindeman (kometbomb)
@@ -26,50 +26,23 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "cydrvb.h"
-#include "cydchr.h"
+#define CYDCHR_SIZE 50
+#define CYDCHR_MIN_RATE 1 // 0.1 Hz
+#define CYDCHR_MAX_RATE 255 // 25.5 Hz
+
+#include "SDL.h"
 
 typedef struct
 {
-	Uint32 flags;
-	Uint32 bit_drop;
-	CydReverb rvb;
-	CydChorus chr;
-} CydFx;
+	Sint32 *buffer, *lut;
+	int sample_rate;
+	int pos_r, pos_buf, buf_size, lut_size;
+} CydChorus;
 
-/* The following is a non-aligned packed struct for saving in files */
-typedef struct
-{
-	Uint32 flags;
-	struct
-	{
-		Uint8 bit_drop;
-	} crush;
-	struct 
-	{
-		Uint8 rate, min_delay, max_delay, stereo_sep;
-	} chr;
-	struct 
-	{
-		Uint8 spread;
-		struct { Uint16 delay; Sint16 gain; } tap[CYDRVB_TAPS];
-	} rvb;
-} __attribute__((__packed__)) CydFxSerialized;
+void cydchr_output(CydChorus *chr, Sint32 in_l, Sint32 in_r, Sint32 *out_l, Sint32 *out_r);
+void cydchr_set(CydChorus *chr, int rate /* 1 = 0.1 Hz */, int min_delay, int max_delay, int stereo_sep /* 0..255 */);
 
-#ifdef STEREOOUTPUT
-void cydfx_output(CydFx *fx, Sint32 fx_l, Sint32 fx_r, Sint32 *left, Sint32 *right);
-#else
-Sint32 cydfx_output(CydFx *fx, Sint32 fx_input);
-#endif
-void cydfx_init(CydFx *fx, int rate);
-void cydfx_deinit(CydFx *fx);
-void cydfx_set(CydFx *fx, const CydFxSerialized *ser);
-
-enum
-{
-	CYDFX_ENABLE_REVERB = 1,
-	CYDFX_ENABLE_CRUSH = 2,
-	CYDFX_ENABLE_CHORUS = 4
-};
+void cydchr_init(CydChorus *chr, int sample_rate);
+void cydchr_deinit(CydChorus *chr);
 
 #endif
