@@ -104,7 +104,7 @@ void cydfx_set(CydFx *fx, const CydFxSerialized *ser)
 		cydrvb_set_tap(&fx->rvb, i, ser->rvb.tap[i].delay, ser->rvb.tap[i].gain);
 	}
 	
-	cydchr_set(&fx->chr, ser->chr.rate, ser->chr.min_delay, ser->chr.max_delay, ser->chr.stereo_sep);
+	cydchr_set(&fx->chr, ser->chr.rate, ser->chr.min_delay, ser->chr.max_delay);
 	
 	fx->bit_drop = 0xffffffff << ser->crush.bit_drop;
 }
