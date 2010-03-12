@@ -1020,6 +1020,7 @@ void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position)
 		mus->song_track[i].sequence_position = 0;
 		mus->song_track[i].last_ctrl = 0;
 		mus->song_track[i].delayed.instrument = NULL;
+		mus->song_track[i].note_offset = 0;
 	}
 	
 	cyd_lock(mus->cyd, 0);
