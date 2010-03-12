@@ -47,7 +47,7 @@ typedef struct
 	} crush;
 	struct 
 	{
-		Uint8 rate, min_delay, max_delay, stereo_sep;
+		Uint8 rate, min_delay, max_delay;
 	} chr;
 	struct 
 	{

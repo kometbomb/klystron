@@ -38,7 +38,7 @@ typedef struct
 } CydChorus;
 
 void cydchr_output(CydChorus *chr, Sint32 in_l, Sint32 in_r, Sint32 *out_l, Sint32 *out_r);
-void cydchr_set(CydChorus *chr, int rate /* 1 = 0.1 Hz */, int min_delay, int max_delay, int stereo_sep /* 0..255 */);
+void cydchr_set(CydChorus *chr, int rate /* 1 = 0.1 Hz */, int min_delay, int max_delay);
 
 void cydchr_init(CydChorus *chr, int sample_rate);
 void cydchr_deinit(CydChorus *chr);
