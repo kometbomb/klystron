@@ -26,8 +26,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cydfx.h"
 #include "cyd.h"
 
-#define KRUSH ~0x3f
-
 #ifdef STEREOOUTPUT
 void cydfx_output(CydFx *fx, Sint32 fx_l, Sint32 fx_r, Sint32 *left, Sint32 *right)
 {
@@ -38,6 +36,16 @@ Sint32 cydfx_output(CydFx *fx, Sint32 fx_input)
 {
 	Sint32 v = fx_input;
 #endif
+
+	if (fx->flags & CYDFX_ENABLE_CHORUS)
+	{
+#ifdef STEREOOUTPUT
+		cydchr_output(&fx->chr, fx_l, fx_r, left, right);
+#else
+		// it's a stereo effect
+#endif
+	}
+
 	if (fx->flags & CYDFX_ENABLE_REVERB)
 	{
 #ifdef STEREOOUTPUT
@@ -54,10 +62,10 @@ Sint32 cydfx_output(CydFx *fx, Sint32 fx_input)
 	if (fx->flags & CYDFX_ENABLE_CRUSH)
 	{
 #ifdef STEREOOUTPUT
-		*left = *left & KRUSH;
-		*right = *right & KRUSH;
+		*left &= fx->bit_drop;
+		*right &= fx->bit_drop;
 #else
-		v = v & KRUSH;
+		v &= fx->bit_drop;
 #endif
 	}
 	
@@ -70,17 +78,25 @@ Sint32 cydfx_output(CydFx *fx, Sint32 fx_input)
 void cydfx_init(CydFx *fx, int rate)
 {
 	cydrvb_init(&fx->rvb, rate);
+#ifdef STEREOOUTPUT
+	cydchr_init(&fx->chr, rate);
+#endif
 }
 
 
 void cydfx_deinit(CydFx *fx)
 {
 	cydrvb_deinit(&fx->rvb);
+#ifdef STEREOOUTPUT
+	cydchr_deinit(&fx->chr);
+#endif
 }
 
 
 void cydfx_set(CydFx *fx, const CydFxSerialized *ser)
 {
+	fx->flags = ser->flags;
+	
 	cydrvb_set_stereo_spread(&fx->rvb, ser->rvb.spread);
 	
 	for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
@@ -88,5 +104,7 @@ void cydfx_set(CydFx *fx, const CydFxSerialized *ser)
 		cydrvb_set_tap(&fx->rvb, i, ser->rvb.tap[i].delay, ser->rvb.tap[i].gain);
 	}
 	
-	fx->flags = ser->flags;
+	cydchr_set(&fx->chr, ser->chr.rate, ser->chr.min_delay, ser->chr.max_delay, ser->chr.stereo_sep);
+	
+	fx->bit_drop = 0xffffffff << ser->crush.bit_drop;
 }
