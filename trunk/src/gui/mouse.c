@@ -50,7 +50,10 @@ void set_repeat_timer(const SDL_Event *event)
 	{
 		memcpy(&repeat_event, event, sizeof(repeat_event));
 		repeat_event.type = SDL_USEREVENT;
-		repeat_timer_id = SDL_AddTimer(repeat_timer_id ? SDL_DEFAULT_REPEAT_INTERVAL : SDL_DEFAULT_REPEAT_DELAY, repeat_timer, NULL);
+		if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) 
+			repeat_timer_id = SDL_AddTimer(repeat_timer_id ? SDL_DEFAULT_REPEAT_INTERVAL : SDL_DEFAULT_REPEAT_DELAY, repeat_timer, NULL);
+		else
+			set_repeat_timer(NULL);
 	}
 	else
 	{

@@ -27,8 +27,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #define CYDCHR_SIZE 50
-#define CYDCHR_MIN_RATE 1 // 0.1 Hz
-#define CYDCHR_MAX_RATE 255 // 25.5 Hz
 
 #include "SDL.h"
 
