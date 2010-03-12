@@ -1175,13 +1175,7 @@ void mus_set_fx(MusEngine *mus, MusSong *song)
 	cyd_lock(mus->cyd, 1);
 	for(int f = 0 ; f < CYD_MAX_FX_CHANNELS ; ++f)
 	{
-		cydrvb_set_stereo_spread(&mus->cyd->fx[f].rvb, song->fx[f].rvb_spread);
-		for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
-		{
-			cydrvb_set_tap(&mus->cyd->fx[f].rvb, i, song->fx[f].rvbtap[i].delay, song->fx[f].rvbtap[i].gain);
-		}
-		
-		mus->cyd->fx[f].flags = song->fx[f].flags;
+		cydfx_set(&mus->cyd->fx[f], &song->fx[f]);
 	}
 	cyd_lock(mus->cyd, 0);
 }
@@ -1250,21 +1244,41 @@ int mus_load_song_file(FILE *f, MusSong *song)
 		
 		if (n_fx > 0)
 		{
-			for (int fx = 0 ; fx < n_fx ; ++fx)
+			if (version >= 10)
 			{
-				if (version >= 10) fread(&song->fx[fx].flags, 1, sizeof(song->fx[fx].flags), f);
-				else song->fx[fx].flags |= CYDFX_ENABLE_REVERB;
-			
-				if (song->fx[fx].flags & CYDFX_ENABLE_REVERB)
+				fread(&song->fx, sizeof(song->fx[0]), n_fx, f);
+				
+				for (int fx = 0 ; fx < n_fx ; ++fx)
 				{
-					fread(&song->fx[fx].rvb_spread, 1, 1, f);
+					FIX_ENDIAN(song->fx[fx].flags);
+					
+					for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
+					{
+						FIX_ENDIAN(song->fx[fx].rvb.tap[i].gain);
+						FIX_ENDIAN(song->fx[fx].rvb.tap[i].delay);
+					}
+				}
+			}
+			else
+			{
+				for (int fx = 0 ; fx < n_fx ; ++fx)
+				{
+					song->fx[fx].flags = CYDFX_ENABLE_REVERB;
+					if (song->flags & MUS_ENABLE_CRUSH) song->fx[fx].flags |= CYDFX_ENABLE_CRUSH;
+					
+					song->fx[fx].rvb.spread = 0;
+				
 					for (int i = 0 ; i < CYDRVB_TAPS ; ++i)	
 					{
-						fread(&song->fx[fx].rvbtap[i].gain, 1, sizeof(song->fx[fx].rvbtap[i].gain), f);
-						fread(&song->fx[fx].rvbtap[i].delay, 1, sizeof(song->fx[fx].rvbtap[i].delay), f);
+						Sint32 g, d;
+						fread(&g, 1, sizeof(g), f);
+						fread(&d, 1, sizeof(d), f);
+							
+						song->fx[fx].rvb.tap[i].gain = g;
+						song->fx[fx].rvb.tap[i].delay = d;
 						
-						FIX_ENDIAN(song->fx[fx].rvbtap[i].gain);
-						FIX_ENDIAN(song->fx[fx].rvbtap[i].delay);
+						FIX_ENDIAN(song->fx[fx].rvb.tap[i].gain);
+						FIX_ENDIAN(song->fx[fx].rvb.tap[i].delay);
 					}
 				}
 			}

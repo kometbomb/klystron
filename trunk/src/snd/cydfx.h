@@ -34,6 +34,17 @@ typedef struct
 	CydReverb rvb;
 } CydFx;
 
+/* The following is a non-aligned packed struct for saving in files */
+typedef struct
+{
+	Uint32 flags;
+	struct 
+	{
+		Uint8 spread;
+		struct { Uint16 delay; Sint16 gain; } tap[CYDRVB_TAPS];
+	} rvb;
+} __attribute__((__packed__)) CydFxSerialized;
+
 #ifdef STEREOOUTPUT
 void cydfx_output(CydFx *fx, Sint32 fx_l, Sint32 fx_r, Sint32 *left, Sint32 *right);
 #else
@@ -41,6 +52,7 @@ Sint32 cydfx_output(CydFx *fx, Sint32 fx_input);
 #endif
 void cydfx_init(CydFx *fx, int rate);
 void cydfx_deinit(CydFx *fx);
+void cydfx_set(CydFx *fx, const CydFxSerialized *ser);
 
 enum
 {

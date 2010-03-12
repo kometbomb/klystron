@@ -28,6 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 #include "cyd.h"
+#include "cydfx.h"
 
 #define MUS_PROG_LEN 32
 #define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
@@ -117,12 +118,7 @@ typedef struct
 	Uint8 num_channels;
 	Uint8 multiplex_period;
 	char title[MUS_TITLE_LEN + 1];
-	struct
-	{
-		Uint32 flags;
-		Uint8 rvb_spread;
-		struct { int delay, gain; } rvbtap[CYDRVB_TAPS];
-	} fx[CYD_MAX_FX_CHANNELS];
+	CydFxSerialized fx[CYD_MAX_FX_CHANNELS];
 } MusSong;
 
 
