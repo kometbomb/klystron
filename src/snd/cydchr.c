@@ -48,10 +48,18 @@ void cydchr_set(CydChorus *chr, int rate, int min_delay, int max_delay, int ster
 {
 	chr->pos_r = stereo_sep * chr->lut_size / 2 / 255;
 	
-	/*chr->lut_size = */
+	if (rate)
+	{
+		chr->lut_size = chr->sample_rate * 4 * 10 / (10 + (rate - 1));
 	
-	for (int i = 0 ; i < chr->lut_size ; ++i)
-		chr->lut[i] = (int)(((sin((double)i / chr->lut_size * M_PI * 2) * 0.5 + 0.5) * (max_delay - min_delay) + min_delay) * chr->sample_rate / 1000) % chr->lut_size;
+		for (int i = 0 ; i < chr->lut_size ; ++i)
+			chr->lut[i] = (int)(((sin((double)i / chr->lut_size * M_PI * 2) * 0.5 + 0.5) * (max_delay - min_delay) + min_delay) * chr->sample_rate / 10000) % chr->lut_size;
+	}
+	else
+	{
+		chr->lut_size = 0;
+		chr->lut[0] = chr->sample_rate * min_delay / 10000;
+	}
 }
 
 
@@ -61,7 +69,7 @@ void cydchr_init(CydChorus *chr, int sample_rate)
 	chr->sample_rate = sample_rate;
 	chr->buf_size = sample_rate * CYDCHR_SIZE / 1000;
 	chr->buffer = calloc(chr->buf_size, sizeof(chr->buffer[0]) * 2);
-	chr->lut = calloc(sample_rate, sizeof(chr->buffer[0]));
+	chr->lut = calloc(sample_rate * 4, sizeof(chr->buffer[0]));
 	chr->lut_size = sample_rate;
 }
 
