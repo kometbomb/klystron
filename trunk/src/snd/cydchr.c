@@ -60,7 +60,7 @@ void cydchr_set(CydChorus *chr, int rate, int min_delay, int max_delay, int ster
 		chr->lut_size = chr->sample_rate * 4 * 10 / (10 + (rate - 1));
 		
 		chr->pos_l = 0;
-		chr->pos_r = stereo_separation * chr->lut_size / 2 / 64;
+		chr->pos_r = (stereo_separation * chr->lut_size / 2 / 64) % chr->lut_size;
 		
 		if (old == chr->lut_size && min_delay == chr->min_delay && chr->max_delay == max_delay) return;
 		
