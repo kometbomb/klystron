@@ -28,6 +28,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 void cydchr_output(CydChorus *chr, Sint32 in_l, Sint32 in_r, Sint32 *out_l, Sint32 *out_r)
 {
+	++chr->pos_l;
+	if (chr->pos_l >= chr->lut_size)
+		chr->pos_l = 0;
+
 	++chr->pos_r;
 	if (chr->pos_r >= chr->lut_size)
 		chr->pos_r = 0;
@@ -39,26 +43,37 @@ void cydchr_output(CydChorus *chr, Sint32 in_l, Sint32 in_r, Sint32 *out_l, Sint
 	chr->buffer[chr->pos_buf] = in_r;
 	chr->buffer[chr->pos_buf + chr->buf_size] = in_r;
 	
-	*out_l = in_l;
+	if (chr->lut_size)
+		*out_l = chr->buffer[(chr->pos_buf - chr->lut[chr->pos_l] + chr->buf_size)];
+	else
+		*out_l = in_l;
+		
 	*out_r = chr->buffer[(chr->pos_buf - chr->lut[chr->pos_r] + chr->buf_size)];
 }
 
 
-void cydchr_set(CydChorus *chr, int rate, int min_delay, int max_delay)
+void cydchr_set(CydChorus *chr, int rate, int min_delay, int max_delay, int stereo_separation)
 {
-	chr->pos_r = 0;
-	
 	if (rate)
 	{
 		int old = chr->lut_size;
 		chr->lut_size = chr->sample_rate * 4 * 10 / (10 + (rate - 1));
-		if (old == chr->lut_size) return;
-	
+		
+		chr->pos_l = 0;
+		chr->pos_r = stereo_separation * chr->lut_size / 2 / 64;
+		
+		if (old == chr->lut_size && min_delay == chr->min_delay && chr->max_delay == max_delay) return;
+		
+		chr->min_delay = min_delay;
+		chr->max_delay = max_delay;
+		
 		for (int i = 0 ; i < chr->lut_size ; ++i)
 			chr->lut[i] = (int)(((sin((double)i / chr->lut_size * M_PI * 2) * 0.5 + 0.5) * (max_delay - min_delay) + min_delay) * chr->sample_rate / 10000) % chr->lut_size;
 	}
 	else
 	{
+		chr->pos_l = 0;
+		chr->pos_r = 0;
 		chr->lut_size = 0;
 		chr->lut[0] = chr->sample_rate * min_delay / 10000;
 	}
