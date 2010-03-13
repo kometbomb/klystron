@@ -114,18 +114,33 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 	{
 		case MUS_FX_PORTA_UP:
 		{
+			if (chn->fixed_note != 0xffff)
+			{
+				chn->note = chn->fixed_note;
+				chn->fixed_note = 0xffff;
+			}
+		
 			Uint16 prev = chn->note;
 			chn->note += ((inst & 0xff) << 2);
 			if (prev > chn->note) chn->note = 0xffff;
+			
 			mus_set_slide(mus, chan, chn->note);
 		}
 		break;
 		
 		case MUS_FX_PORTA_DN:
 		{
+			if (chn->fixed_note != 0xffff)
+			{
+				chn->note = chn->fixed_note;
+				chn->fixed_note = 0xffff;
+			}
+		
 			Uint16 prev = chn->note;
 			chn->note -= ((inst & 0xff) << 2);
+			
 			if (prev < chn->note) chn->note = 0x0;
+			
 			mus_set_slide(mus, chan, chn->note);
 		}
 		break;
@@ -292,18 +307,34 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					
 					case MUS_FX_EXT_PORTA_UP:
 					{
+						if (chn->fixed_note != 0xffff)
+						{
+							chn->note = chn->fixed_note;
+							chn->fixed_note = 0xffff;
+						}
+								
 						Uint16 prev = chn->note;
 						chn->note += ((inst & 0x0f));
+						
 						if (prev > chn->note) chn->note = 0xffff;
+						
 						mus_set_slide(mus, chan, chn->note);
 					}
 					break;
 					
 					case MUS_FX_EXT_PORTA_DN:
 					{
+						if (chn->fixed_note != 0xffff)
+						{
+							chn->note = chn->fixed_note;
+							chn->fixed_note = 0xffff;
+						}
+						
 						Uint16 prev = chn->note;
 						chn->note -= ((inst & 0x0f));
+						
 						if (prev < chn->note) chn->note = 0x0;
+						
 						mus_set_slide(mus, chan, chn->note);
 					}
 					break;
