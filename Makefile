@@ -181,7 +181,8 @@ endif
 tools/bin/makebundle.exe: tools/makebundle/*.c
 	make -C tools/makebundle 
 
+ifdef COMSPEC
 tools/bin/editor.exe: tools/editor/src/*
 	make -C tools/editor
 	cp tools/editor/bin.$(CFG)/editor.exe tools/bin/editor.exe
-	
+endif
