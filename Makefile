@@ -82,7 +82,11 @@ endif
 
 all: bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a bin.$(CFG)/lib${TARGET}_gui.a tools
 
+ifdef COMSPEC
 tools: tools/bin/makebundle.exe tools/bin/editor.exe
+else
+tools: tools/bin/makebundle.exe 
+endif
 
 inform:
 	@echo "Configuration "$(CFG)
