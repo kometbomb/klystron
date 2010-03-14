@@ -2,7 +2,7 @@ TARGET=editor.exe
 VPATH=src:src
 ECHO = echo
 CFG = debug
-MACHINE = -march=pentium4 -mfpmath=sse -msse3
+MACHINE = -march=pentium2 
 
 # The directories containing the source files, separated by ':'
 
@@ -32,9 +32,16 @@ CXX = gcc -std=c99 --no-strict-aliasing
 CXXDEP = gcc -E -std=c99
 
 # What include flags to pass to the compiler
-INCLUDEFLAGS= -I ../Common -I src -I /mingw/include/sdl -I /code/googlecode/klystron/src 
 
-CXXFLAGS = $(MACHINE) -mthreads -ftree-vectorize
+CXXFLAGS = $(MACHINE) -ftree-vectorize
+
+ifdef COMSPEC
+	CXXFLAGS += -mthreads
+	INCLUDEFLAGS := -I ../Common -I src -I /mingw/include/sdl -I /code/googlecode/klystron/src 
+	LDFLAGS = -L ../../bin.$(CFG) -lengine_gfx -lengine_util -lengine_gui -lmingw32 -lSDLmain -lSDL -lconfig
+else
+	INCLUDEFLAGS := `sdl-config --cflags` -U_FORTIFY_SOURCE
+endif
 
 # Separate compile options per configuration
 ifeq ($(CFG),debug)
@@ -56,9 +63,6 @@ exit
 endif
 endif
 endif
-
-# A common link flag for all configurations
-LDFLAGS = -L /code/googlecode/klystron/bin.$(CFG) -lengine_gfx -lengine_util -lengine_gui -lmingw32 -lSDLmain -lSDL -lconfig
 
 all:	inform bin.$(CFG)/${TARGET} 
 
