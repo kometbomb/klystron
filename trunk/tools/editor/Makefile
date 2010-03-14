@@ -38,10 +38,12 @@ CXXFLAGS = $(MACHINE) -ftree-vectorize
 ifdef COMSPEC
 	CXXFLAGS += -mthreads
 	INCLUDEFLAGS := -I ../Common -I src -I /mingw/include/sdl -I /code/googlecode/klystron/src 
-	LDFLAGS = -L ../../bin.$(CFG) -lengine_gfx -lengine_util -lengine_gui -lmingw32 -lSDLmain -lSDL -lconfig
+	LDFLAGS = -lmingw32 -lSDLmain -lSDL -lconfig
 else
-	INCLUDEFLAGS := `sdl-config --cflags` -U_FORTIFY_SOURCE
+	INCLUDEFLAGS := `sdl-config --cflags` -U_FORTIFY_SOURCE -I ../../src -L ../../bin.$(CFG) 
 endif
+
+LDFLAGS += -lengine_gfx -lengine_util -lengine_gui 
 
 # Separate compile options per configuration
 ifeq ($(CFG),debug)
