@@ -601,13 +601,41 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan, int advance)
 }
 
 
+static int mus_shape(int position, int shape)
+{
+	switch (shape)
+	{
+		case MUS_SHAPE_SINE:
+			return vibrato_table[position & (VIB_TAB_SIZE - 1)];
+			break;
+			
+		case MUS_SHAPE_SQUARE:
+			return ((position & (VIB_TAB_SIZE - 1)) & (VIB_TAB_SIZE / 2)) ? -128 : 127;
+			break;
+			
+		case MUS_SHAPE_RAMP_UP:
+			return (position & (VIB_TAB_SIZE - 1)) * 2 - 128;
+			break;
+			
+		case MUS_SHAPE_RAMP_DN:
+			return 127 - (position & (VIB_TAB_SIZE - 1)) * 2;
+			break;
+			
+		default:
+		case MUS_SHAPE_RANDOM:
+			return 0; // TODO
+			break;
+	}
+}
+
+
 static void do_pwm(MusEngine* mus, int chan)
 {
 	MusChannel *chn = &mus->channel[chan];
 	MusInstrument *ins = chn->instrument;
 
 	mus->song_track[chan].pwm_position += ins->pwm_speed;
-	mus->cyd->channel[chan].pw = mus->song_track[chan].pw + vibrato_table[((mus->song_track[chan].pwm_position) >> 1) & (VIB_TAB_SIZE - 1)] * ins->pwm_depth / 32;
+	mus->cyd->channel[chan].pw = mus->song_track[chan].pw + mus_shape(mus->song_track[chan].pwm_position >> 1, ins->pwm_shape) * ins->pwm_depth / 32;
 }
 
 
@@ -657,7 +685,10 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	mus_set_note(mus, chan, (Uint16)note << 8, 1);
 	chn->last_note = chn->target_note = (Uint16)note << 8;
 	chn->current_tick = 0;
+	
 	mus->song_track[chan].vibrato_position = 0;
+	mus->song_track[chan].vib_delay = ins->vib_delay;
+	
 	mus->song_track[chan].slide_speed = 0;
 	
 	update_volumes(mus, &mus->song_track[chan], chn, &mus->cyd->channel[chan], ins->flags & MUS_INST_RELATIVE_VOLUME ? MAX_VOLUME : ins->volume);
@@ -702,9 +733,6 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	
 	return chan;
 }
-
-
-
 
 
 int mus_trigger_instrument(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note)
@@ -801,8 +829,10 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 	}
 	
 	Uint8 ctrl = 0;
-	int vibdep = ins->vibrato_depth;
+	int vibdep = my_max(0, (int)ins->vibrato_depth - (int)mus->song_track[chan].vib_delay);
 	int vibspd = ins->vibrato_speed;
+	
+	if (mus->song_track[chan].vib_delay) --mus->song_track[chan].vib_delay;
 	
 	if (mus->song_track[chan].pattern)
 	{
@@ -837,7 +867,7 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 	if (((ctrl & MUS_CTRL_VIB) && !(ins->flags & MUS_INST_INVERT_VIBRATO_BIT)) || (!(ctrl & MUS_CTRL_VIB) && (ins->flags & MUS_INST_INVERT_VIBRATO_BIT)))
 	{
 		mus->song_track[chan].vibrato_position += vibspd;
-		vib = vibrato_table[((mus->song_track[chan].vibrato_position) >> 1) & (VIB_TAB_SIZE - 1)] * vibdep / 64;
+		vib = mus_shape(mus->song_track[chan].vibrato_position >> 1, ins->vib_shape) * vibdep / 64;
 	}
 	
 	
@@ -1137,6 +1167,9 @@ int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst)
 	VER_READ(version, 7, 0xff, &inst->ym_env_shape, 0);
 	VER_READ(version, 7, 0xff, &inst->buzz_offset, 0);
 	VER_READ(version, 10, 0xff, &inst->fx_bus, 0);
+	VER_READ(version, 11, 0xff, &inst->vib_shape, 0);
+	VER_READ(version, 11, 0xff, &inst->vib_delay, 0);
+	VER_READ(version, 11, 0xff, &inst->pwm_shape, 0);
 	
 	/* The file format is little-endian, the following only does something on big-endian machines */
 	
@@ -1196,6 +1229,8 @@ void mus_get_default_instrument(MusInstrument *inst)
 	inst->slide_speed = 0x80;
 	inst->vibrato_speed = 0x20;
 	inst->vibrato_depth = 0x20;
+	inst->vib_shape = MUS_SHAPE_SINE;
+	inst->vib_delay = 0;
 	
 	for (int p = 0 ; p < MUS_PROG_LEN; ++p)
 		inst->program[p] = MUS_FX_NOP;
