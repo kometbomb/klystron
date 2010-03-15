@@ -30,6 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "freqs.h"
 #include "macros.h"
 
+#define VIB_TAB_SIZE 128
 
 static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note);
 
@@ -582,29 +583,63 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan, int advance)
 }
 
 
-static int mus_shape(int position, int shape)
+static Sint8 mus_shape(Uint16 position, Uint8 shape)
 {
+	static const Sint8 rnd_table[VIB_TAB_SIZE] = {
+		110, -1, 88, -31, 64,
+		-13, 29, -70, -113, 71,
+		99, -71, 74, 82, 52,
+		-82, -58, 37, 20, -76,
+		46, -97, -69, 41, 31,
+		-62, -5, 99, -2, -48,
+		-89, 17, -19, 4, -27,
+		-43, -20, 25, 112, -34,
+		78, 26, -56, -54, 72,
+		-75, 22, 72, -119, 115,
+		56, -66, 25, 87, 93,
+		14, 82, 127, 79, -40,
+		-100, 21, 17, 17, -116,
+		-110, 61, -99, 105, 73,
+		116, 53, -9, 105, 91,
+		120, -73, 112, -10, 66,
+		-10, -30, 99, -67, 60,
+		84, 110, 87, -27, -46,
+		114, 77, -27, -46, 75,
+		-78, 83, -110, 92, -9,
+		107, -64, 31, 77, -39,
+		115, 126, -7, 121, -2,
+		66, 116, -45, 91, 1,
+		-96, -27, 17, 76, -82,
+		58, -7, 75, -35, 49,
+		3, -52, 40
+	};
+	
+	const Sint8 sine_table[VIB_TAB_SIZE] =
+	{
+		0, 6, 12, 18, 24, 31, 37, 43, 48, 54, 60, 65, 71, 76, 81, 85, 90, 94, 98, 102, 106, 109, 112,		115, 118, 120, 122, 124, 125, 126, 127, 127, 127, 127, 127, 126, 125, 124, 122, 120, 118, 115, 112,		109, 106, 102, 98, 94, 90, 85, 81, 76, 71, 65, 60, 54, 48, 43, 37, 31, 24, 18, 12, 6,		0, -6, -12, -18, -24, -31, -37, -43, -48, -54, -60, -65, -71, -76, -81, -85, -90, -94, -98, -102,		-106, -109, -112, -115, -118, -120, -122, -124, -125, -126, -127, -127, -128, -127, -127, -126, -125, -124, -122,		-120, -118, -115, -112, -109, -106, -102, -98, -94, -90, -85, -81, -76, -71, -65, -60, -54, -48, -43, -37, -31, -24, -18, -12, -6
+	};
+	
 	switch (shape)
 	{
 		case MUS_SHAPE_SINE:
-			return vibrato_table[position & (VIB_TAB_SIZE - 1)];
+			return sine_table[position & (VIB_TAB_SIZE - 1)];
 			break;
 			
 		case MUS_SHAPE_SQUARE:
-			return ((position & (VIB_TAB_SIZE - 1)) & (VIB_TAB_SIZE / 2)) ? -128 : 127;
+			return ((position % VIB_TAB_SIZE) & (VIB_TAB_SIZE / 2)) ? -128 : 127;
 			break;
 			
 		case MUS_SHAPE_RAMP_UP:
-			return (position & (VIB_TAB_SIZE - 1)) * 2 - 128;
+			return (position % VIB_TAB_SIZE) * 2 - 128;
 			break;
 			
 		case MUS_SHAPE_RAMP_DN:
-			return 127 - (position & (VIB_TAB_SIZE - 1)) * 2;
+			return 127 - (position % VIB_TAB_SIZE) * 2;
 			break;
 			
 		default:
 		case MUS_SHAPE_RANDOM:
-			return 0; // TODO
+			return rnd_table[(position / 8) % VIB_TAB_SIZE];
 			break;
 	}
 }
