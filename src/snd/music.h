@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define MUS_PROG_LEN 32
 #define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
 
-#define MUS_VERSION 10
+#define MUS_VERSION 11
 
 #define MUS_TITLE_LEN 16
 
@@ -54,7 +54,7 @@ typedef struct
 	Uint8 flttype;
 	Uint8 ym_env_shape;
 	Sint16 buzz_offset;
-	Uint8 fx_bus;
+	Uint8 fx_bus, vib_shape, vib_delay, pwm_shape;
 	char name[16];
 } MusInstrument;
 
@@ -140,6 +140,7 @@ typedef struct
 	Uint16 filter_cutoff;
 	Uint8 extarp1, extarp2;
 	Uint8 volume;
+	Uint8 vib_delay;
 } MusTrackStatus;
 
 typedef struct
@@ -246,6 +247,16 @@ enum
 	MUS_ENABLE_CRUSH = 2,
 	MUS_ENABLE_MULTIPLEX = 4,
 	MUS_NO_REPEAT = 8
+};
+
+enum
+{
+	MUS_SHAPE_SINE,
+	MUS_SHAPE_RAMP_UP,
+	MUS_SHAPE_RAMP_DN,
+	MUS_SHAPE_RANDOM,
+	MUS_SHAPE_SQUARE,
+	MUS_NUM_SHAPES
 };
 
 #define MUS_INST_SIG "cyd!inst"

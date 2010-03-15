@@ -26,8 +26,9 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#define VIB_TAB_SIZE 128
 
-const Sint8 vibrato_table[] =
+const Sint8 vibrato_table[VIB_TAB_SIZE] =
 {
       0,
       6,
@@ -259,8 +260,6 @@ const Uint16 frequency_table[] =
   (Uint16)(3951.07 * 16)
 };
 
-#define VIB_TAB_SIZE (sizeof(vibrato_table) / sizeof(vibrato_table[0]))
 #define FREQ_TAB_SIZE (sizeof(frequency_table) / sizeof(frequency_table[0]))
-
 
 #endif
