@@ -622,7 +622,7 @@ static Sint8 mus_shape(Uint16 position, Uint8 shape)
 	switch (shape)
 	{
 		case MUS_SHAPE_SINE:
-			return sine_table[position & (VIB_TAB_SIZE - 1)];
+			return sine_table[position % VIB_TAB_SIZE];
 			break;
 			
 		case MUS_SHAPE_SQUARE:
