@@ -114,12 +114,6 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 	{
 		case MUS_FX_PORTA_UP:
 		{
-			if (chn->fixed_note != 0xffff)
-			{
-				chn->note = chn->fixed_note;
-				chn->fixed_note = 0xffff;
-			}
-		
 			Uint16 prev = chn->note;
 			chn->note += ((inst & 0xff) << 2);
 			if (prev > chn->note) chn->note = 0xffff;
@@ -130,12 +124,6 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 		
 		case MUS_FX_PORTA_DN:
 		{
-			if (chn->fixed_note != 0xffff)
-			{
-				chn->note = chn->fixed_note;
-				chn->fixed_note = 0xffff;
-			}
-		
 			Uint16 prev = chn->note;
 			chn->note -= ((inst & 0xff) << 2);
 			
@@ -307,12 +295,6 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					
 					case MUS_FX_EXT_PORTA_UP:
 					{
-						if (chn->fixed_note != 0xffff)
-						{
-							chn->note = chn->fixed_note;
-							chn->fixed_note = 0xffff;
-						}
-								
 						Uint16 prev = chn->note;
 						chn->note += ((inst & 0x0f));
 						
@@ -324,12 +306,6 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					
 					case MUS_FX_EXT_PORTA_DN:
 					{
-						if (chn->fixed_note != 0xffff)
-						{
-							chn->note = chn->fixed_note;
-							chn->fixed_note = 0xffff;
-						}
-						
 						Uint16 prev = chn->note;
 						chn->note -= ((inst & 0x0f));
 						
@@ -455,7 +431,12 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 				
 				case MUS_FX_ARPEGGIO:
 				{
-					chn->fixed_note = 0xffff;
+					if (chn->fixed_note != 0xffff)
+					{
+						chn->note = chn->last_note;
+						chn->fixed_note = 0xffff;
+					}
+					
 					if ((inst & 0xff) == 0xf0)
 						chn->arpeggio_note = mus->song_track[chan].extarp1;
 					else if ((inst & 0xff) == 0xf1)
