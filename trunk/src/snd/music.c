@@ -1176,7 +1176,14 @@ int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst)
 	_VER_READ(&inst->pwm_depth, 0); 
 	_VER_READ(&inst->slide_speed, 0);
 	_VER_READ(&inst->base_note, 0);
-	_VER_READ(inst->name, sizeof(inst->name));
+	Uint8 len = 16;
+	VER_READ(version, 11, 0xff, &len, 0);
+	if (len)
+	{
+		memset(inst->name, 0, sizeof(inst->name));
+		_VER_READ(inst->name, my_min(len, sizeof(inst->name)));
+		inst->name[sizeof(inst->name) - 1] = '\0';
+	}
 	VER_READ(version, 1, 0xff, &inst->cutoff, 0);
 	VER_READ(version, 1, 0xff, &inst->resonance, 0);
 	VER_READ(version, 1, 0xff, &inst->flttype, 0);
@@ -1316,7 +1323,19 @@ int mus_load_song_file(FILE *f, MusSong *song)
 		for (int i = 0 ; i < (int)song->num_channels ; ++i)
 			FIX_ENDIAN(song->num_sequences[i]);
 		
-		if (version >= 5) fread(song->title, 1, MUS_TITLE_LEN + 1, f);
+		Uint8 title_len = MUS_TITLE_LEN + 1;
+		
+		if (version >= 11)
+		{
+			fread(&title_len, 1, 1, f);
+		}
+		
+		if (version >= 5) 
+		{
+			memset(song->title, 0, sizeof(song->title));
+			fread(song->title, 1, my_min(sizeof(song->title), title_len), f);
+			song->title[sizeof(song->title) - 1] = '\0';
+		}
 		
 		Uint8 n_fx = 0;
 		
