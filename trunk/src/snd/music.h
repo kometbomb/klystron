@@ -35,7 +35,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define MUS_VERSION 11
 
-#define MUS_TITLE_LEN 16
+#define MUS_SONG_TITLE_LEN 64
+#define MUS_INSTRUMENT_NAME_LEN 32
 
 typedef struct
 {
@@ -55,7 +56,7 @@ typedef struct
 	Uint8 ym_env_shape;
 	Sint16 buzz_offset;
 	Uint8 fx_bus, vib_shape, vib_delay, pwm_shape;
-	char name[16];
+	char name[MUS_INSTRUMENT_NAME_LEN + 1];
 } MusInstrument;
 
 enum
@@ -117,7 +118,7 @@ typedef struct
 	Uint32 flags;
 	Uint8 num_channels;
 	Uint8 multiplex_period;
-	char title[MUS_TITLE_LEN + 1];
+	char title[MUS_SONG_TITLE_LEN + 1];
 	CydFxSerialized fx[CYD_MAX_FX_CHANNELS];
 } MusSong;
 
