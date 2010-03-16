@@ -1323,7 +1323,7 @@ int mus_load_song_file(FILE *f, MusSong *song)
 		for (int i = 0 ; i < (int)song->num_channels ; ++i)
 			FIX_ENDIAN(song->num_sequences[i]);
 		
-		Uint8 title_len = MUS_TITLE_LEN + 1;
+		Uint8 title_len = 16 + 1; // old length
 		
 		if (version >= 11)
 		{
