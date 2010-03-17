@@ -144,7 +144,7 @@ void file_list_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_E
 	{
 		if (data.selected_file == i && data.focus == FOCUS_LIST)
 		{
-			bevel(dest_surface,&pos, data.gfx, BEV_SELECTED_PATTERN_ROW);
+			bevel(dest_surface,&pos, data.gfx, BEV_SELECTED_ROW);
 		}
 	
 		if (data.files[i].type == FB_FILE)
