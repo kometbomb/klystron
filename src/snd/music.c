@@ -848,8 +848,6 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 	int vibdep = my_max(0, (int)ins->vibrato_depth - (int)mus->song_track[chan].vib_delay);
 	int vibspd = ins->vibrato_speed;
 	
-	if (mus->song_track[chan].vib_delay) --mus->song_track[chan].vib_delay;
-	
 	if (mus->song_track[chan].pattern)
 	{
 		ctrl = mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].ctrl;
@@ -884,6 +882,7 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 	{
 		mus->song_track[chan].vibrato_position += vibspd;
 		vib = mus_shape(mus->song_track[chan].vibrato_position >> 1, ins->vib_shape) * vibdep / 64;
+		if (mus->song_track[chan].vib_delay) --mus->song_track[chan].vib_delay;
 	}
 	
 	
