@@ -76,7 +76,7 @@ static void mus_set_buzz_frequency(MusEngine *mus, int chan, Uint16 note)
 }
 
 
-static void mus_set_note(MusEngine *mus, int chan, Uint16 note, int update_note)
+static void mus_set_note(MusEngine *mus, int chan, Uint16 note, int update_note, int divider)
 {
 	MusChannel *chn = &mus->channel[chan];
 	
@@ -84,7 +84,7 @@ static void mus_set_note(MusEngine *mus, int chan, Uint16 note, int update_note)
 	
 	Uint16 frequency = get_freq(note);
 		
-	cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], frequency);
+	cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], frequency / divider);
 	
 	mus_set_buzz_frequency(mus, chan, note);
 }
@@ -698,7 +698,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 		note += (Uint16)((int)ins->base_note-MIDDLE_C);
 	}
 	
-	mus_set_note(mus, chan, (Uint16)note << 8, 1);
+	mus_set_note(mus, chan, (Uint16)note << 8, 1, ins->flags & MUS_INST_QUARTER_FREQ ? 4 : 1);
 	chn->last_note = chn->target_note = (Uint16)note << 8;
 	chn->current_tick = 0;
 	
@@ -893,7 +893,7 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 	if (note < 0) note = 0;
 	if (note > FREQ_TAB_SIZE << 8) note = (FREQ_TAB_SIZE - 1) << 8;
 	
-	mus_set_note(mus, chan, note, 0);
+	mus_set_note(mus, chan, note, 0, ins->flags & MUS_INST_QUARTER_FREQ ? 4 : 1);
 }
 
 
@@ -980,7 +980,7 @@ int mus_advance_tick(void* udata)
 							}
 							else if (ctrl & MUS_CTRL_LEGATO)
 							{
-								mus_set_note(mus, i, ((Uint16)note + pinst->base_note - MIDDLE_C) << 8, 1);
+								mus_set_note(mus, i, ((Uint16)note + pinst->base_note - MIDDLE_C) << 8, 1, pinst->flags & MUS_INST_QUARTER_FREQ ? 4 : 1);
 								mus->channel[i].target_note = ((Uint16)note + pinst->base_note - MIDDLE_C) << 8;
 							}
 							else 
