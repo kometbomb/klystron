@@ -177,7 +177,7 @@ void field_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event
 	
 	if (data.focus == FOCUS_FIELD)
 	{
-		int i = 0;
+		int i = my_max(0, data.editpos - content.w / data.largefont->w);
 		size_t length = strlen(data.field);
 		for ( ; data.field[i] && i < length ; ++i)
 		{
@@ -191,7 +191,11 @@ void field_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event
 			font_write(data.largefont, dest_surface, &pos, "§");
 	}
 	else
-		font_write(data.largefont, dest_surface, &content, data.field);
+	{
+		char temp[100] = "";
+		strncat(temp, data.field, my_min(sizeof(temp) - 1, content.w / data.largefont->w));
+		font_write(data.largefont, dest_surface, &content, temp);
+	}
 	
 	if (check_event(event, area, NULL, 0, 0, 0)) data.focus = FOCUS_FIELD;
 }
@@ -314,7 +318,7 @@ static int populate_files(GfxDomain *domain, SDL_Surface *gfx, const Font *font,
 					data.files[data.n_files].display_name = strdup(de->d_name);
 					if (strlen(data.files[data.n_files].display_name) > LIST_WIDTH / data.largefont->w - 4)
 					{
-						data.files[data.n_files].display_name[LIST_WIDTH / data.largefont->w - 4] = '\0';
+						strcpy(&data.files[data.n_files].display_name[LIST_WIDTH / data.largefont->w - 4], "...");
 					}
 					
 					++data.n_files;
