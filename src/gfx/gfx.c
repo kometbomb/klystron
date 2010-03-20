@@ -438,7 +438,8 @@ static void scale2x(SDL_Surface *src, SDL_Surface *dst)
 				*E1 = B == F ? F : E;
 				*E2 = D == H ? D : E;
 				*E3 = H == F ? F : E;
-			} else 
+			} 
+			else 
 			{
 				*E0 = E;
 				*E1 = E;
