@@ -27,15 +27,18 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "bevel.h"
 #include "view.h"
 
+#define BORDER 4
+#define SIZE_MINUS_BORDER (BEV_SIZE - BORDER)
+
 void bevel(SDL_Surface *screen, const SDL_Rect *area, SDL_Surface *gfx, int offset)
 {
 	/* Center */
 	{
-		for (int y = 4 ; y < area->h - 4 ; y += 8)
+		for (int y = BORDER ; y < area->h - BORDER ; y += BEV_SIZE / 2)
 		{
-			for (int x = 4 ; x < area->w - 4 ; x += 8)
+			for (int x = BORDER ; x < area->w - BORDER ; x += BEV_SIZE / 2)
 			{
-				SDL_Rect src = { 4 + offset * BEV_SIZE, 4, my_min(8, area->w - x - 4), my_min(8, area->h - y - 4) };
+				SDL_Rect src = { BORDER + offset * BEV_SIZE, BORDER, my_min(BEV_SIZE / 2, area->w - x - BORDER), my_min(BEV_SIZE / 2, area->h - y - BORDER) };
 				SDL_Rect dest = { x + area->x, y + area->y };
 				SDL_BlitSurface(gfx, &src, screen, &dest);
 			}
@@ -44,32 +47,32 @@ void bevel(SDL_Surface *screen, const SDL_Rect *area, SDL_Surface *gfx, int offs
 	
 	/* Sides */
 	{
-		for (int y = 4 ; y < area->h - 4 ; y += 8)
+		for (int y = BORDER ; y < area->h - BORDER ; y += BEV_SIZE / 2)
 		{	
 			{
-				SDL_Rect src = { offset * BEV_SIZE, 4, 4, my_min(8, area->h - 4 - y) };
+				SDL_Rect src = { offset * BEV_SIZE, BORDER, BORDER, my_min(BEV_SIZE / 2, area->h - BORDER - y) };
 				SDL_Rect dest = { area->x, y + area->y };
 				SDL_BlitSurface(gfx, &src, screen, &dest);
 			}
 			
 			{
-				SDL_Rect src = { 12 + offset * BEV_SIZE, 4, 4, my_min(8, area->h - 4 - y) };
-				SDL_Rect dest = { area->x + area->w - 4, y + area->y };
+				SDL_Rect src = { SIZE_MINUS_BORDER + offset * BEV_SIZE, BORDER, BORDER, my_min(BEV_SIZE / 2, area->h - BORDER - y) };
+				SDL_Rect dest = { area->x + area->w - BORDER, y + area->y };
 				SDL_BlitSurface(gfx, &src, screen, &dest);
 			}
 		}
 		
-		for (int x = 4 ; x < area->w - 4 ; x += 8)
+		for (int x = BORDER ; x < area->w - BORDER ; x += BEV_SIZE / 2)
 		{	
 			{
-				SDL_Rect src = { 4 + offset * BEV_SIZE, 0, my_min(8, area->w - 4 - x), 4 };
+				SDL_Rect src = { BORDER + offset * BEV_SIZE, 0, my_min(BEV_SIZE / 2, area->w - BORDER - x), BORDER };
 				SDL_Rect dest = { area->x + x, area->y };
 				SDL_BlitSurface(gfx, &src, screen, &dest);
 			}
 			
 			{
-				SDL_Rect src = { 4 + offset * BEV_SIZE, 12, my_min(8, area->w - 4 - x), 4 };
-				SDL_Rect dest = { x + area->x, area->y + area->h - 4 };
+				SDL_Rect src = { BORDER + offset * BEV_SIZE, SIZE_MINUS_BORDER, my_min(BEV_SIZE / 2, area->w - BORDER - x), BORDER };
+				SDL_Rect dest = { x + area->x, area->y + area->h - BORDER };
 				SDL_BlitSurface(gfx, &src, screen, &dest);
 			}
 		}
@@ -77,26 +80,26 @@ void bevel(SDL_Surface *screen, const SDL_Rect *area, SDL_Surface *gfx, int offs
 	
 	/* Corners */
 	{
-		SDL_Rect src = { offset * BEV_SIZE, 0, 4, 4 };
+		SDL_Rect src = { offset * BEV_SIZE, 0, BORDER, BORDER };
 		SDL_Rect dest = { area->x, area->y };
 		SDL_BlitSurface(gfx, &src, screen, &dest);
 	}
 	
 	{
-		SDL_Rect src = { 12 + offset * BEV_SIZE, 0, 4, 4 };
-		SDL_Rect dest = { area->x + area->w - 4, area->y};
+		SDL_Rect src = { SIZE_MINUS_BORDER + offset * BEV_SIZE, 0, BORDER, BORDER };
+		SDL_Rect dest = { area->x + area->w - BORDER, area->y};
 		SDL_BlitSurface(gfx, &src, screen, &dest);
 	}
 	
 	{
-		SDL_Rect src = { 12 + offset * BEV_SIZE, 12, 4, 4 };
-		SDL_Rect dest = { area->x + area->w - 4, area->y + area->h - 4};
+		SDL_Rect src = { SIZE_MINUS_BORDER + offset * BEV_SIZE, SIZE_MINUS_BORDER, BORDER, BORDER };
+		SDL_Rect dest = { area->x + area->w - BORDER, area->y + area->h - BORDER};
 		SDL_BlitSurface(gfx, &src, screen, &dest);
 	}
 	
 	{
-		SDL_Rect src = { offset * BEV_SIZE, 12, 4, 4 };
-		SDL_Rect dest = { area->x, area->y + area->h - 4};
+		SDL_Rect src = { offset * BEV_SIZE, SIZE_MINUS_BORDER, BORDER, BORDER };
+		SDL_Rect dest = { area->x, area->y + area->h - BORDER};
 		SDL_BlitSurface(gfx, &src, screen, &dest);
 	}
 }
@@ -108,8 +111,8 @@ void button(SDL_Surface *screen, const SDL_Rect *area, SDL_Surface *gfx, int off
 	
 	if (decal >= 0)
 	{
-		SDL_Rect src = { decal * BEV_SIZE, 16, 16, 16 };
-		SDL_Rect dest = { area->x + area->w / 2 - 16 / 2, area->y + area->h / 2 - 16 / 2};
+		SDL_Rect src = { decal * BEV_SIZE, BEV_SIZE, BEV_SIZE, BEV_SIZE };
+		SDL_Rect dest = { area->x + area->w / 2 - BEV_SIZE / 2, area->y + area->h / 2 - BEV_SIZE / 2};
 		SDL_BlitSurface(gfx, &src, screen, &dest);
 	}
 }
