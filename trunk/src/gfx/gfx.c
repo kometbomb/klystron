@@ -432,10 +432,20 @@ static void scale2x(SDL_Surface *src, SDL_Surface *dst)
 			F = *(Uint32*)(srcpix + (looph*srcpitch) + (4*my_min(width-1,loopw+1)));
 			H = *(Uint32*)(srcpix + (my_min(height-1,looph+1)*srcpitch) + (4*loopw));
 			
-			*E0 = D == B && B != F && D != H ? D : E;
-			*E1 = B == F && B != D && F != H ? F : E;
-			*E2 = D == H && D != B && H != F ? D : E;
-			*E3 = H == F && D != H && B != F ? F : E;
+			if (B != H && D != F) 
+			{
+				*E0 = D == B ? D : E;
+				*E1 = B == F ? F : E;
+				*E2 = D == H ? D : E;
+				*E3 = H == F ? F : E;
+			} else 
+			{
+				*E0 = E;
+				*E1 = E;
+				*E2 = E;
+				*E3 = E;
+			}
+
 
 			E0 += 2;
 			E1 += 2;
