@@ -69,6 +69,7 @@ static void delegate(void *p1, void *p2, void *p3)
 int button_event(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, int offset, int offset_pressed, int decal, void (*action)(void*,void*,void*), void *param1, void *param2, void *param3)
 {
 	Uint32 mask = CASTPTR(Uint32,param1) ^ CASTPTR(Uint32,param2) ^ CASTPTR(Uint32,action);
+	if (!action && (mask == 0)) mask = ((Uint32)area->x << 16) | (Uint32)area->y;
 	void *p[3] = { param1, param2, param3 };
 	int pressed = check_event(event, area, delegate, action, p, MAKEPTR(mask));
 	pressed |= check_drag_event(event, area, NULL, MAKEPTR(mask)) << 1;
@@ -81,10 +82,11 @@ int button_event(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area
 int button_text_event(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, const Font *font, int offset, int offset_pressed, const char * label, void (*action)(void*,void*,void*), void *param1, void *param2, void *param3)
 {
 	Uint32 mask = CASTPTR(Uint32,param1) ^ CASTPTR(Uint32,param2) ^ CASTPTR(Uint32,action);
+	if (!action && (mask == 0)) mask = ((Uint32)area->x << 16) | (Uint32)area->y;
 	void *p[3] = { param1, param2, param3 };
 	int pressed = check_event(event, area, delegate, action, p, MAKEPTR(mask));
 	pressed |= check_drag_event(event, area, NULL, MAKEPTR(mask)) << 1;
-	button_text(dest, area, gfx, (pressed & 1) ? offset_pressed : offset, font, label);
+	button_text(dest, area, gfx, pressed ? offset_pressed : offset, font, label);
 	
 	return pressed;
 }
