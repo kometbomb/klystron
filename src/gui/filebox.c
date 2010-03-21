@@ -315,7 +315,8 @@ static int populate_files(GfxDomain *domain, SDL_Surface *gfx, const Font *font,
 					}
 					data.files[data.n_files].type = ( attribute.st_mode & S_IFDIR ) ? FB_DIRECTORY : FB_FILE;
 					data.files[data.n_files].name = strdup(de->d_name);
-					data.files[data.n_files].display_name = strdup(de->d_name);
+					data.files[data.n_files].display_name = malloc(strlen(de->d_name) + 4); // TODO: figure out how much this goes past
+					strcpy(data.files[data.n_files].display_name, de->d_name);
 					if (strlen(data.files[data.n_files].display_name) > LIST_WIDTH / data.largefont->w - 4)
 					{
 						strcpy(&data.files[data.n_files].display_name[LIST_WIDTH / data.largefont->w - 4], "...");
