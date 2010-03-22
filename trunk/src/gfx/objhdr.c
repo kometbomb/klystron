@@ -306,10 +306,11 @@ void objhdr_advance_animation(ObjHdr *obj)
 {
 	if (obj->anim == NULL) return;
 	
-	obj->objflags &= ~(OBJ_ANIM_FINISHED|OBJ_ANIM_LOOPED);
+	obj->objflags &= ~(OBJ_ANIM_FINISHED|OBJ_ANIM_LOOPED|OBJ_ANIM_NEXT_FRAME);
 	
 	if (obj->frame_delay <= 0)
 	{
+		obj->objflags |= OBJ_ANIM_NEXT_FRAME;
 		++obj->anim_frame;
 		switch (obj->anim[obj->anim_frame].frame) 
 		{
