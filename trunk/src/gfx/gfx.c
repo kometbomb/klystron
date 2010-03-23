@@ -23,7 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-
+#include <assert.h>
 #include "gfx.h"
 #include <math.h>
 
@@ -302,59 +302,67 @@ static inline int delta(int e, int x, int y)
 
 void gfx_line(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint32 color)
 {
-	if (x0 < 0)
-	{
-		y0 = y0 + (0 - x0) * (y1-y0)/(x1-x0);
-		x0 = 0;
-	}
+	// Liang-Barsky
+	
+	// TODO: remove float math overkill
+	
+	float p, q;
+	float u1 = 0.0, u2 = 1.0;
+	float r;
 
-	if (x0 >= dest->w)
+	float dx = x1 - x0;
+	float dy = y1 - y0;
+
+	float ptab[] = {-dx, dx, -dy, dy};
+	float qtab[] = {x0, dest->w - 1 - x0, y0, dest->h - 1 - y0};
+
+	for (int i = 0; i < 4; ++i)
 	{
-		y0 = y0 + delta((dest->w-1 - x0), (y1-y0),(x1-x0));
-		x0 = dest->w-1;
+		p = ptab[i];
+		q = qtab[i];
+
+		if (p == 0 && q < 0)
+		{
+			return;
+		}
+
+		r = q / p;
+
+		if (p < 0)
+		{
+			u1 =my_max(u1, r);
+		}
+
+		if (p > 0)
+		{
+			u2 = my_min(u2, r);
+		}
+
+		if (u1 > u2)
+		{
+			return;
+		}
 	}
 	
-	if (x1 < 0)
+	if( u2 < 1 )
 	{
-		y1 = y1 + delta((0 - x1), (y1-y0),(x1-x0));
-		x1 = 0;
-	}
-
-	if (x1 >= dest->w)
-	{
-		y1 = y1 + delta((dest->w-1 - x1), (y1-y0),(x1-x0));
-		x1 = dest->w-1;
+		x1 = x0 + u2 * dx;
+		y1 = y0 + u2 * dy;
 	}
 	
-	if (y0 < 0)
+	if( u1 > 0)
 	{
-		x0 = x0 + delta((0 - y0), (x1-x0),(y1-y0));
-		y0 = 0;
+		x0 = x0 + u1 * dx;
+		y0 = y0 + u1 * dy;
 	}
-
-	if (y0 >= dest->h)
-	{
-		x0 = x0 + delta((dest->h-1 - y0), (x1-x0),(y1-y0));
-		y0 = dest->h-1;
-	}
-	
-	if (y1 < 0)
-	{
-		x1 = x1 + delta((0 - y1), (x1-x0),(y1-y0));
-		y1 = 0;
-	}
-
-	if (y1 >= dest->h)
-	{
-		x1 = x1 + delta((dest->h-1 - y1), (x1-x0),(y1-y0));
-		y1 = dest->h-1;
-	}
-	
+		
 	gfx_line_unclipped(dest, x0, y0, x1, y1, color);
 }
 
 void gfx_line_unclipped(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint32 color)
 {
+	assert(x0 >= 0 && x0 <= dest->w && y0 >= 0 && y0 <= dest->h);
+	
 	my_lock(dest);
 	int Dx = x1 - x0; 
 	int Dy = y1 - y0;
@@ -381,7 +389,7 @@ void gfx_line_unclipped(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint3
 	int E = TwoDy - Dx; //2*Dy - Dx
 	int y = y0;
 	int xDraw, yDraw;	
-	for (int x = x0; x != x1; x += xstep) {		
+	for (int x = x0; ; x += xstep) {		
 	   if (steep) {			
 		   xDraw = y;
 		   yDraw = x;
@@ -391,6 +399,9 @@ void gfx_line_unclipped(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint3
 	   }
 	   // plot
 	   plot(dest, xDraw, yDraw, color);
+	   
+	   if (x == x1) break;
+	   
 	   // next
 	   if (E > 0) {
 		   E += TwoDyTwoDx; //E += 2*Dy - 2*Dx;
