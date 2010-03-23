@@ -300,6 +300,7 @@ static inline int delta(int e, int x, int y)
 	return e * x / y;
 }
 
+
 void gfx_line(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint32 color)
 {
 	// Liang-Barsky
@@ -330,7 +331,7 @@ void gfx_line(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint32 color)
 
 		if (p < 0)
 		{
-			u1 =my_max(u1, r);
+			u1 = my_max(u1, r);
 		}
 
 		if (p > 0)
@@ -358,6 +359,7 @@ void gfx_line(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint32 color)
 		
 	gfx_line_unclipped(dest, x0, y0, x1, y1, color);
 }
+
 
 void gfx_line_unclipped(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint32 color)
 {
