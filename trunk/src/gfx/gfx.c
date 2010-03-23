@@ -344,13 +344,13 @@ void gfx_line(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint32 color)
 		}
 	}
 	
-	if( u2 < 1 )
+	if (u2 < 1)
 	{
 		x1 = x0 + u2 * dx;
 		y1 = y0 + u2 * dy;
 	}
 	
-	if( u1 > 0)
+	if (u1 > 0)
 	{
 		x0 = x0 + u1 * dx;
 		y0 = y0 + u1 * dy;
