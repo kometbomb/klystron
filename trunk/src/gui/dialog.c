@@ -153,8 +153,9 @@ int generic_edit_text(SDL_Event *e, char *edit_buffer, size_t edit_buffer_size, 
 		
 			default:
 			{
-				if (*editpos < (edit_buffer_size - 1) && isprint(e->key.keysym.unicode))
+				if (*editpos < (edit_buffer_size - 1) && (e->key.keysym.unicode >= 0x20 && e->key.keysym.unicode < 0xff))
 				{
+					debug("%x", e->key.keysym.unicode);
 					memmove(&edit_buffer[*editpos + 1], &edit_buffer[*editpos], edit_buffer_size - *editpos - 1);
 					edit_buffer[*editpos] = e->key.keysym.unicode;
 					clamp(*editpos, +1, 0,edit_buffer_size-1);
