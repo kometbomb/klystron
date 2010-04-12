@@ -48,6 +48,38 @@ OTHER DEALINGS IN THE SOFTWARE.
 		}\
 	}
 
+int * gfx_build_collision_mask(SDL_Surface *s)
+{
+	int * mask = malloc(sizeof(int) * s->w * s->h);
+	
+	my_lock(s);
+	for (int y = 0 ; y < s->h ; ++y)
+	{
+		Uint8 *pa = (Uint8 *)s->pixels + y * s->pitch;
+		
+		for (int x = 0 ; x < s->w ; ++x)
+		{
+			int p = 0;
+			
+			switch (s->format->BytesPerPixel) 
+			{
+				default:
+				case 1: p = ((*((Uint8*)pa))) != s->format->colorkey; break;
+				case 2: p = ((*((Uint16*)pa))&0xffff) != s->format->colorkey; break;
+				case 3: p = ((*((Uint32*)pa))&0xffffff) != s->format->colorkey; break;
+				case 4: p = ((*((Uint32*)pa))&0xffffff) != s->format->colorkey; break;
+			}
+			
+			mask[x + y * s->w] = p;
+			pa += s->format->BytesPerPixel;
+		}
+	}
+	my_unlock(s);
+	
+	return mask;
+}
+	
+	
 GfxSurface* gfx_load_surface(const char* filename, const int flags)
 {
 	FILE *f = fopen(filename, "rb");
@@ -122,6 +154,8 @@ GfxSurface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
 		gs->surface = loaded;
 	}
 	out:
+	
+	if (flags & GFX_COL_MASK) gs->mask = gfx_build_collision_mask(gs->surface);
 	
 	return gs;
 }

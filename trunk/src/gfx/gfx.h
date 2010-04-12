@@ -36,7 +36,8 @@ enum
 {
 	GFX_KEYED = 1,
 	GFX_ALPHA = 2,
-	GFX_TRANS_HALF = 4
+	GFX_TRANS_HALF = 4,
+	GFX_COL_MASK = 8
 };
 
 typedef enum
@@ -63,6 +64,7 @@ typedef struct
 
 GfxSurface* gfx_load_surface(const char* filename, const int flags);
 GfxSurface* gfx_load_surface_RW(SDL_RWops *rw, const int flags);
+int * gfx_build_collision_mask(SDL_Surface *s);
 void gfx_free_surface(GfxSurface *surface);
 void gfx_blit_2x(SDL_Surface *dest, SDL_Surface *src);
 void gfx_blit_2x_resample(SDL_Surface *dest, SDL_Surface *src);
