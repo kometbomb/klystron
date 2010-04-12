@@ -148,11 +148,11 @@ static int objhdr_check_collision_internal(const ObjHdr *a, const ObjHdr *b, int
 		w = my_min(a_right - a_left - a_xofs+1, b_right - b_left - b_xofs+1);
 		
 	if (a->objflags & OBJ_COL_PIXEL && b->objflags & OBJ_COL_PIXEL)
-		return surf_alpha_both(a->surface, b->surface, a_xofs + a->current_frame*a->w, a_yofs + a->_yofs, b_xofs + b->current_frame*b->w, b_yofs + b->_yofs, w, h);
+		return surf_alpha_both(a->surface->surface, b->surface->surface, a_xofs + a->current_frame*a->w, a_yofs + a->_yofs, b_xofs + b->current_frame*b->w, b_yofs + b->_yofs, w, h);
 	else if (a->objflags & OBJ_COL_PIXEL && !(b->objflags & OBJ_COL_PIXEL))
-		return surf_alpha_a(a->surface, a_xofs + a->current_frame*a->w, a_yofs + a->_yofs, w, h);
+		return surf_alpha_a(a->surface->surface, a_xofs + a->current_frame*a->w, a_yofs + a->_yofs, w, h);
 	else if (b->objflags & OBJ_COL_PIXEL && !(a->objflags & OBJ_COL_PIXEL))
-		return surf_alpha_a(b->surface, b_xofs + b->current_frame*b->w, b_yofs + b->_yofs , w, h);
+		return surf_alpha_a(b->surface->surface, b_xofs + b->current_frame*b->w, b_yofs + b->_yofs , w, h);
 	else return 1;
 }
 
@@ -249,7 +249,7 @@ void objhdr_draw(SDL_Surface *destination, const ObjHdr *object, int xofs, int y
 			if (object->surface != NULL)
 			{
 				SDL_Rect src = { object->current_frame * object->w, object->_yofs, object->w, object->h };
-				SDL_BlitSurface(object->surface , &src, destination, &dest);
+				SDL_BlitSurface(object->surface->surface , &src, destination, &dest);
 			}
 		}
 		

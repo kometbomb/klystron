@@ -36,13 +36,13 @@ typedef struct
 {
 	char *charmap;
 	TileDescriptor *tiledescriptor;
-	SDL_Surface * surface;
+	GfxSurface * surface;
 	int w, h;
 } Font;
 
 int font_load(Font *font, Bundle *b, char *name);
 int font_load_file(Font *font, char *filename);
-void font_create(Font *font, SDL_Surface *tiles, const int w, const int h, char *charmap);
+void font_create(Font *font, GfxSurface *tiles, const int w, const int h, char *charmap);
 void font_destroy(Font *font);
 void font_write_cursor(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text);
 void font_write_va(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text, va_list va);

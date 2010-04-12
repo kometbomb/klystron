@@ -1,5 +1,5 @@
-#ifndef TILEDESCRIPTOR_H
-#define TILEDESCRIPTOR_H
+#ifndef GFXSURF_H
+#define GFXSURF_H
 
 /*
 Copyright (c) 2009-2010 Tero Lindeman (kometbomb)
@@ -26,15 +26,13 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-
-#include "bgcell.h"
-#include "gfxsurf.h"
+#include "SDL.h"
 
 typedef struct
 {
-	int flags;
-	GfxSurface *surface;
-	SDL_Rect rect;
-} TileDescriptor;
+	SDL_Surface *surface; // this can now be a hw surface
+	int *mask; // collision mask (needs to be sw)
+} GfxSurface;
 
 #endif
+

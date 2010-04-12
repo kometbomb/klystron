@@ -30,6 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "SDL.h"
 #include "SDL_rwops.h"
 #include "tiledescriptor.h"
+#include "gfxsurf.h"
 
 enum
 {
@@ -60,8 +61,9 @@ typedef struct
 	int flags;
 } GfxDomain;
 
-SDL_Surface* gfx_load_surface(const char* filename, const int flags);
-SDL_Surface* gfx_load_surface_RW(SDL_RWops *rw, const int flags);
+GfxSurface* gfx_load_surface(const char* filename, const int flags);
+GfxSurface* gfx_load_surface_RW(SDL_RWops *rw, const int flags);
+void gfx_free_surface(GfxSurface *surface);
 void gfx_blit_2x(SDL_Surface *dest, SDL_Surface *src);
 void gfx_blit_2x_resample(SDL_Surface *dest, SDL_Surface *src);
 void gfx_blit_3x(SDL_Surface *dest, SDL_Surface *src);
@@ -69,7 +71,7 @@ void gfx_blit_3x_resample(SDL_Surface *dest, SDL_Surface *src);
 void gfx_blit_4x(SDL_Surface *dest, SDL_Surface *src);
 void gfx_raster(SDL_Surface *dest, const SDL_Rect *rect, const Uint32 *colors, int len);
 void gfx_generate_raster(Uint32 *dest, const Uint32 from, const Uint32 to, int len);
-TileDescriptor *gfx_build_tiledescriptor(SDL_Surface *tiles, const int cellwidth, const int cellheight) ;
+TileDescriptor *gfx_build_tiledescriptor(GfxSurface *tiles, const int cellwidth, const int cellheight) ;
 void gfx_line_unclipped(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint32 color);
 void gfx_line(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint32 color);
 void gfx_circle_inverted(SDL_Surface *dest, const int xc, const int yc, const int r, const Uint32 color);
