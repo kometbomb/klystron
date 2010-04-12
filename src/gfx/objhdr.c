@@ -28,59 +28,44 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <assert.h>
 
 
-static inline int surf_alpha_both(SDL_Surface *a, SDL_Surface *b, int ax, int ay, int bx, int by, int w, int h)
+static inline int surf_alpha_both(const int *a, const int *b, int ax, int ay, int bx, int by, int w, int h, int stride_a, int stride_b)
 {
-	my_lock(a);
-	my_lock(b);
-	
-#ifdef DEBUG
-	assert(a->format->BytesPerPixel == 4 && a->format->BytesPerPixel == 4);
-#endif
-	
 	for (int y = 0 ; y < h ; ++y)
 	{
-		Uint8 *pa = (Uint8 *)a->pixels + (ay+y) * a->pitch + ax * a->format->BytesPerPixel;
-		Uint8 *pb = (Uint8 *)b->pixels + (by+y) * b->pitch + bx * b->format->BytesPerPixel;
+		const int *pa = a + (ay + y) * stride_a + ax;
+		const int *pb = b + (by + y) * stride_b + bx;
 		
 		for (int x = 0 ; x < w ; ++x)
 		{
-			if ((*((Uint32*)pa)&0xffffff) != a->format->colorkey
-				&& (*((Uint32*)pb)&0xffffff) != b->format->colorkey)
+			if (*pa && *pb)
 			{
-				my_unlock(a);
-				my_unlock(b);
 				return 1;
 			}
-			pa+=a->format->BytesPerPixel;
-			pb+=b->format->BytesPerPixel;
+			++pa;
+			++pb;
 		}
 	}
-	
-	my_unlock(a);
-	my_unlock(b);
 	
 	return 0;
 }
 
 
-static inline int surf_alpha_a(SDL_Surface *a, int ax, int ay, int w, int h)
+static inline int surf_alpha_a(const int *a, int ax, int ay, int w, int h, int stride)
 {
-	my_lock(a);
 	for (int y = ay ; y < h+ay ; ++y)
 	{
-		Uint8 *pa = (Uint8 *)a->pixels + y * a->pitch + ax * a->format->BytesPerPixel;
+		const int *pa = a + y * stride + ax;
 		
 		for (int x = 0 ; x < w ; ++x)
 		{
-			if (((*((Uint32*)pa))&0xffffff) != a->format->colorkey)
+			if (*pa)
 			{
-				my_unlock(a);
 				return 1;
 			}
-			pa+=a->format->BytesPerPixel;
+			++pa;
 		}
 	}
-	my_unlock(a);
+	
 	return 0;
 }
 
@@ -148,11 +133,11 @@ static int objhdr_check_collision_internal(const ObjHdr *a, const ObjHdr *b, int
 		w = my_min(a_right - a_left - a_xofs+1, b_right - b_left - b_xofs+1);
 		
 	if (a->objflags & OBJ_COL_PIXEL && b->objflags & OBJ_COL_PIXEL)
-		return surf_alpha_both(a->surface->surface, b->surface->surface, a_xofs + a->current_frame*a->w, a_yofs + a->_yofs, b_xofs + b->current_frame*b->w, b_yofs + b->_yofs, w, h);
+		return surf_alpha_both(a->surface->mask, b->surface->mask, a_xofs + a->current_frame*a->w, a_yofs + a->_yofs, b_xofs + b->current_frame*b->w, b_yofs + b->_yofs, w, h, a->surface->surface->w, b->surface->surface->w);
 	else if (a->objflags & OBJ_COL_PIXEL && !(b->objflags & OBJ_COL_PIXEL))
-		return surf_alpha_a(a->surface->surface, a_xofs + a->current_frame*a->w, a_yofs + a->_yofs, w, h);
+		return surf_alpha_a(a->surface->mask, a_xofs + a->current_frame*a->w, a_yofs + a->_yofs, w, h, a->surface->surface->w);
 	else if (b->objflags & OBJ_COL_PIXEL && !(a->objflags & OBJ_COL_PIXEL))
-		return surf_alpha_a(b->surface->surface, b_xofs + b->current_frame*b->w, b_yofs + b->_yofs , w, h);
+		return surf_alpha_a(b->surface->mask, b_xofs + b->current_frame*b->w, b_yofs + b->_yofs , w, h, b->surface->surface->w);
 	else return 1;
 }
 
