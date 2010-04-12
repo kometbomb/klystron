@@ -151,7 +151,18 @@ GfxSurface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
 	}
 	else
 	{
-		gs->surface = loaded;
+		SDL_Surface* optimal = SDL_DisplayFormatAlpha(loaded);
+		
+		if (!optimal)
+		{
+			warning("Conversion failed %dx%d", loaded->w, loaded->h);
+			gs->surface = loaded;
+			goto out;
+		}
+		
+		SDL_FreeSurface(loaded);
+	
+		gs->surface = optimal;
 	}
 	out:
 	
