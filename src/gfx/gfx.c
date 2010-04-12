@@ -48,13 +48,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 		}\
 	}
 
-SDL_Surface* gfx_load_surface(const char* filename, const int flags)
+GfxSurface* gfx_load_surface(const char* filename, const int flags)
 {
 	FILE *f = fopen(filename, "rb");
 	if (f)
 	{
 		SDL_RWops * rw = SDL_RWFromFP(f, 1);
-		SDL_Surface * s = gfx_load_surface_RW(rw, flags);
+		GfxSurface * s = gfx_load_surface_RW(rw, flags);
 		return s;
 	}
 	else
@@ -65,7 +65,7 @@ SDL_Surface* gfx_load_surface(const char* filename, const int flags)
 }
 
 
-SDL_Surface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
+GfxSurface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
 {
 	SDL_Surface* loaded = SDL_LoadBMP_RW(rw, 1);
 	
@@ -74,6 +74,8 @@ SDL_Surface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
 		warning("Loading surface failed");
 		return NULL;
 	}
+	
+	GfxSurface *gs = calloc(1, sizeof(GfxSurface));
 	
 	if (flags & GFX_KEYED)
 	{
@@ -85,7 +87,8 @@ SDL_Surface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
 		if (!optimal)
 		{
 			warning("Conversion failed %dx%d", loaded->w, loaded->h);
-			return loaded;
+			gs->surface = loaded;
+			goto out;
 		}
 		
 		if (optimal && (flags & GFX_TRANS_HALF))
@@ -95,7 +98,7 @@ SDL_Surface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
 		
 		SDL_FreeSurface(loaded);
 		
-		return optimal;
+		gs->surface = optimal;
 	}
 	else if (flags & GFX_ALPHA)
 	{
@@ -106,17 +109,21 @@ SDL_Surface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
 		if (!optimal)
 		{
 			warning("Conversion failed %dx%d", loaded->w, loaded->h);
-			return loaded;
+			gs->surface = loaded;
+			goto out;
 		}
 		
 		SDL_FreeSurface(loaded);
-		return optimal;
+		
+		gs->surface = optimal;
 	}
 	else
 	{
-		return loaded;
+		gs->surface = loaded;
 	}
+	out:
 	
+	return gs;
 }
 
 
@@ -228,44 +235,44 @@ void gfx_generate_raster(Uint32 *dest, const Uint32 from, const Uint32 to, int l
 
 static int has_pixels(TileDescriptor *desc)
 {
-	my_lock(desc->surface);
+	my_lock(desc->surface->surface);
 	
 	int result = 0;
 	
 	for (int y = 0 ; y < desc->rect.h ; ++y)
 	{
-		Uint8 *p = (Uint8 *)desc->surface->pixels + ((int)desc->rect.y + y) * desc->surface->pitch + (int)desc->rect.x * desc->surface->format->BytesPerPixel;
+		Uint8 *p = (Uint8 *)desc->surface->surface->pixels + ((int)desc->rect.y + y) * desc->surface->surface->pitch + (int)desc->rect.x * desc->surface->surface->format->BytesPerPixel;
 		
 		for (int x = 0 ; x < desc->rect.w ; ++x)
 		{
 			//printf("%08x", *(Uint32*)p);
-			if ((*((Uint32*)p)&0xffffff) != desc->surface->format->colorkey)
+			if ((*((Uint32*)p)&0xffffff) != desc->surface->surface->format->colorkey)
 			{
 				++result;
 			}
 			
-			p+=desc->surface->format->BytesPerPixel;
+			p+=desc->surface->surface->format->BytesPerPixel;
 		}
 	}
 	
-	my_unlock(desc->surface);
+	my_unlock(desc->surface->surface);
 	
 	return result;
 }
 
 
-TileDescriptor *gfx_build_tiledescriptor(SDL_Surface *tiles, const int cellwidth, const int cellheight) 
+TileDescriptor *gfx_build_tiledescriptor(GfxSurface *tiles, const int cellwidth, const int cellheight) 
 {
-	TileDescriptor *descriptor = calloc(sizeof(*descriptor), (tiles->w/cellwidth)*(tiles->h/cellheight));
-	for (int i = 0 ; i < (tiles->w/cellwidth)*(tiles->h/cellheight) ; ++i) 
+	TileDescriptor *descriptor = calloc(sizeof(*descriptor), (tiles->surface->w/cellwidth)*(tiles->surface->h/cellheight));
+	for (int i = 0 ; i < (tiles->surface->w/cellwidth)*(tiles->surface->h/cellheight) ; ++i) 
 	{
 		descriptor[i].rect.x = i*cellwidth;
 		descriptor[i].rect.y = 0; 
 		
-		while (descriptor[i].rect.x >= tiles->w)
+		while (descriptor[i].rect.x >= tiles->surface->w)
 		{
 			descriptor[i].rect.y += cellheight;
-			descriptor[i].rect.x -= tiles->w;
+			descriptor[i].rect.x -= tiles->surface->w;
 		}
 		
 		descriptor[i].rect.w = cellwidth;
@@ -759,4 +766,12 @@ int gfx_domain_is_next_frame(GfxDomain *domain)
 	domain->last_ticks += frames * domain->frame_time;
 	
 	return frames;
+}
+
+
+void gfx_free_surface(GfxSurface *surface)
+{
+	if (surface->surface) SDL_FreeSurface(surface->surface);
+	if (surface->mask) free(surface->mask);
+	free(surface);
 }

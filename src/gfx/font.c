@@ -28,7 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "gfx.h"
 #include <string.h>
 
-void font_create(Font *font, SDL_Surface *tiles, const int w, const int h, char *charmap)
+void font_create(Font *font, GfxSurface *tiles, const int w, const int h, char *charmap)
 {
 	font->tiledescriptor = gfx_build_tiledescriptor(tiles,w,h);
 	font->charmap = strdup(charmap);
@@ -41,7 +41,7 @@ void font_destroy(Font *font)
 {
 	if (font->tiledescriptor) free(font->tiledescriptor);
 	if (font->charmap) free(font->charmap);
-	if (font->surface) SDL_FreeSurface(font->surface);
+	if (font->surface) gfx_free_surface(font->surface);
 	
 	font->tiledescriptor = NULL;
 	font->charmap = NULL;
@@ -95,7 +95,7 @@ static void inner_write(const Font *font, SDL_Surface *dest, const SDL_Rect *r, 
 		if (tile)
 		{
 			SDL_Rect rect = { x, y, tile->rect.w, tile->rect.h };
-			SDL_BlitSurface(tile->surface, (SDL_Rect*)&tile->rect, dest, &rect);
+			SDL_BlitSurface(tile->surface->surface, (SDL_Rect*)&tile->rect, dest, &rect);
 			
 			if (bounds)
 			{
@@ -157,7 +157,7 @@ static int font_load_inner(Font *font, Bundle *fb)
 	SDL_RWops *rw = SDL_RWFromBundle(fb, "font.bmp");
 	if (rw)
 	{
-		SDL_Surface * s= gfx_load_surface_RW(rw, GFX_KEYED);
+		GfxSurface * s= gfx_load_surface_RW(rw, GFX_KEYED);
 		
 		char map[1000];
 		memset(map, 0, sizeof(map));

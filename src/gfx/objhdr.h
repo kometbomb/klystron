@@ -28,6 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "SDL.h"
 #include "sllhdr.h"
+#include "gfxsurf.h"
 #include "macros.h"
 
 enum // OBJFLAGS
@@ -67,7 +68,7 @@ typedef struct
 	Sint32 w, h;\
 	Sint32 _yofs;\
 	SDL_Rect colrect;\
-	SDL_Surface *surface;\
+	GfxSurface *surface;\
 	const AnimFrame *anim;\
 	Sint32 current_frame, anim_frame, frame_delay, anim_speed_fine;\
 	

@@ -119,7 +119,7 @@ void bg_draw(SDL_Surface *surface, const SDL_Rect * dest, const Background *bg, 
 			if ( cell->tile ) 
 			{
 				SDL_Rect rect = { sx - (xofs % (CELLSIZE)) + dest->x - CELLSIZE, sy - (yofs % (CELLSIZE)) + dest->y - CELLSIZE, CELLSIZE, CELLSIZE };
-				SDL_BlitSurface(bg->tiles[cell->tile-1].surface, &bg->tiles[cell->tile-1].rect, surface, &rect);
+				SDL_BlitSurface(bg->tiles[cell->tile-1].surface->surface, &bg->tiles[cell->tile-1].rect, surface, &rect);
 				// SDL_FillRect(surface, &rect, 0x808080);
 			}
 		
