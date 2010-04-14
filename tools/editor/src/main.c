@@ -61,7 +61,7 @@ int ev_drag_start_x, ev_drag_start_y, drag_start_x, drag_start_y;
 Uint32 bg_color = 0;
 GfxDomain *domain = NULL;
 Font font;
-SDL_Surface *gfx = NULL;
+GfxSurface *gfx = NULL;
 
 typedef enum { EVPAR_INT, EVPAR_ENUM } EvParType;
 
@@ -90,7 +90,7 @@ config_t cfg;
 
 void load_dialog()
 {
-	FILE *f = open_dialog("rb", "Load level", "lev", domain, gfx, &font, &font);
+	FILE *f = open_dialog("rb", "Load level", "lev", domain, gfx->surface, &font, &font);
 	if (f)
 	{
 	
@@ -124,7 +124,7 @@ void load_level(const char *path)
 
 void load_defs(const char *fn)
 {
-	FILE *f = fn ? fopen(fn, "r") : open_dialog("r", "Load project defs", "cfg", domain, gfx, &font, &font);
+	FILE *f = fn ? fopen(fn, "r") : open_dialog("r", "Load project defs", "cfg", domain, gfx->surface, &font, &font);
 	if (f)
 	{
 		int r = config_read(&cfg, f);
@@ -224,7 +224,7 @@ void load_defs(const char *fn)
 
 int save_dialog()
 {
-	FILE *f = open_dialog("wb", "Save level", "lev", domain, gfx, &font, &font);
+	FILE *f = open_dialog("wb", "Save level", "lev", domain, gfx->surface, &font, &font);
 	if (f)
 	{
 		level.n_layers = MAX_LAYERS;
@@ -494,27 +494,27 @@ void set_tile(int ax, int ay)
 
 int has_pixels(TileDescriptor *desc)
 {
-	my_lock(desc->surface);
+	my_lock(desc->surface->surface);
 	
 	int result = 0;
 	
 	for (int y = 0 ; y < desc->rect.h ; ++y)
 	{
-		Uint8 *p = (Uint8 *)desc->surface->pixels + ((int)desc->rect.y + y) * desc->surface->pitch + (int)desc->rect.x * desc->surface->format->BytesPerPixel;
+		Uint8 *p = (Uint8 *)desc->surface->surface->pixels + ((int)desc->rect.y + y) * desc->surface->surface->pitch + (int)desc->rect.x * desc->surface->surface->format->BytesPerPixel;
 		
 		for (int x = 0 ; x < desc->rect.w ; ++x)
 		{
 			//printf("%08x", *(Uint32*)p);
-			if ((*((Uint32*)p)&0xffffff) != desc->surface->format->colorkey)
+			if ((*((Uint32*)p)&0xffffff) != desc->surface->surface->format->colorkey)
 			{
 				++result;
 			}
 			
-			p+=desc->surface->format->BytesPerPixel;
+			p+=desc->surface->surface->format->BytesPerPixel;
 		}
 	}
 	
-	my_unlock(desc->surface);
+	my_unlock(desc->surface->surface);
 	
 	return result;
 }
@@ -754,7 +754,7 @@ int main(int argc, char **argv)
 	domain->scale = screen_scale;
 	gfx_domain_update(domain);
 	
-	SDL_Surface *tiles = gfx_load_surface(tileset, GFX_KEYED);
+	GfxSurface *tiles = gfx_load_surface(tileset, GFX_KEYED);
 	
 	if (!tiles)
 	{
@@ -771,7 +771,7 @@ int main(int argc, char **argv)
 	
 	level.n_layers = MAX_LAYERS;
 	
-	init_magic_layer(tiles->w, tiles->h, descriptor, (tiles->w/CELLSIZE)*(tiles->h/CELLSIZE));
+	init_magic_layer(tiles->surface->w, tiles->surface->h, descriptor, (tiles->surface->w/CELLSIZE) * (tiles->surface->h/CELLSIZE));
 		
 	int done = 0;
 	
@@ -1256,7 +1256,7 @@ int main(int argc, char **argv)
 		
 		if (done) 
 		{
-			int r = confirm_ync(domain, gfx, &font, "Save level?");
+			int r = confirm_ync(domain, gfx->surface, &font, "Save level?");
 			
 			if (r == 0) done = 0;
 			if (r == -1) goto out;
