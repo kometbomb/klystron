@@ -108,13 +108,9 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	
 	cyd->wavetable_entries = malloc(sizeof(cyd->wavetable_entries[0]) * CYD_WAVE_MAX_ENTRIES);
 	
-	Sint32 shit = 0x8000000;
-	
 	for (int i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
 	{
-		cyd_wave_entry_init(&cyd->wavetable_entries[i], &shit, 2);
-		cyd->wavetable_entries[i].loop_end = 2;
-		cyd->wavetable_entries[i].flags = CYD_WAVE_LOOP;
+		cyd_wave_entry_init(&cyd->wavetable_entries[i], NULL, 0, 0, 0);
 	}
 	
 	cyd_reset(cyd);
