@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define MUS_PROG_LEN 32
 #define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
 
-#define MUS_VERSION 11
+#define MUS_VERSION 12
 
 #define MUS_SONG_TITLE_LEN 64
 #define MUS_INSTRUMENT_NAME_LEN 32
@@ -57,6 +57,7 @@ typedef struct
 	Sint16 buzz_offset;
 	Uint8 fx_bus, vib_shape, vib_delay, pwm_shape;
 	char name[MUS_INSTRUMENT_NAME_LEN + 1];
+	Uint8 wavetable_entry;
 } MusInstrument;
 
 enum
@@ -70,7 +71,8 @@ enum
 	MUS_INST_SET_CUTOFF = 32,
 	MUS_INST_YM_BUZZ = 64,
 	MUS_INST_RELATIVE_VOLUME = 128,
-	MUS_INST_QUARTER_FREQ = 256
+	MUS_INST_QUARTER_FREQ = 256,
+	MUS_INST_WAVE_LOCK_NOTE = 512
 };
 
 typedef struct
@@ -182,7 +184,6 @@ enum
 	MUS_PAK_BIT_CMD = 8
 };
 
-#define MIDDLE_C (12*4)
 #define MUS_NOTE_NO_INSTRUMENT 0xff
 #define MUS_CTRL_BIT 1
 #define MAX_VOLUME 128

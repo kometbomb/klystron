@@ -1,5 +1,5 @@
-#ifndef FREQS_H
-#define FREQS_H
+#ifndef CYDWAVE_H
+#define CYDWAVE_H
 
 /*
 Copyright (c) 2009-2010 Tero Lindeman (kometbomb)
@@ -26,13 +26,10 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "SDL.h"
+#include "cyd.h"
+#include "cydentry.h"
 
-#define FREQ_TAB_SIZE 96
-#define MIDDLE_C (12*4)
-
-extern const Uint16 frequency_table[FREQ_TAB_SIZE];
-
-Uint16 get_freq(int note);
+Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, Uint64 wave_acc);
+void cyd_wave_cycle(CydEngine *cyd, CydChannel *chn);
 
 #endif

@@ -1,6 +1,3 @@
-#ifndef FREQS_H
-#define FREQS_H
-
 /*
 Copyright (c) 2009-2010 Tero Lindeman (kometbomb)
 
@@ -26,13 +23,26 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "SDL.h"
+#include "cydentry.h"
+#include "cyddefs.h"
+#include "freqs.h"
+#include <stdlib.h>
 
-#define FREQ_TAB_SIZE 96
-#define MIDDLE_C (12*4)
+void cyd_wave_entry_deinit(CydWavetableEntry *entry)
+{
+	if (entry->data) free(entry->data);
+	entry->data = NULL;
+}
 
-extern const Uint16 frequency_table[FREQ_TAB_SIZE];
 
-Uint16 get_freq(int note);
-
-#endif
+void cyd_wave_entry_init(CydWavetableEntry *entry, const Sint16 *data, Uint32 n_samples)
+{
+	entry->data = realloc(entry->data, sizeof(*data) * n_samples);
+	memcpy(entry->data, data, sizeof(*data) * n_samples);
+	entry->samples = n_samples;
+	entry->flags = 0;
+	entry->loop_begin = 0;
+	entry->loop_end = n_samples;
+	entry->base_note = MIDDLE_C * 256;
+	entry->sample_rate = CYD_BASE_FREQ / 256;
+}
