@@ -36,7 +36,7 @@ void cyd_wave_entry_deinit(CydWavetableEntry *entry)
 
 void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_samples, CydWaveType sample_type, int channels)
 {
-	if (data)
+	if (data && n_samples > 0)
 	{
 		entry->data = realloc(entry->data, sizeof(*entry->data) * n_samples);
 		
@@ -51,14 +51,23 @@ void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_sa
 					case CYD_WAVE_TYPE_SINT16:
 						v += ((Sint16*)data)[i * channels + c];
 						break;
+						
+					case CYD_WAVE_TYPE_SINT8:
+						v += ((Sint8*)data)[i * channels + c] << 8;
+						break;
 				}
 			}
 			
 			if (channels > 1)
 				v /= channels;
 			
-			entry->data[i] = v;
+			entry->data[i] = v >> (16 - OUTPUT_BITS + 1);
 		}
+	}
+	else
+	{
+		free(entry->data);
+		entry->data = NULL;
 	}
 	
 	/* default stuff */
