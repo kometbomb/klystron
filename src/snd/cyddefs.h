@@ -1,5 +1,5 @@
-#ifndef FREQS_H
-#define FREQS_H
+#ifndef CYDDEFS_H
+#define CYDDEFS_H
 
 /*
 Copyright (c) 2009-2010 Tero Lindeman (kometbomb)
@@ -26,13 +26,24 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "SDL.h"
+#define RANDOM_SEED 0xf31782ce
+#define CLOCK 985250
+#define PRE_GAIN 4
+#define OUTPUT_BITS 12
+#define ACC_BITS 24
+#define ACC_LENGTH (1 << (ACC_BITS - 1)) // Osc counter length
+#define YM_LENGTH (ACC_LENGTH) // YM envelope counter length
+#define MAX_VOLUME 128
+#define CYD_WAVE_MAX_ENTRIES 128
 
-#define FREQ_TAB_SIZE 96
-#define MIDDLE_C (12*4)
+#define CYD_BASE_FREQ 22050
+#define CYD_MAX_CHANNELS 32
+#define CYD_MAX_FX_CHANNELS 4
 
-extern const Uint16 frequency_table[FREQ_TAB_SIZE];
+#define CYD_PAN_CENTER 64
+#define CYD_PAN_LEFT 0
+#define CYD_PAN_RIGHT 128
+#define CYD_STEREO_GAIN 2048
 
-Uint16 get_freq(int note);
 
 #endif

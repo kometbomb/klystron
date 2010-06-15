@@ -50,21 +50,6 @@ static void update_volumes(MusEngine *mus, MusTrackStatus *ts, MusChannel *chn, 
 }
 
 
-static Uint16 get_freq(int note)
-{
-	if ((note & 0xff) == 0)
-	{
-		return frequency_table[(note >> 8) % FREQ_TAB_SIZE];
-	}
-	else
-	{
-		Uint16 f1 = frequency_table[(note >> 8) % FREQ_TAB_SIZE];
-		Uint16 f2 = frequency_table[((note >> 8) + 1) % FREQ_TAB_SIZE];
-		return f1 + ((f2-f1) * (note & 0xff)) / 256;
-	}
-}
-
-
 static void mus_set_buzz_frequency(MusEngine *mus, int chan, Uint16 note)
 {
 	MusChannel *chn = &mus->channel[chan];
@@ -72,6 +57,19 @@ static void mus_set_buzz_frequency(MusEngine *mus, int chan, Uint16 note)
 	{
 		Uint16 buzz_frequency = get_freq(note + chn->buzz_offset);
 		cyd_set_env_frequency(mus->cyd, &mus->cyd->channel[chan], buzz_frequency);
+	}
+}
+
+
+static void mus_set_wavetable_frequency(MusEngine *mus, int chan, Uint16 note)
+{
+	MusChannel *chn = &mus->channel[chan];
+	CydChannel *cydchn = &mus->cyd->channel[chan];
+	
+	if ((chn->instrument->cydflags & CYD_CHN_ENABLE_WAVE) && (cydchn->wave_entry))
+	{
+		Uint16 wave_frequency = get_freq(note);
+		cyd_set_wavetable_frequency(mus->cyd, cydchn, wave_frequency);
 	}
 }
 
@@ -85,6 +83,8 @@ static void mus_set_note(MusEngine *mus, int chan, Uint16 note, int update_note,
 	Uint16 frequency = get_freq(note);
 		
 	cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], frequency / divider);
+	
+	mus_set_wavetable_frequency(mus, chan, note);
 	
 	mus_set_buzz_frequency(mus, chan, note);
 }
@@ -744,6 +744,15 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 		memcpy(&mus->cyd->channel[chan].adsr, &ins->adsr, sizeof(ins->adsr));
 	}
 	
+	if (ins->cydflags & CYD_CHN_ENABLE_WAVE)
+	{
+		cyd_set_wave_entry(&mus->cyd->channel[chan], &mus->cyd->wavetable_entries[ins->wavetable_entry]);
+	}
+	else
+	{
+		cyd_set_wave_entry(&mus->cyd->channel[chan], NULL);
+	}
+	
 	//cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], chn->frequency);
 	cyd_enable_gate(mus->cyd, &mus->cyd->channel[chan], 1);
 	
@@ -1183,6 +1192,7 @@ int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst)
 		_VER_READ(inst->name, my_min(len, sizeof(inst->name)));
 		inst->name[sizeof(inst->name) - 1] = '\0';
 	}
+	
 	VER_READ(version, 1, 0xff, &inst->cutoff, 0);
 	VER_READ(version, 1, 0xff, &inst->resonance, 0);
 	VER_READ(version, 1, 0xff, &inst->flttype, 0);
@@ -1192,6 +1202,7 @@ int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst)
 	VER_READ(version, 11, 0xff, &inst->vib_shape, 0);
 	VER_READ(version, 11, 0xff, &inst->vib_delay, 0);
 	VER_READ(version, 11, 0xff, &inst->pwm_shape, 0);
+	VER_READ(version, 12, 0xff, &inst->wavetable_entry, 0);
 	
 	/* The file format is little-endian, the following only does something on big-endian machines */
 	

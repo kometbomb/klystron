@@ -1,5 +1,5 @@
-#ifndef FREQS_H
-#define FREQS_H
+#ifndef CYDENTRY_H
+#define CYDENTRY_H
 
 /*
 Copyright (c) 2009-2010 Tero Lindeman (kometbomb)
@@ -28,11 +28,22 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "SDL.h"
 
-#define FREQ_TAB_SIZE 96
-#define MIDDLE_C (12*4)
+enum
+{
+	CYD_WAVE_LOOP = 1,
+	CYD_WAVE_PINGPONG = 2 // ping-pong loop as in FT2
+};
 
-extern const Uint16 frequency_table[FREQ_TAB_SIZE];
+typedef struct
+{
+	Uint32 flags;
+	Uint32 sample_rate;
+	Uint32 samples, loop_begin, loop_end;
+	Uint16 base_note;
+	Sint16 *data; 
+} CydWavetableEntry;
 
-Uint16 get_freq(int note);
+void cyd_wave_entry_init(CydWavetableEntry *entry, const Sint16 *data, Uint32 n_samples);
+void cyd_wave_entry_deinit(CydWavetableEntry *entry);
 
 #endif

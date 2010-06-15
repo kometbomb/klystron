@@ -1,6 +1,3 @@
-#ifndef FREQS_H
-#define FREQS_H
-
 /*
 Copyright (c) 2009-2010 Tero Lindeman (kometbomb)
 
@@ -26,13 +23,41 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "SDL.h"
+#include "cydwave.h"
+#include "cyddefs.h"
+#include "macros.h"
 
-#define FREQ_TAB_SIZE 96
-#define MIDDLE_C (12*4)
+Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, Uint64 wave_acc)
+{
+	if (entry->data)
+	{
+		return entry->data[wave_acc / ACC_LENGTH];
+	}
+	else
+		return 0;
+}
 
-extern const Uint16 frequency_table[FREQ_TAB_SIZE];
 
-Uint16 get_freq(int note);
-
-#endif
+void cyd_wave_cycle(CydEngine *cyd, CydChannel *chn)
+{
+	if (chn->wave_entry && (chn->flags & CYD_CHN_ENABLE_WAVE))
+	{
+		chn->wave_acc += chn->wave_frequency;
+		
+		if (chn->wave_entry->flags & CYD_WAVE_LOOP)
+		{
+			if (chn->wave_acc >= (Uint64)chn->wave_entry->loop_end * ACC_LENGTH)
+			{
+				chn->wave_acc = chn->wave_acc - (Uint64)chn->wave_entry->loop_end * ACC_LENGTH + (Uint64)chn->wave_entry->loop_begin * ACC_LENGTH;
+			}
+		}
+		else
+		{
+			if (chn->wave_acc >= (Uint64)chn->wave_entry->samples * ACC_LENGTH)
+			{
+				// stop playback
+				chn->wave_entry = NULL;
+			}
+		}
+	}
+}

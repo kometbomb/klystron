@@ -124,3 +124,25 @@ const Uint16 frequency_table[FREQ_TAB_SIZE] =
   (Uint16)(3729.31 * 16),
   (Uint16)(3951.07 * 16)
 };
+
+
+Uint16 get_freq(int note)
+{
+	if (note <= 0)
+		return frequency_table[0];
+		
+	if (note >= (FREQ_TAB_SIZE << 8))
+		return frequency_table[FREQ_TAB_SIZE - 1];
+
+	if ((note & 0xff) == 0)
+	{
+		return frequency_table[(note >> 8)];
+	}
+	else
+	{
+		Uint16 f1 = frequency_table[(note >> 8)];
+		Uint16 f2 = frequency_table[((note >> 8) + 1)];
+		return f1 + ((f2-f1) * (note & 0xff)) / 256;
+	}
+}
+

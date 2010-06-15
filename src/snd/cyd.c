@@ -35,14 +35,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <time.h>
 #endif
 
-#define RANDOM_SEED 0xf31782ce
-#define CLOCK 985250
-#define PRE_GAIN 4
-#define OUTPUT_BITS 12
-#define ACC_BITS 24
-#define ACC_LENGTH (1 << (ACC_BITS - 1)) // Osc counter length
-#define YM_LENGTH (ACC_LENGTH) // YM envelope counter length
-#define MAX_VOLUME 128
+#include "cyddefs.h"
+#include "cydwave.h"
+#include "freqs.h"
 
 #define envspd(cyd,slope) (slope!=0?((0xff0000 / ((slope) * (slope) * 256)) * CYD_BASE_FREQ / cyd->sample_rate):0xff0000)
 
@@ -111,6 +106,16 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	for (int i = 0 ; i < CYD_MAX_FX_CHANNELS ; ++i)
 		cydfx_init(&cyd->fx[i], sample_rate);
 	
+	cyd->wavetable_entries = malloc(sizeof(cyd->wavetable_entries[0]) * CYD_WAVE_MAX_ENTRIES);
+	
+	Sint32 shit = 0x8000000;
+	
+	for (int i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
+	{
+		cyd_wave_entry_init(&cyd->wavetable_entries[i], &shit, 2);
+		cyd->wavetable_entries[i].loop_end = 2;
+		cyd->wavetable_entries[i].flags = CYD_WAVE_LOOP;
+	}
 	
 	cyd_reset(cyd);
 }
@@ -141,6 +146,12 @@ void cyd_deinit(CydEngine *cyd)
 	if (cyd->dump) fclose(cyd->dump);
 	cyd->dump = NULL;
 #endif
+
+	for (int i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
+		cyd_wave_entry_deinit(&cyd->wavetable_entries[i]);
+		
+	free(cyd->wavetable_entries);
+	cyd->wavetable_entries = NULL;
 }
 
 
@@ -273,6 +284,8 @@ static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
 	chn->sync_bit = chn->accumulator & ACC_LENGTH;
 	chn->accumulator &= ACC_LENGTH - 1;
 	
+	cyd_wave_cycle(cyd, chn);
+	
 	if ((prev_acc & (ACC_LENGTH/32)) != (chn->accumulator & (ACC_LENGTH/32)))
 	{
 		Uint32 bit0 = ((chn->random >> 22) ^ (chn->random >> 17)) & 0x1;
@@ -288,6 +301,7 @@ static void cyd_sync_channel(CydEngine *cyd, CydChannel *chn)
 	if (chn->flags & CYD_CHN_ENABLE_SYNC && cyd->channel[chn->sync_source].sync_bit)
 	{
 		chn->accumulator = 0;
+		chn->wave_acc = 0;
 		chn->random = RANDOM_SEED;
 	}
 }
@@ -320,7 +334,7 @@ static inline Uint32 cyd_noise(Uint32 acc)
 static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 {
 	Sint32 v = 0;
-	switch (chn->flags & WAVEFORMS)
+	switch (chn->flags & (WAVEFORMS & ~CYD_CHN_ENABLE_WAVE))
 	{
 		case CYD_CHN_ENABLE_PULSE:
 		v = cyd_pulse(chn->accumulator, chn->pw);
@@ -424,6 +438,9 @@ static Sint16 cyd_output(CydEngine *cyd)
 	for (int i = 0 ; i < cyd->n_channels ; ++i)
 	{
 		s[i] = (Sint32)cyd_output_channel(cyd, &cyd->channel[i]);
+		
+		if ((cyd->channel[i].flags & CYD_CHN_ENABLE_WAVE) && cyd->channel[i].wave_entry && !(cyd->channel[i].flags & CYD_CHN_WAVE_OVERRIDE_ENV))
+			s[i] += cyd_wave_get_sample(cyd->channel[i].wave_entry, cyd->channel[i].wave_acc);
 	}
 	
 	for (int i = 0 ; i < cyd->n_channels ; ++i)
@@ -441,6 +458,11 @@ static Sint16 cyd_output(CydEngine *cyd)
 				o = cyd_env_output(cyd, chn, s[i] - 0x800);
 			}
 			
+			if ((cyd->channel[i].flags & CYD_CHN_ENABLE_WAVE) && cyd->channel[i].wave_entry && (cyd->channel[i].flags & CYD_CHN_WAVE_OVERRIDE_ENV))
+			{
+				o += cyd_wave_get_sample(cyd->channel[i].wave_entry, cyd->channel[i].wave_acc) * (Sint32)(chn->volume) / MAX_VOLUME;
+			}
+			
 			if (chn->flags & CYD_CHN_ENABLE_FILTER) 
 			{
 				cydflt_cycle(&chn->flt, o);
@@ -454,8 +476,8 @@ static Sint16 cyd_output(CydEngine *cyd)
 			
 #ifdef STEREOOUTPUT
 			Sint32 ol = o * chn->gain_left / CYD_STEREO_GAIN, or = o * chn->gain_right / CYD_STEREO_GAIN;
-#endif			
-			
+#endif		
+
 			if (chn->flags & CYD_CHN_ENABLE_FX)
 			{
 #ifdef STEREOOUTPUT
@@ -646,6 +668,13 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 {
 	chn->frequency = (Uint64)ACC_LENGTH/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
+}
+
+
+void cyd_set_wavetable_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
+{	
+	if (chn->wave_entry)
+		chn->wave_frequency = (Uint64)ACC_LENGTH * (Uint64)chn->wave_entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)frequency / (Uint64)get_freq(chn->wave_entry->base_note);
 }
 
 
@@ -873,3 +902,11 @@ void cyd_set_panning(CydEngine *cyd, CydChannel *chn, Uint8 panning)
 	chn->gain_right = sin(a) * CYD_STEREO_GAIN;
 }
 #endif
+
+
+void cyd_set_wave_entry(CydChannel *chn, const CydWavetableEntry * entry)
+{
+	chn->wave_entry = entry;
+	chn->wave_acc = 0;
+	chn->wave_frequency = 0;
+}

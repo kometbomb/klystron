@@ -33,15 +33,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "cydflt.h"
 #include "cydfx.h"
-
-#define CYD_BASE_FREQ 22050
-#define CYD_MAX_CHANNELS 32
-#define CYD_MAX_FX_CHANNELS 4
-
-#define CYD_PAN_CENTER 64
-#define CYD_PAN_LEFT 0
-#define CYD_PAN_RIGHT 128
-#define CYD_STEREO_GAIN 2048
+#include "cydentry.h"
+#include "cyddefs.h"
 
 typedef struct
 {
@@ -71,6 +64,9 @@ typedef struct
 	volatile Uint8 envelope_state;
 	CydFilter flt;
 	int fx_bus;
+	const CydWavetableEntry *wave_entry;
+	Uint64 wave_acc; // probably overkill
+	Uint32 wave_frequency;
 } CydChannel;
 
 enum
@@ -94,7 +90,9 @@ enum
 	CYD_CHN_ENABLE_RING_MODULATION = 256,
 	CYD_CHN_ENABLE_FILTER = 512,
 	CYD_CHN_ENABLE_FX = 1024,
-	CYD_CHN_ENABLE_YM_ENV = 2048
+	CYD_CHN_ENABLE_YM_ENV = 2048,
+	CYD_CHN_ENABLE_WAVE = 4096,
+	CYD_CHN_WAVE_OVERRIDE_ENV = 8192
 };
 
 enum {
@@ -113,7 +111,7 @@ enum
 	
 };
 
-#define WAVEFORMS (CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_SAW)
+#define WAVEFORMS (CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_WAVE)
 
 #define LUT_SIZE 1024
 #define YM_LUT_SIZE 32
@@ -140,6 +138,7 @@ typedef struct
 	FILE *dump;
 #endif
 	size_t samples_output; // bytes in last cyd_output_buffer
+	CydWavetableEntry *wavetable_entries;
 } CydEngine;
 
 enum
@@ -158,10 +157,12 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels);
 void cyd_deinit(CydEngine *cyd);
 void cyd_reset(CydEngine *cyd);
 void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency);
+void cyd_set_wavetable_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency);
 void cyd_set_env_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency);
 void cyd_set_env_shape(CydChannel *chn, Uint8 shape);
 void cyd_enable_gate(CydEngine *cyd, CydChannel *chn, Uint8 enable);
 void cyd_set_waveform(CydChannel *chn, Uint32 wave);
+void cyd_set_wave_entry(CydChannel *chn, const CydWavetableEntry * entry);
 void cyd_set_filter_coeffs(CydEngine * cyd, CydChannel *chn, Uint16 cutoff, Uint8 resonance);
 void cyd_pause(CydEngine *cyd, Uint8 enable);
 void cyd_set_callback(CydEngine *cyd, int (*callback)(void*), void*param, Uint16 period);
