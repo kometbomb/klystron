@@ -26,7 +26,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cydentry.h"
 #include "cyddefs.h"
 #include "freqs.h"
-#include <stdlib.h>
 
 void cyd_wave_entry_deinit(CydWavetableEntry *entry)
 {
@@ -35,14 +34,39 @@ void cyd_wave_entry_deinit(CydWavetableEntry *entry)
 }
 
 
-void cyd_wave_entry_init(CydWavetableEntry *entry, const Sint16 *data, Uint32 n_samples)
+void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_samples, CydWaveType sample_type, int channels)
 {
-	entry->data = realloc(entry->data, sizeof(*data) * n_samples);
-	memcpy(entry->data, data, sizeof(*data) * n_samples);
+	if (data)
+	{
+		entry->data = realloc(entry->data, sizeof(*entry->data) * n_samples);
+		
+		for (int i = 0; i < n_samples ; ++i)
+		{
+			Sint32 v = 0;
+			
+			for (int c = 0; c < channels ; ++c)
+			{
+				switch (sample_type)
+				{
+					case CYD_WAVE_TYPE_SINT16:
+						v += ((Sint16*)data)[i * channels + c];
+						break;
+				}
+			}
+			
+			if (channels > 1)
+				v /= channels;
+			
+			entry->data[i] = v;
+		}
+	}
+	
+	/* default stuff */
+	
 	entry->samples = n_samples;
 	entry->flags = 0;
 	entry->loop_begin = 0;
 	entry->loop_end = n_samples;
-	entry->base_note = MIDDLE_C * 256;
-	entry->sample_rate = CYD_BASE_FREQ / 256;
+	entry->base_note = MIDDLE_C << 8;
+	entry->sample_rate = CYD_BASE_FREQ;
 }

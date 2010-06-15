@@ -34,6 +34,11 @@ enum
 	CYD_WAVE_PINGPONG = 2 // ping-pong loop as in FT2
 };
 
+typedef enum
+{
+	CYD_WAVE_TYPE_SINT16 = 0
+} CydWaveType;
+
 typedef struct
 {
 	Uint32 flags;
@@ -43,7 +48,7 @@ typedef struct
 	Sint16 *data; 
 } CydWavetableEntry;
 
-void cyd_wave_entry_init(CydWavetableEntry *entry, const Sint16 *data, Uint32 n_samples);
+void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_samples, CydWaveType sample_type, int channels);
 void cyd_wave_entry_deinit(CydWavetableEntry *entry);
 
 #endif
