@@ -106,7 +106,7 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	for (int i = 0 ; i < CYD_MAX_FX_CHANNELS ; ++i)
 		cydfx_init(&cyd->fx[i], sample_rate);
 	
-	cyd->wavetable_entries = malloc(sizeof(cyd->wavetable_entries[0]) * CYD_WAVE_MAX_ENTRIES);
+	cyd->wavetable_entries = calloc(sizeof(cyd->wavetable_entries[0]), CYD_WAVE_MAX_ENTRIES);
 	
 	for (int i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
 	{
@@ -203,9 +203,10 @@ static inline void cyd_cycle_adsr(CydEngine *eng, CydChannel *chn)
 			{
 				chn->envelope -= chn->env_speed;
 			}
-			else {
+			else 
+			{
 				chn->envelope_state = DONE;
-				chn->flags &= ~CYD_CHN_ENABLE_GATE;
+				if ((chn->flags & (CYD_CHN_ENABLE_WAVE|CYD_CHN_WAVE_OVERRIDE_ENV)) != (CYD_CHN_ENABLE_WAVE|CYD_CHN_WAVE_OVERRIDE_ENV)) chn->flags &= ~CYD_CHN_ENABLE_GATE;
 				chn->envelope = 0;
 			}
 			break;
@@ -260,7 +261,7 @@ static inline void cyd_cycle_adsr(CydEngine *eng, CydChannel *chn)
 			
 			case RELEASE:
 				chn->envelope_state = DONE;
-				chn->flags &= ~CYD_CHN_ENABLE_GATE;
+				if ((chn->flags & (CYD_CHN_ENABLE_WAVE|CYD_CHN_WAVE_OVERRIDE_ENV)) != (CYD_CHN_ENABLE_WAVE|CYD_CHN_WAVE_OVERRIDE_ENV)) chn->flags &= ~CYD_CHN_ENABLE_GATE;
 				chn->envelope = 0;
 			break;
 			
