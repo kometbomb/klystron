@@ -1145,13 +1145,13 @@ int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, M
 }
 
 
-int mus_load_instrument(const char *path, MusInstrument *inst)
+int mus_load_instrument(const char *path, MusInstrument *inst, CydWavetableEntry *wavetable_entries)
 {
 	FILE *f = fopen(path, "rb");
 	
 	if (f)
 	{
-		int r = mus_load_instrument_file2(f, inst);
+		int r = mus_load_instrument_file2(f, inst, wavetable_entries);
 	
 		fclose(f);
 		
@@ -1162,7 +1162,36 @@ int mus_load_instrument(const char *path, MusInstrument *inst)
 }
 
 
-int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst)
+static void load_wavetable_entry(Uint8 version, CydWavetableEntry * e, FILE *f)
+{
+	VER_READ(version, 12, 0xff, &e->flags, 0);
+	VER_READ(version, 12, 0xff, &e->sample_rate, 0);
+	VER_READ(version, 12, 0xff, &e->samples, 0);
+	VER_READ(version, 12, 0xff, &e->loop_begin, 0);
+	VER_READ(version, 12, 0xff, &e->loop_end, 0);
+	VER_READ(version, 12, 0xff, &e->base_note, 0);
+	
+	FIX_ENDIAN(e->flags);
+	FIX_ENDIAN(e->sample_rate);
+	FIX_ENDIAN(e->samples);
+	FIX_ENDIAN(e->loop_begin);
+	FIX_ENDIAN(e->loop_end);
+	FIX_ENDIAN(e->base_note);
+	
+	if (e->samples > 0)
+	{
+		Sint16 *data = malloc(sizeof(data[0]) * e->samples);
+		
+		fread(data, sizeof(data[0]), e->samples, f);
+		
+		cyd_wave_entry_init(e, data, e->samples, CYD_WAVE_TYPE_SINT16, 1);
+		
+		free(data);
+	}
+}
+
+
+int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst, CydWavetableEntry *wavetable_entries)
 {
 	mus_get_default_instrument(inst);
 
@@ -1204,6 +1233,20 @@ int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst)
 	VER_READ(version, 11, 0xff, &inst->pwm_shape, 0);
 	VER_READ(version, 12, 0xff, &inst->wavetable_entry, 0);
 	
+	if (wavetable_entries && inst->wavetable_entry == 0xff)
+	{
+		for (inst->wavetable_entry = 0 ; inst->wavetable_entry < CYD_WAVE_MAX_ENTRIES ; ++inst->wavetable_entry)
+		{
+			CydWavetableEntry *e = &wavetable_entries[inst->wavetable_entry];
+			
+			if (e->samples == 0)
+			{
+				load_wavetable_entry(version, e, f);
+				break;
+			}
+		}
+	}
+	
 	/* The file format is little-endian, the following only does something on big-endian machines */
 	
 	FIX_ENDIAN(inst->flags);
@@ -1219,7 +1262,7 @@ int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst)
 }
 
 
-int mus_load_instrument_file2(FILE *f, MusInstrument *inst)
+int mus_load_instrument_file2(FILE *f, MusInstrument *inst, CydWavetableEntry *wavetable_entries)
 {
 	char id[9];
 				
@@ -1235,7 +1278,7 @@ int mus_load_instrument_file2(FILE *f, MusInstrument *inst)
 		if (version > MUS_VERSION)
 			return 0;
 	
-		mus_load_instrument_file(version, f, inst);
+		mus_load_instrument_file(version, f, inst, wavetable_entries);
 		
 		return 1;
 	}
@@ -1281,7 +1324,7 @@ void mus_set_fx(MusEngine *mus, MusSong *song)
 }
 
 
-int mus_load_song_file(FILE *f, MusSong *song)
+int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entries)
 {
 	char id[9];
 	id[8] = '\0';
@@ -1401,7 +1444,7 @@ int mus_load_song_file(FILE *f, MusSong *song)
 		
 		for (int i = 0 ; i < song->num_instruments; ++i)
 		{
-			mus_load_instrument_file(version, f, &song->instrument[i]); 
+			mus_load_instrument_file(version, f, &song->instrument[i], NULL); 
 		}
 		
 		
@@ -1505,6 +1548,17 @@ int mus_load_song_file(FILE *f, MusSong *song)
 			}
 		}
 		
+		if (version >= 12)
+		{
+			Uint8 max_wt = 0;
+			fread(&max_wt, 1, sizeof(Uint8), f);
+					
+			for (int i = 0 ; i < max_wt ; ++i)
+			{
+				load_wavetable_entry(version, &wavetable_entries[i], f);
+			}
+		}
+		
 		return 1;
 	}
 	
@@ -1512,13 +1566,13 @@ int mus_load_song_file(FILE *f, MusSong *song)
 }
 
 
-int mus_load_song(const char *path, MusSong *song)
+int mus_load_song(const char *path, MusSong *song, CydWavetableEntry *wavetable_entries)
 {
 	FILE *f = fopen(path, "rb");
 	
 	if (f)
 	{	
-		int r = mus_load_song_file(f, song);
+		int r = mus_load_song_file(f, song, wavetable_entries);
 		fclose(f);
 		
 		return r;

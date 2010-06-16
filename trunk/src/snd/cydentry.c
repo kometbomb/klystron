@@ -53,7 +53,7 @@ void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_sa
 						break;
 						
 					case CYD_WAVE_TYPE_SINT8:
-						v += ((Sint8*)data)[i * channels + c] << 8;
+						v += (Sint16)(((Sint8*)data)[i * channels + c]) << 8;
 						break;
 				}
 			}
@@ -61,7 +61,7 @@ void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_sa
 			if (channels > 1)
 				v /= channels;
 			
-			entry->data[i] = v >> (16 - OUTPUT_BITS + 1);
+			entry->data[i] = v;
 		}
 	}
 	else
@@ -73,9 +73,4 @@ void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_sa
 	/* default stuff */
 	
 	entry->samples = n_samples;
-	entry->flags = 0;
-	entry->loop_begin = 0;
-	entry->loop_end = n_samples;
-	entry->base_note = MIDDLE_C << 8;
-	entry->sample_rate = CYD_BASE_FREQ;
 }

@@ -422,7 +422,7 @@ static Sint32 cyd_env_output(CydEngine *cyd, CydChannel *chn, Sint32 input)
 #ifdef STEREOOUTPUT
 static void cyd_output(CydEngine *cyd, Sint32 *left, Sint32 *right)
 #else
-static Sint16 cyd_output(CydEngine *cyd)
+static Sint32 cyd_output(CydEngine *cyd)
 #endif
 {
 #ifdef STEREOOUTPUT
@@ -638,19 +638,19 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 		left = right = cyd_output(cyd);
 #endif
 
-		Sint32 o1 = (Sint32)*(Sint16*)stream + left;
+		Sint32 o1 = (Sint32)*(Sint16*)stream + left * PRE_GAIN;
 		
 		if (o1 < -32768) o1 = -32768;
 		else if (o1 > 32767) o1 = 32767;
 		
-		*(Sint16*)stream = o1 * PRE_GAIN;
+		*(Sint16*)stream = o1;
 		
-		Sint32 o2 = (Sint32)*((Sint16*)stream + 1) + right;
+		Sint32 o2 = (Sint32)*((Sint16*)stream + 1) + right * PRE_GAIN;
 		
 		if (o2 < -32768) o2 = -32768;
 		else if (o2 > 32767) o2 = 32767;
 		
-		*((Sint16*)stream + 1) = o2 * PRE_GAIN;
+		*((Sint16*)stream + 1) = o2;
 		
 		cyd_cycle(cyd);
 

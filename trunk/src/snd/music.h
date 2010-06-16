@@ -271,12 +271,12 @@ void mus_release(MusEngine* mus, int chan);
 void mus_init_engine(MusEngine *mus, CydEngine *cyd);
 void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position);
 int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, MusPattern **pattern, MusChannel *);
-int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst);
-int mus_load_instrument_file2(FILE *f, MusInstrument *inst);
-int mus_load_instrument(const char *path, MusInstrument *inst);
+int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst, CydWavetableEntry *wavetable_entries);
+int mus_load_instrument_file2(FILE *f, MusInstrument *inst, CydWavetableEntry *wavetable_entries);
+int mus_load_instrument(const char *path, MusInstrument *inst, CydWavetableEntry *wavetable_entries);
 void mus_get_default_instrument(MusInstrument *inst);
-int mus_load_song(const char *path, MusSong *song);
-int mus_load_song_file(FILE *f, MusSong *song);
+int mus_load_song(const char *path, MusSong *song, CydWavetableEntry *wavetable_entries);
+int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entries);
 void mus_free_song(MusSong *song);
 void mus_set_fx(MusEngine *mus, MusSong *song);
 
