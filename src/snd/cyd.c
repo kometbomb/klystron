@@ -331,7 +331,7 @@ static inline Uint32 cyd_noise(Uint32 acc)
 static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 {
 	Sint32 v = 0;
-	switch (chn->flags & (WAVEFORMS & ~CYD_CHN_ENABLE_WAVE))
+	switch (chn->flags & WAVEFORMS & ~CYD_CHN_ENABLE_WAVE)
 	{
 		case CYD_CHN_ENABLE_PULSE:
 		v = cyd_pulse(chn->accumulator, chn->pw);
@@ -394,10 +394,11 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 		break;
 		
 		default:
+		return 0;
 		break;
 	}
 	
-	return v;
+	return v - 0x800;
 }
 
 
@@ -448,11 +449,11 @@ static Sint16 cyd_output(CydEngine *cyd)
 		{
 			if (chn->flags & CYD_CHN_ENABLE_RING_MODULATION)
 			{
-				o = cyd_env_output(cyd, chn, s[i] * s[chn->ring_mod] / 0x1000 - 0x800);
+				o = cyd_env_output(cyd, chn, s[i] * (s[chn->ring_mod] + 0x800) / 0x1000);
 			}
 			else
 			{
-				o = cyd_env_output(cyd, chn, s[i] - 0x800);
+				o = cyd_env_output(cyd, chn, s[i]);
 			}
 			
 			if ((cyd->channel[i].flags & CYD_CHN_ENABLE_WAVE) && cyd->channel[i].wave_entry && (cyd->channel[i].flags & CYD_CHN_WAVE_OVERRIDE_ENV))
