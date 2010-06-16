@@ -30,8 +30,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, Uint64 wave_acc)
 {
 	if (entry->data)
-	{
-		return entry->data[wave_acc / ACC_LENGTH];
+	{	
+		int a = wave_acc / ACC_LENGTH;
+		int b = a + 1;
+		
+		if (b >= entry->samples)
+			return entry->data[a];
+		else
+			return entry->data[a] + (entry->data[b] - entry->data[a]) * (wave_acc % ACC_LENGTH) / ACC_LENGTH;
 	}
 	else
 		return 0;
