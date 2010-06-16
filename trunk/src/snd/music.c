@@ -1553,6 +1553,11 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 			}
 		}
 		
+		for (int i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
+		{
+			cyd_wave_entry_init(&wavetable_entries[i], NULL, 0, 0, 0, 0, 0);
+		}
+		
 		if (version >= 12)
 		{
 			Uint8 max_wt = 0;
