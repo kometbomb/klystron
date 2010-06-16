@@ -34,6 +34,9 @@ Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, Uint64 wave_acc)
 		int a = wave_acc / ACC_LENGTH;
 		int b = a + 1;
 		
+		if ((entry->flags & CYD_WAVE_LOOP) && b >= entry->loop_end)
+			b = b - entry->loop_end + entry->loop_begin;
+		
 		if (b >= entry->samples)
 			return entry->data[a];
 		else
