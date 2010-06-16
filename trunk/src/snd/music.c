@@ -1354,7 +1354,12 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 		fread(&song->num_patterns, 1, sizeof(song->num_patterns), f);
 		fread(song->num_sequences, 1, sizeof(song->num_sequences[0]) * (int)song->num_channels, f);
 		fread(&song->song_length, 1, sizeof(song->song_length), f);
+		
 		fread(&song->loop_point, 1, sizeof(song->loop_point), f);
+		
+		if (version >= 12)
+			fread(&song->master_volume, 1, 1, f);
+		
 		fread(&song->song_speed, 1, sizeof(song->song_speed), f);
 		fread(&song->song_speed2, 1, sizeof(song->song_speed2), f);
 		fread(&song->song_rate, 1, sizeof(song->song_rate), f);
