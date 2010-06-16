@@ -83,6 +83,15 @@ static void cyd_init_log_tables(CydEngine *cyd)
 }
 
 
+void cyd_reset_wavetable(CydEngine *cyd)
+{
+	for (int i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
+	{
+		cyd_wave_entry_init(&cyd->wavetable_entries[i], NULL, 0, 0, 0, 0, 0);
+	}
+}
+
+
 void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 {
 	memset(cyd, 0, sizeof(*cyd));
@@ -108,10 +117,7 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	
 	cyd->wavetable_entries = calloc(sizeof(cyd->wavetable_entries[0]), CYD_WAVE_MAX_ENTRIES);
 	
-	for (int i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
-	{
-		cyd_wave_entry_init(&cyd->wavetable_entries[i], NULL, 0, 0, 0, 0, 0);
-	}
+	cyd_reset_wavetable(cyd);
 	
 	cyd_reset(cyd);
 }
