@@ -49,7 +49,7 @@ typedef struct
 	Sint16 *data; 
 } CydWavetableEntry;
 
-void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_samples, CydWaveType sample_type, int channels);
+void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_samples, CydWaveType sample_type, int channels, int denom, int nom);
 void cyd_wave_entry_deinit(CydWavetableEntry *entry);
 
 #endif

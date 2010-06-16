@@ -34,7 +34,7 @@ void cyd_wave_entry_deinit(CydWavetableEntry *entry)
 }
 
 
-void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_samples, CydWaveType sample_type, int channels)
+void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_samples, CydWaveType sample_type, int channels, int denom, int nom)
 {
 	if (data && n_samples > 0)
 	{
@@ -61,7 +61,7 @@ void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_sa
 			if (channels > 1)
 				v /= channels;
 			
-			entry->data[i] = v;
+			entry->data[i] = v * denom / nom;
 		}
 	}
 	else

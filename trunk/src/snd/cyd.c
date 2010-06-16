@@ -110,7 +110,7 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	
 	for (int i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
 	{
-		cyd_wave_entry_init(&cyd->wavetable_entries[i], NULL, 0, 0, 0);
+		cyd_wave_entry_init(&cyd->wavetable_entries[i], NULL, 0, 0, 0, 0, 0);
 	}
 	
 	cyd_reset(cyd);
