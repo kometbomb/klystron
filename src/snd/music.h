@@ -123,6 +123,7 @@ typedef struct
 	Uint8 multiplex_period;
 	char title[MUS_SONG_TITLE_LEN + 1];
 	CydFxSerialized fx[CYD_MAX_FX_CHANNELS];
+	Uint8 master_volume;
 } MusSong;
 
 

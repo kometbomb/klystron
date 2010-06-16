@@ -144,7 +144,8 @@ typedef struct
 enum
 {
 	CYD_PAUSED = 1,
-	CYD_SINGLE_THREAD = 8
+	CYD_CLIPPING = 2,
+	CYD_SINGLE_THREAD = 8,
 };
 
 // YM2149 envelope shape flags, CONT is assumed to be always set

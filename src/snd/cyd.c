@@ -600,6 +600,7 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 	CydEngine *cyd = udata;
 	Sint16 *stream = _stream;
 	cyd->samples_output = 0;
+	cyd->flags &= ~CYD_CLIPPING;
 	
 	for (int i = 0 ; i < len ; i += sizeof(Sint16)*2, stream += 2, ++cyd->samples_output)
 	{
@@ -640,15 +641,31 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 
 		Sint32 o1 = (Sint32)*(Sint16*)stream + left * PRE_GAIN;
 		
-		if (o1 < -32768) o1 = -32768;
-		else if (o1 > 32767) o1 = 32767;
+		if (o1 < -32768) 
+		{
+			o1 = -32768;
+			cyd->flags |= CYD_CLIPPING;
+		}
+		else if (o1 > 32767) 
+		{
+			o1 = 32767;
+			cyd->flags |= CYD_CLIPPING;
+		}
 		
 		*(Sint16*)stream = o1;
 		
 		Sint32 o2 = (Sint32)*((Sint16*)stream + 1) + right * PRE_GAIN;
 		
-		if (o2 < -32768) o2 = -32768;
-		else if (o2 > 32767) o2 = 32767;
+		if (o2 < -32768) 
+		{
+			o2 = -32768;
+			cyd->flags |= CYD_CLIPPING;
+		}
+		else if (o2 > 32767) 
+		{
+			o2 = 32767;
+			cyd->flags |= CYD_CLIPPING;
+		}
 		
 		*((Sint16*)stream + 1) = o2;
 		
