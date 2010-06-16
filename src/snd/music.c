@@ -68,7 +68,7 @@ static void mus_set_wavetable_frequency(MusEngine *mus, int chan, Uint16 note)
 	
 	if ((chn->instrument->cydflags & CYD_CHN_ENABLE_WAVE) && (cydchn->wave_entry))
 	{
-		Uint16 wave_frequency = get_freq(note);
+		Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : note);
 		cyd_set_wavetable_frequency(mus->cyd, cydchn, wave_frequency);
 	}
 }
@@ -1184,7 +1184,7 @@ static void load_wavetable_entry(Uint8 version, CydWavetableEntry * e, FILE *f)
 		
 		fread(data, sizeof(data[0]), e->samples, f);
 		
-		cyd_wave_entry_init(e, data, e->samples, CYD_WAVE_TYPE_SINT16, 1);
+		cyd_wave_entry_init(e, data, e->samples, CYD_WAVE_TYPE_SINT16, 1, 1, 1);
 		
 		free(data);
 	}
