@@ -1336,8 +1336,13 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 		Uint8 version = 0;
 		fread(&version, 1, sizeof(version), f);
 		
+		debug("Song version = %u", version);
+		
 		if (version > MUS_VERSION)
+		{
+			debug("Unsupported song version");
 			return 0;
+		}
 		
 		if (version >= 6) 
 			fread(&song->num_channels, 1, sizeof(song->num_channels), f);
@@ -1404,9 +1409,20 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 		
 		if (n_fx > 0)
 		{
+			debug("Song has %u effects", n_fx);
 			if (version >= 10)
 			{
-				fread(&song->fx, sizeof(song->fx[0]), n_fx, f);
+				memset(&song->fx, 0, sizeof(song->fx[0]) * n_fx);
+				if (version < 12)
+				{
+					debug("Reading legacy fx format");
+					fread(&song->fx, sizeof(song->fx[0]) - sizeof(Uint8), n_fx, f);
+				}
+				else
+				{
+					debug("Reading fx format 2");
+					fread(&song->fx, sizeof(song->fx[0]), n_fx, f);
+				}
 				
 				for (int fx = 0 ; fx < n_fx ; ++fx)
 				{
