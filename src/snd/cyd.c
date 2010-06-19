@@ -742,6 +742,7 @@ void cyd_enable_gate(CydEngine *cyd, CydChannel *chn, Uint8 enable)
 	}
 	else
 	{
+		chn->flags &= ~CYD_CHN_WAVE_OVERRIDE_ENV;
 		chn->envelope_state = RELEASE;
 		chn->env_speed = envspd(cyd, chn->adsr.r);
 	}
