@@ -62,10 +62,9 @@ Sint32 cydfx_output(CydFx *fx, Sint32 fx_input)
 	if (fx->flags & CYDFX_ENABLE_CRUSH)
 	{
 #ifdef STEREOOUTPUT
-		*left &= fx->bit_drop;
-		*right &= fx->bit_drop;
+		cydcrush_output(&fx->crush, *left, *right, left, right);
 #else
-		v &= fx->bit_drop;
+		v = cydcrush_output(&fx->crush, v);
 #endif
 	}
 	
@@ -81,6 +80,7 @@ void cydfx_init(CydFx *fx, int rate)
 #ifdef STEREOOUTPUT
 	cydchr_init(&fx->chr, rate);
 #endif
+	cydcrush_init(&fx->crush, rate);
 }
 
 
@@ -90,6 +90,7 @@ void cydfx_deinit(CydFx *fx)
 #ifdef STEREOOUTPUT
 	cydchr_deinit(&fx->chr);
 #endif
+	cydcrush_deinit(&fx->crush);
 }
 
 
@@ -105,6 +106,5 @@ void cydfx_set(CydFx *fx, const CydFxSerialized *ser)
 	}
 	
 	cydchr_set(&fx->chr, ser->chr.rate, ser->chr.min_delay, ser->chr.max_delay, ser->chr.sep);
-	
-	fx->bit_drop = 0xffffffff << ser->crush.bit_drop;
+	cydcrush_set(&fx->crush, ser->crushex.downsample, ser->crush.bit_drop);
 }

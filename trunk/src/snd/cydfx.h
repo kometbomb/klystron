@@ -28,11 +28,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "cydrvb.h"
 #include "cydchr.h"
+#include "cydcrush.h"
 
 typedef struct
 {
 	Uint32 flags;
-	Uint32 bit_drop;
+	CydCrush crush;
 	CydReverb rvb;
 	CydChorus chr;
 } CydFx;
@@ -54,6 +55,10 @@ typedef struct
 		Uint8 spread;
 		struct { Uint16 delay; Sint16 gain; } tap[CYDRVB_TAPS];
 	} rvb;
+	struct // so we won't fuck up old versions of this struct when freading
+	{
+		Uint8 downsample;
+	} crushex;
 } __attribute__((__packed__)) CydFxSerialized;
 
 #ifdef STEREOOUTPUT
