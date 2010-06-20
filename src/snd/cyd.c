@@ -695,7 +695,7 @@ void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 void cyd_set_wavetable_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 {	
 	if (chn->wave_entry)
-		chn->wave_frequency = (Uint64)ACC_LENGTH * (Uint64)chn->wave_entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)frequency / (Uint64)get_freq(chn->wave_entry->base_note);
+		chn->wave_frequency = (Uint64)WAVETABLE_RESOLUTION * (Uint64)chn->wave_entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)frequency / (Uint64)get_freq(chn->wave_entry->base_note);
 }
 
 

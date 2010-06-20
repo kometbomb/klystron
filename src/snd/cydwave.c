@@ -31,7 +31,7 @@ Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, Uint64 wave_acc)
 {
 	if (entry->data)
 	{	
-		int a = wave_acc / ACC_LENGTH;
+		int a = wave_acc / WAVETABLE_RESOLUTION;
 		int b = a + 1;
 		
 		if ((entry->flags & CYD_WAVE_LOOP) && b >= entry->loop_end)
@@ -40,7 +40,7 @@ Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, Uint64 wave_acc)
 		if (b >= entry->samples)
 			return entry->data[a];
 		else
-			return entry->data[a] + (entry->data[b] - entry->data[a]) * (wave_acc % ACC_LENGTH) / ACC_LENGTH;
+			return entry->data[a] + (entry->data[b] - entry->data[a]) * (wave_acc % WAVETABLE_RESOLUTION) / WAVETABLE_RESOLUTION;
 	}
 	else
 		return 0;
@@ -55,14 +55,14 @@ void cyd_wave_cycle(CydEngine *cyd, CydChannel *chn)
 		
 		if (chn->wave_entry->flags & CYD_WAVE_LOOP)
 		{
-			if (chn->wave_acc >= (Uint64)chn->wave_entry->loop_end * ACC_LENGTH)
+			if (chn->wave_acc >= (Uint64)chn->wave_entry->loop_end * WAVETABLE_RESOLUTION)
 			{
-				chn->wave_acc = chn->wave_acc - (Uint64)chn->wave_entry->loop_end * ACC_LENGTH + (Uint64)chn->wave_entry->loop_begin * ACC_LENGTH;
+				chn->wave_acc = chn->wave_acc - (Uint64)chn->wave_entry->loop_end * WAVETABLE_RESOLUTION + (Uint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION;
 			}
 		}
 		else
 		{
-			if (chn->wave_acc >= (Uint64)chn->wave_entry->samples * ACC_LENGTH)
+			if (chn->wave_acc >= (Uint64)chn->wave_entry->samples * WAVETABLE_RESOLUTION)
 			{
 				// stop playback
 				chn->wave_entry = NULL;
