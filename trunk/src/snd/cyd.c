@@ -932,3 +932,12 @@ void cyd_set_wave_entry(CydChannel *chn, const CydWavetableEntry * entry)
 	chn->wave_acc = 0;
 	chn->wave_frequency = 0;
 }
+
+
+void cyd_set_wavetable_offset(CydChannel *chn, Uint16 offset /* 0..0x1000 = 0-100% */)
+{
+	if (chn->wave_entry)
+	{
+		chn->wave_acc = (Uint64)offset * WAVETABLE_RESOLUTION * chn->wave_entry->samples / 0x1000;
+	}
+}
