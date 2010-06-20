@@ -56,7 +56,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define warning(...) do { fputs("[WARNING] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
 #define fatal(...) do { fputs("[FATAL] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
 
-#define FIX_ENDIAN(x) x = (sizeof(x) < 2 ? x : (sizeof(x) == 2 ? SDL_SwapLE16(x) : SDL_SwapLE32(x)))
+#define FIX_ENDIAN(x) do { x = (sizeof(x) < 2 ? x : (sizeof(x) == 2 ? SDL_SwapLE16(x) : SDL_SwapLE32(x))); } while(0)
 
 // Makes "warning: cast to pointer from integer of different size" disappear
 
