@@ -330,6 +330,12 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
 				}
 				break;
+				
+				case MUS_FX_WAVETABLE_OFFSET:
+				{
+					cyd_set_wavetable_offset(cydchn, inst & 0xfff);
+				}
+				break;
 			}
 			
 			switch (inst & 0x7f00)
