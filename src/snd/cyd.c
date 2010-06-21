@@ -305,6 +305,7 @@ static void cyd_sync_channel(CydEngine *cyd, CydChannel *chn)
 	{
 		chn->accumulator = 0;
 		chn->wave_acc = 0;
+		chn->wave_direction = 0;
 		chn->random = RANDOM_SEED;
 	}
 }
@@ -931,6 +932,7 @@ void cyd_set_wave_entry(CydChannel *chn, const CydWavetableEntry * entry)
 	chn->wave_entry = entry;
 	chn->wave_acc = 0;
 	chn->wave_frequency = 0;
+	chn->wave_direction = 0;
 }
 
 
