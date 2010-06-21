@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cyd.h"
 #include "cydentry.h"
 
-Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, Uint64 wave_acc);
+Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, Uint64 wave_acc, int direction);
 void cyd_wave_cycle(CydEngine *cyd, CydChannel *chn);
 
 #endif
