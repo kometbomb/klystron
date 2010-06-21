@@ -27,20 +27,46 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cyddefs.h"
 #include "macros.h"
 
-Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, Uint64 wave_acc)
+Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, Uint64 wave_acc, int direction)
 {
 	if (entry->data)
 	{	
-		int a = wave_acc / WAVETABLE_RESOLUTION;
-		int b = a + 1;
-		
-		if ((entry->flags & CYD_WAVE_LOOP) && b >= entry->loop_end)
-			b = b - entry->loop_end + entry->loop_begin;
-		
-		if (b >= entry->samples)
-			return entry->data[a];
+		if (direction == 0) 
+		{
+			int a = wave_acc / WAVETABLE_RESOLUTION;
+			int b = a + 1;
+			
+			if ((entry->flags & CYD_WAVE_LOOP) && b >= entry->loop_end)
+			{
+				if (!(entry->flags & CYD_WAVE_PINGPONG))
+					b = b - entry->loop_end + entry->loop_begin;
+				else
+					b = entry->loop_end - (b - entry->loop_end);
+			}
+			
+			if (b >= entry->samples)
+				return entry->data[a];
+			else
+				return entry->data[a] + (entry->data[b] - entry->data[a]) * (wave_acc % WAVETABLE_RESOLUTION) / WAVETABLE_RESOLUTION;
+		}
 		else
-			return entry->data[a] + (entry->data[b] - entry->data[a]) * (wave_acc % WAVETABLE_RESOLUTION) / WAVETABLE_RESOLUTION;
+		{
+			int a = wave_acc / WAVETABLE_RESOLUTION;
+			int b = a - 1;
+			
+			if ((entry->flags & CYD_WAVE_LOOP) && b < (Sint32)entry->loop_begin)
+			{
+				if (!(entry->flags & CYD_WAVE_PINGPONG))
+					b = b - entry->loop_begin + entry->loop_end;
+				else
+					b = entry->loop_begin - (b - entry->loop_begin);
+			}
+			
+			if (b < 0)
+				return entry->data[a];
+			else
+				return entry->data[a] + (entry->data[b] - entry->data[a]) * (WAVETABLE_RESOLUTION - (wave_acc % WAVETABLE_RESOLUTION)) / WAVETABLE_RESOLUTION;
+		}
 	}
 	else
 		return 0;
@@ -85,11 +111,11 @@ void cyd_wave_cycle(CydEngine *cyd, CydChannel *chn)
 			
 			if (chn->wave_entry->flags & CYD_WAVE_LOOP)
 			{
-				if ((Sint64)chn->wave_acc < (Uint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION)
+				if ((Sint64)chn->wave_acc < (Sint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION)
 				{
 					if (chn->wave_entry->flags & CYD_WAVE_PINGPONG) 
 					{
-						chn->wave_acc = (Uint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION - (chn->wave_acc - (Uint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION);
+						chn->wave_acc = (Sint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION - ((Sint64)chn->wave_acc - (Sint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION);
 						chn->wave_direction = 0;
 					}
 					else
