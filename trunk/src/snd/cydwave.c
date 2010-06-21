@@ -51,21 +51,60 @@ void cyd_wave_cycle(CydEngine *cyd, CydChannel *chn)
 {
 	if (chn->wave_entry && (chn->flags & CYD_CHN_ENABLE_WAVE))
 	{
-		chn->wave_acc += chn->wave_frequency;
-		
-		if (chn->wave_entry->flags & CYD_WAVE_LOOP)
+		if (chn->wave_direction == 0)
 		{
-			if (chn->wave_acc >= (Uint64)chn->wave_entry->loop_end * WAVETABLE_RESOLUTION)
+			chn->wave_acc += chn->wave_frequency;
+			
+			if (chn->wave_entry->flags & CYD_WAVE_LOOP)
 			{
-				chn->wave_acc = chn->wave_acc - (Uint64)chn->wave_entry->loop_end * WAVETABLE_RESOLUTION + (Uint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION;
+				if (chn->wave_acc >= (Uint64)chn->wave_entry->loop_end * WAVETABLE_RESOLUTION)
+				{
+					if (chn->wave_entry->flags & CYD_WAVE_PINGPONG) 
+					{
+						chn->wave_acc = (Uint64)chn->wave_entry->loop_end * WAVETABLE_RESOLUTION - (chn->wave_acc - (Uint64)chn->wave_entry->loop_end * WAVETABLE_RESOLUTION);
+						chn->wave_direction = 1;
+					}
+					else
+					{
+						chn->wave_acc = chn->wave_acc - (Uint64)chn->wave_entry->loop_end * WAVETABLE_RESOLUTION + (Uint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION;
+					}
+				}
+			}
+			else
+			{
+				if (chn->wave_acc >= (Uint64)chn->wave_entry->samples * WAVETABLE_RESOLUTION)
+				{
+					// stop playback
+					chn->wave_entry = NULL;
+				}
 			}
 		}
 		else
 		{
-			if (chn->wave_acc >= (Uint64)chn->wave_entry->samples * WAVETABLE_RESOLUTION)
+			chn->wave_acc -= chn->wave_frequency;
+			
+			if (chn->wave_entry->flags & CYD_WAVE_LOOP)
 			{
-				// stop playback
-				chn->wave_entry = NULL;
+				if ((Sint64)chn->wave_acc < (Uint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION)
+				{
+					if (chn->wave_entry->flags & CYD_WAVE_PINGPONG) 
+					{
+						chn->wave_acc = (Uint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION - (chn->wave_acc - (Uint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION);
+						chn->wave_direction = 0;
+					}
+					else
+					{
+						chn->wave_acc = chn->wave_acc - (Uint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION + (Uint64)chn->wave_entry->loop_end * WAVETABLE_RESOLUTION;
+					}
+				}
+			}
+			else
+			{
+				if ((Sint64)chn->wave_acc < 0)
+				{
+					// stop playback
+					chn->wave_entry = NULL;
+				}
 			}
 		}
 	}

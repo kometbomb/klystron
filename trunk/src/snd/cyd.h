@@ -65,6 +65,7 @@ typedef struct
 	CydFilter flt;
 	int fx_bus;
 	const CydWavetableEntry *wave_entry;
+	int wave_direction; // 0 = forward, 1 = backwards
 	Uint64 wave_acc; // probably overkill
 	Uint32 wave_frequency;
 } CydChannel;

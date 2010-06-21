@@ -98,10 +98,10 @@ int spinner(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *_area, SD
 	SDL_Rect area;
 	copy_rect(&area, _area);
 	area.w /= 2;
-	minus = button_event(dest, event, &area, gfx, BEV_BUTTON, BEV_BUTTON_ACTIVE, DECAL_MINUS, NULL, MAKEPTR(0x80000000 | param), 0, NULL) & 1;
+	minus = button_event(dest, event, &area, gfx, BEV_BUTTON, BEV_BUTTON_ACTIVE, DECAL_MINUS, NULL, MAKEPTR(0x80000000 | ((Uint32)area.x << 16 | area.y)), 0, NULL) & 1;
 
 	area.x += area.w;
-	plus = button_event(dest, event, &area, gfx, BEV_BUTTON, BEV_BUTTON_ACTIVE, DECAL_PLUS, NULL, MAKEPTR(0x81000000 | param), 0, NULL) & 1;
+	plus = button_event(dest, event, &area, gfx, BEV_BUTTON, BEV_BUTTON_ACTIVE, DECAL_PLUS, NULL, MAKEPTR(0x81000000 | ((Uint32)area.x << 16 | area.y)), 0, NULL) & 1;
 	
 	return plus ? +1 : (minus ? -1 : 0);
 }

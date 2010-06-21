@@ -76,6 +76,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
-#define clamp(val, add, _min, _max) val = my_min(_max, my_max(_min, val + add))
+#define clamp(val, add, _min, _max) val = my_min(_max, my_max(_min, (int)val + add))
 
 #endif
