@@ -85,6 +85,8 @@ static void cyd_init_log_tables(CydEngine *cyd)
 
 void cyd_reset_wavetable(CydEngine *cyd)
 {
+	memset(cyd->wavetable_entries, 0, sizeof(cyd->wavetable_entries[0]) * CYD_WAVE_MAX_ENTRIES);
+
 	for (int i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
 	{
 		cyd_wave_entry_init(&cyd->wavetable_entries[i], NULL, 0, 0, 0, 0, 0);
