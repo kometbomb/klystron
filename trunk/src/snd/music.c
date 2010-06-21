@@ -713,7 +713,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	
 	mus->song_track[chan].slide_speed = 0;
 	
-	update_volumes(mus, &mus->song_track[chan], chn, &mus->cyd->channel[chan], ins->flags & MUS_INST_RELATIVE_VOLUME ? MAX_VOLUME : ins->volume);
+	update_volumes(mus, &mus->song_track[chan], chn, &mus->cyd->channel[chan], (ins->flags & MUS_INST_RELATIVE_VOLUME) ? MAX_VOLUME : ins->volume);
 	
 	mus->cyd->channel[chan].sync_source = ins->sync_source == 0xff? chan : ins->sync_source;
 	mus->cyd->channel[chan].ring_mod = ins->ring_mod == 0xff? chan : ins->ring_mod;
@@ -961,6 +961,7 @@ int mus_advance_tick(void* udata)
 						else
 						{
 							pinst = &mus->song->instrument[inst];
+							mus->channel[i].instrument = pinst;
 						}
 						
 						if (note == MUS_NOTE_RELEASE)
@@ -1013,7 +1014,18 @@ int mus_advance_tick(void* udata)
 							}
 							
 							if (inst != MUS_NOTE_NO_INSTRUMENT)
-								update_volumes(mus, &mus->song_track[i], &mus->channel[i], &mus->cyd->channel[i], MAX_VOLUME);
+							{
+								if (pinst->flags & MUS_INST_RELATIVE_VOLUME)
+								{
+									mus->song_track[i].volume = MAX_VOLUME;
+									mus->cyd->channel[i].volume = (mus->channel[i].flags & MUS_CHN_DISABLED) ? 0 : (int)pinst->volume * (int)mus->volume / MAX_VOLUME;
+								}
+								else
+								{
+									mus->song_track[i].volume = pinst->volume;
+									mus->cyd->channel[i].volume = (mus->channel[i].flags & MUS_CHN_DISABLED) ? 0 : (int)pinst->volume * (int)mus->volume / MAX_VOLUME;
+								}
+							}
 						}
 					}
 				}
