@@ -3,6 +3,8 @@
 
 <wiki:toc max_depth="2" />
 
+*Note:* this tutorial assumes you are using SDL.
+
 = Playing music =
 
 == Initializing ==
