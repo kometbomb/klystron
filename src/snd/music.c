@@ -53,7 +53,7 @@ static void update_volumes(MusEngine *mus, MusTrackStatus *ts, MusChannel *chn, 
 static void mus_set_buzz_frequency(MusEngine *mus, int chan, Uint16 note)
 {
 	MusChannel *chn = &mus->channel[chan];
-	if (chn->instrument->flags & MUS_INST_YM_BUZZ)
+	if (chn->instrument && chn->instrument->flags & MUS_INST_YM_BUZZ)
 	{
 		Uint16 buzz_frequency = get_freq(note + chn->buzz_offset);
 		cyd_set_env_frequency(mus->cyd, &mus->cyd->channel[chan], buzz_frequency);
@@ -66,7 +66,7 @@ static void mus_set_wavetable_frequency(MusEngine *mus, int chan, Uint16 note)
 	MusChannel *chn = &mus->channel[chan];
 	CydChannel *cydchn = &mus->cyd->channel[chan];
 	
-	if ((chn->instrument->cydflags & CYD_CHN_ENABLE_WAVE) && (cydchn->wave_entry))
+	if (chn->instrument && (chn->instrument->cydflags & CYD_CHN_ENABLE_WAVE) && (cydchn->wave_entry))
 	{
 		Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : note);
 		cyd_set_wavetable_frequency(mus->cyd, cydchn, wave_frequency);
@@ -362,8 +362,8 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 			
 				case MUS_FX_BUZZ_SET:
 				{
-					chn->buzz_offset = ((inst & 0xff)) - 0x80;
-						
+					chn->buzz_offset = (chn->buzz_offset & 0xff00) | (inst & 0xff);
+					
 					mus_set_buzz_frequency(mus, chan, chn->note);
 				}
 				break;
@@ -524,6 +524,8 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan, int advance)
 		{
 			case MUS_FX_JUMP:
 			{
+				/* This should handle infinite jumping between two jump instructions (program hang) */
+			
 				if (!visited[tick])
 				{
 					visited[tick] = 1;
@@ -544,12 +546,12 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan, int advance)
 			{
 				if (chn->program_loop == (inst & 0xff))
 				{
-					chn->program_loop = 1;
-					
+					if (advance) chn->program_loop = 1;
 				}
 				else
 				{
-					++chn->program_loop;
+					if (advance) ++chn->program_loop;
+					
 					while ((chn->instrument->program[tick] & 0xff00) != MUS_FX_LABEL && tick > 0) 
 						--tick;
 						
