@@ -95,7 +95,7 @@ GfxSurface* gfx_load_surface(const char* filename, const int flags)
 	}
 	else
 	{
-		warning("Loading surface '%s' failed", filename);
+		warning("Opening image '%s' failed", filename);
 		return NULL;
 	}
 }
@@ -111,7 +111,7 @@ GfxSurface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
 	
 	if (!loaded) 
 	{
-		warning("Loading surface failed");
+		warning("Loading surface failed: %s", SDL_GetError());
 		return NULL;
 	}
 	
