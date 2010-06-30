@@ -151,11 +151,14 @@ void cyd_deinit(CydEngine *cyd)
 	cyd->dump = NULL;
 #endif
 
-	for (int i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
-		cyd_wave_entry_deinit(&cyd->wavetable_entries[i]);
-		
-	free(cyd->wavetable_entries);
-	cyd->wavetable_entries = NULL;
+	if (cyd->wavetable_entries)
+	{
+		for (int i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
+			cyd_wave_entry_deinit(&cyd->wavetable_entries[i]);
+			
+		free(cyd->wavetable_entries);
+		cyd->wavetable_entries = NULL;
+	}
 }
 
 

@@ -32,6 +32,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <windows.h>
 #endif
 
+#ifdef USESDL_IMAGE
+#include "SDL_image.h"
+#endif
+
 // gives the optimizer an opportunity to vectorize the second loop
 
 #define vechelper(width, block)\
@@ -99,7 +103,11 @@ GfxSurface* gfx_load_surface(const char* filename, const int flags)
 
 GfxSurface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
 {
+#ifdef USESDL_IMAGE
+	SDL_Surface* loaded = IMG_Load_RW(rw, 1);
+#else
 	SDL_Surface* loaded = SDL_LoadBMP_RW(rw, 1);
+#endif
 	
 	if (!loaded) 
 	{
