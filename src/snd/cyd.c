@@ -128,14 +128,22 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 void cyd_deinit(CydEngine *cyd)
 {
 	if (cyd->lookup_table)
+	{
 		free(cyd->lookup_table);
+		cyd->lookup_table = NULL;
+	}
 	
 	if (cyd->lookup_table_ym)	
+	{
 		free(cyd->lookup_table_ym);
-		
-	cyd->lookup_table = NULL;
-	free(cyd->channel);
-	cyd->channel = NULL;
+		cyd->lookup_table_ym = NULL;
+	}
+
+	if (cyd->channel)
+	{
+		free(cyd->channel);
+		cyd->channel = NULL;
+	}
 	
 	for (int i = 0 ; i < CYD_MAX_FX_CHANNELS ; ++i)
 		cydfx_deinit(&cyd->fx[i]);
