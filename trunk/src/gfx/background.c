@@ -137,7 +137,7 @@ const ObjHdr * bg_check_collision_chained(const Background *bg, const ObjHdr *he
 }
 
 
-int bg_create_tile_objhdr(ObjHdr* object_array, const Background *bg, int x, int y, int w, int h)
+int bg_create_tile_objhdr(ObjHdr* object_array, const Background *bg, int x, int y, int w, int h, int zero_src)
 {
 	int items = 0;
 	ObjHdr *obj = object_array;
@@ -159,7 +159,7 @@ int bg_create_tile_objhdr(ObjHdr* object_array, const Background *bg, int x, int
 					obj->_yofs = bg->tiles[bg->data[_x + _y * bg->w].tile-1].rect.y;
 					obj->surface = bg->tiles[bg->data[_x + _y * bg->w].tile-1].surface;
 					obj = obj->next;
-					bg->data[_x + _y * bg->w].tile = 0;
+					if (zero_src) bg->data[_x + _y * bg->w].tile = 0;
 				}
 				++items;
 			}
