@@ -1046,7 +1046,17 @@ int mus_advance_tick(void* udata)
 			{
 				if (mus->song_track[i].pattern)
 				{
-					++mus->song_track[i].pattern_step;
+					Uint32 command = mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command;
+					if ((command & 0xf00) == MUS_FX_LOOP_PATTERN)
+					{
+						Uint16 step = command & 0xff;
+						mus->song_track[i].pattern_step = step;
+					}
+					else
+					{
+						++mus->song_track[i].pattern_step;
+					}
+					
 					if (mus->song_track[i].pattern_step >= mus->song_track[i].pattern->num_steps)
 					{
 						mus->song_track[i].pattern = NULL;
