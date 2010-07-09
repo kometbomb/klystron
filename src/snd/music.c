@@ -1142,7 +1142,7 @@ void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position)
 }
 
 
-int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, MusPattern **pattern, MusChannel *channel)
+int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, MusPattern **pattern, MusChannel *channel, int *cyd_env)
 {
 	cyd_lock(mus->cyd, 1);
 	
@@ -1167,6 +1167,17 @@ int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, M
 	if (channel)
 	{
 		memcpy(channel, mus->channel, sizeof(mus->channel));
+	}
+	
+	if (cyd_env)
+	{
+		for (int i = 0 ; i < my_min(mus->cyd->n_channels, MUS_MAX_CHANNELS) ; ++i)
+		{
+			if (mus->cyd->channel[i].flags & CYD_CHN_ENABLE_YM_ENV)
+				cyd_env[i] = mus->cyd->channel[i].volume;
+			else
+				cyd_env[i] = cyd_env_output(mus->cyd, &mus->cyd->channel[i], MAX_VOLUME);
+		}
 	}
 	
 	cyd_lock(mus->cyd, 0);

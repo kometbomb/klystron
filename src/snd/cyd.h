@@ -183,5 +183,6 @@ void cyd_set_panning(CydEngine *cyd, CydChannel *chn, Uint8 panning);
 #endif
 
 void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata);
+Sint32 cyd_env_output(CydEngine *cyd, CydChannel *chn, Sint32 input);
 
 #endif
