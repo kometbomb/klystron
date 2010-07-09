@@ -422,7 +422,7 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 }
 
 
-static Sint32 cyd_env_output(CydEngine *cyd, CydChannel *chn, Sint32 input)
+Sint32 cyd_env_output(CydEngine *cyd, CydChannel *chn, Sint32 input)
 {
 	if (chn->flags & CYD_CHN_ENABLE_YM_ENV)
 	{
