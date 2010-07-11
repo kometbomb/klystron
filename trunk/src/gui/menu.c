@@ -207,7 +207,7 @@ static void draw_submenu(SDL_Surface *menu_dest, const SDL_Event *event, const M
 			copy_rect(&r, &area);
 			adjust_rect(&r, 2);
 			
-			font = shortcut_font;
+			font = header_font;
 			
 			horiz = 1;
 			
@@ -220,6 +220,8 @@ static void draw_submenu(SDL_Surface *menu_dest, const SDL_Event *event, const M
 		{
 			if (item->text[0])
 			{
+				if (horiz) font = header_font; else font = menu_font;
+			
 				const char * sc_text = get_shortcut_key(item);
 				int bg = 0;
 				
@@ -257,6 +259,8 @@ static void draw_submenu(SDL_Surface *menu_dest, const SDL_Event *event, const M
 					bg = 1;
 				}
 				
+				int selected = 0;
+				
 				if ((pass == DRAW) && (bg || (current_menu_action == item && current_menu_action)))
 				{
 					SDL_Rect bar;
@@ -264,6 +268,9 @@ static void draw_submenu(SDL_Surface *menu_dest, const SDL_Event *event, const M
 					adjust_rect(&bar, -1);
 					bar.h --;
 					bevel(menu_dest, &bar, menu_gfx, BEV_MENU_SELECTED);
+					
+					font = horiz ? header_font_selected : menu_font_selected;
+					selected = 1;
 				}
 				
 				if (pass == DRAW) 
@@ -286,7 +293,7 @@ static void draw_submenu(SDL_Surface *menu_dest, const SDL_Event *event, const M
 						SDL_Rect tick;
 						copy_rect(&tick, &r);
 						tick.y = r.h / 2 + r.y - shortcut_font->h / 2;
-						font_write(shortcut_font, menu_dest, &tick, tick_char);
+						font_write(selected ? shortcut_font_selected : shortcut_font, menu_dest, &tick, tick_char);
 					}
 				}
 				
@@ -297,7 +304,7 @@ static void draw_submenu(SDL_Surface *menu_dest, const SDL_Event *event, const M
 					r.w = SC_SIZE;
 					r.x -= strlen(sc_text) * shortcut_font->w;
 					r.y = r.h / 2 + r.y - shortcut_font->h / 2;
-					font_write(shortcut_font, menu_dest, &r, sc_text);
+					font_write(selected ? shortcut_font_selected : shortcut_font, menu_dest, &r, sc_text);
 					r.x = tmpx;
 					r.y = tmpy;
 					update_rect(&area, &r);
