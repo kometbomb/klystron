@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define MUS_PROG_LEN 32
 #define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
 
-#define MUS_VERSION 12
+#define MUS_VERSION 13
 
 #define MUS_SONG_TITLE_LEN 64
 #define MUS_INSTRUMENT_NAME_LEN 32
@@ -79,6 +79,7 @@ typedef struct
 {
 	MusInstrument *instrument;
 	Uint16 note;
+	Uint8 volume;
 	// ------
 	Uint8 arpeggio_note;
 	Uint16 target_note, last_note, fixed_note;
@@ -124,6 +125,8 @@ typedef struct
 	char title[MUS_SONG_TITLE_LEN + 1];
 	CydFxSerialized fx[CYD_MAX_FX_CHANNELS];
 	Uint8 master_volume;
+	Uint8 default_volume[MUS_MAX_CHANNELS];
+	Sint8 default_panning[MUS_MAX_CHANNELS];
 } MusSong;
 
 
@@ -159,7 +162,7 @@ typedef struct
 	Uint16 song_position;
 	CydEngine *cyd;
 	Uint8 current_tick;
-	Uint8 volume; // 0..128
+	Uint8 volume, play_volume; // 0..128
 	Uint8 multiplex_ctr;
 } MusEngine;
 
@@ -216,6 +219,9 @@ enum
 	MUS_FX_SET_PANNING = 0x1800,
 	MUS_FX_PAN_LEFT = 0x1700,
 	MUS_FX_PAN_RIGHT = 0x1900,
+	MUS_FX_FADE_GLOBAL_VOLUME = 0x1a00,
+	MUS_FX_SET_GLOBAL_VOLUME = 0x1d00,
+	MUS_FX_SET_CHANNEL_VOLUME = 0x1c00,
 	MUS_FX_CUTOFF_UP = 0x2100,
 	MUS_FX_CUTOFF_DN = 0x2200,
 	MUS_FX_CUTOFF_SET = 0x2900,
