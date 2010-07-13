@@ -1195,7 +1195,7 @@ void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position)
 }
 
 
-int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, MusPattern **pattern, MusChannel *channel, int *cyd_env)
+int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, MusPattern **pattern, MusChannel *channel, int *cyd_env, int *mus_note)
 {
 	cyd_lock(mus->cyd, 1);
 	
@@ -1230,6 +1230,14 @@ int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, M
 				cyd_env[i] = mus->cyd->channel[i].volume;
 			else
 				cyd_env[i] = cyd_env_output(mus->cyd, &mus->cyd->channel[i], MAX_VOLUME);
+		}
+	}
+	
+	if (mus_note)
+	{
+		for (int i = 0 ; i < my_min(mus->cyd->n_channels, MUS_MAX_CHANNELS) ; ++i)
+		{
+			mus_note[i] = mus->channel[i].note;
 		}
 	}
 	
