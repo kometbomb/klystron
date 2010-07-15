@@ -428,6 +428,12 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 				}
 				break;
 				
+				case MUS_FX_RESONANCE_SET:
+				{
+					cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, inst & 3);
+				}
+				break;
+				
 				case MUS_FX_SET_SPEED:
 				{
 					if (from_program)
