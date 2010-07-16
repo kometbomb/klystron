@@ -96,6 +96,7 @@ void slider(SDL_Surface *dest_surface, const SDL_Rect *_area, const SDL_Event *e
 		
 		bar_size = bar_bottom - bar_top;
 		
+		if (bar_size < my_max(_area->w, _area->h) / 6) bar_size = my_max(_area->w, _area->h) / 6;
 		if (bar_size < sbsize) bar_size = sbsize;
 		if (bar_size > area_size) { bar_size = area_size; bar_top = area_start; }
 		if (bar_top + bar_size > area_size + area_start) bar_top = area_size - bar_size + area_start;
