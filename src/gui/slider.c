@@ -77,7 +77,7 @@ void slider(SDL_Surface *dest_surface, const SDL_Rect *_area, const SDL_Event *e
 	int area_start = ((param->orientation == SLIDER_HORIZONTAL) ? _area->x : _area->y) + button_size;
 	int bar_size = area_size;
 	int bar_top = area_start;
-	
+	int sbsize = my_min(_area->w, _area->h);
 	
 	if (param->visible_last > param->visible_first && param->last != param->first)
 	{
@@ -96,7 +96,7 @@ void slider(SDL_Surface *dest_surface, const SDL_Rect *_area, const SDL_Event *e
 		
 		bar_size = bar_bottom - bar_top;
 		
-		if (bar_size < 4) bar_size = 4;
+		if (bar_size < sbsize) bar_size = sbsize;
 		if (bar_size > area_size) { bar_size = area_size; bar_top = area_start; }
 		if (bar_top + bar_size > area_size + area_start) bar_top = area_size - bar_size + area_start;
 	}
@@ -170,7 +170,7 @@ void slider(SDL_Surface *dest_surface, const SDL_Rect *_area, const SDL_Event *e
 	}
 	
 	{
-		SDL_Rect area = { _area->x, _area->y, SCROLLBAR, SCROLLBAR };
+		SDL_Rect area = { _area->x, _area->y, sbsize, sbsize };
 		
 		button_event(dest_surface, event, &area, param->gfx, BEV_BUTTON, BEV_BUTTON_ACTIVE, param->orientation == SLIDER_HORIZONTAL ? DECAL_LEFTARROW : DECAL_UPARROW, modify_position, MAKEPTR(-param->granularity), param, 0);
 		

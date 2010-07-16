@@ -38,6 +38,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <unistd.h>
 #include <sys/stat.h>
 
+#define SCROLLBAR 10
 #define WIDTH 280
 #define HEIGHT 180
 #define TOP_LEFT (320 / 2 - WIDTH / 2)
