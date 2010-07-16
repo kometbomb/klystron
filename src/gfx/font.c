@@ -51,6 +51,8 @@ void font_destroy(Font *font)
 
 static const TileDescriptor * findchar(const Font *font, char c)
 {
+	if (c == ' ') return NULL;
+
 	char *tc;
 	const TileDescriptor *tile;
 	for (tile = font->tiledescriptor, tc = font->charmap; *tc ; ++tile, ++tc)
