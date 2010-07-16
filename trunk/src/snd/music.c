@@ -564,6 +564,8 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan, int advance)
 		break;
 	}
 	
+	int dont_reloop = 0;
+	
 	if(inst != MUS_FX_NOP)
 	{
 		switch (inst & 0xff00)
@@ -598,10 +600,17 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan, int advance)
 				{
 					if (advance) ++chn->program_loop;
 					
+					int l = 0;
+					
 					while ((chn->instrument->program[tick] & 0xff00) != MUS_FX_LABEL && tick > 0) 
+					{
 						--tick;
+						if (!(chn->instrument->program[tick] & 0x8000)) ++l;
+					}
 						
 					--tick;
+					
+					dont_reloop = l <= 1;
 				}
 			}
 			break;
@@ -625,7 +634,7 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan, int advance)
 	
 	// skip to next on msb
 	
-	if ((inst & 0x8000) && inst != MUS_FX_NOP)
+	if ((inst & 0x8000) && inst != MUS_FX_NOP && !dont_reloop)
 	{
 		goto do_it_again;
 	}
