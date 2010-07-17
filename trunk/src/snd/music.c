@@ -1681,7 +1681,14 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 						song->pattern[i].step[s].instrument = MUS_NOTE_NO_INSTRUMENT;
 						
 					if (bits & MUS_PAK_BIT_CTRL)
+					{
 						fread(&song->pattern[i].step[s].ctrl, 1, sizeof(song->pattern[i].step[s].ctrl), f);
+						
+						if (version >= 14)
+							bits |= song->pattern[i].step[s].ctrl & ~7;
+						
+						song->pattern[i].step[s].ctrl &= 7;
+					}
 					else
 						song->pattern[i].step[s].ctrl = 0;
 						
@@ -1691,6 +1698,15 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 						song->pattern[i].step[s].command = 0;
 						
 					FIX_ENDIAN(song->pattern[i].step[s].command);
+					
+					if (bits & MUS_PAK_BIT_VOLUME)
+					{
+						fread(&song->pattern[i].step[s].volume, 1, sizeof(song->pattern[i].step[s].volume), f);
+					}
+					else
+					{
+						song->pattern[i].step[s].volume = MUS_NOTE_NO_VOLUME;	
+					}
 					
 					if (s & 1) ++current;
 				}
