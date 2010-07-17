@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define MUS_PROG_LEN 32
 #define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
 
-#define MUS_VERSION 13
+#define MUS_VERSION 14
 
 #define MUS_SONG_TITLE_LEN 64
 #define MUS_INSTRUMENT_NAME_LEN 32
@@ -93,6 +93,7 @@ typedef struct
 {
 	Uint8 note, instrument, ctrl;
 	Uint16 command;
+	Uint8 volume;
 } MusStep;
 
 typedef struct
@@ -185,9 +186,12 @@ enum
 	MUS_PAK_BIT_NOTE = 1,
 	MUS_PAK_BIT_INST = 2,
 	MUS_PAK_BIT_CTRL = 4,
-	MUS_PAK_BIT_CMD = 8
+	MUS_PAK_BIT_CMD = 8,
+	/* -- these go in ctrl byte -- */
+	MUS_PAK_BIT_VOLUME = 128
 };
 
+#define MUS_NOTE_NO_VOLUME 0xff
 #define MUS_NOTE_NO_INSTRUMENT 0xff
 #define MUS_CTRL_BIT 1
 #define MAX_VOLUME 128
