@@ -58,12 +58,10 @@ static const TileDescriptor * findchar(const Font *font, char c)
 	for (tile = font->tiledescriptor, tc = font->charmap; *tc ; ++tile, ++tc)
 		if (*tc == c) return tile;
 		
-	char lc = tolower(c);
-	
-	if (lc == c) return NULL;
+	c = tolower(c);
 		
 	for (tile = font->tiledescriptor, tc = font->charmap; *tc ; ++tile, ++tc)
-		if (tolower(*tc) == lc) return tile;
+		if (tolower(*tc) == c) return tile;
 	//debug("Could not find character '%c'", c);
 	return NULL;
 }
