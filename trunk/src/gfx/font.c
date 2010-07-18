@@ -58,10 +58,12 @@ static const TileDescriptor * findchar(const Font *font, char c)
 	for (tile = font->tiledescriptor, tc = font->charmap; *tc ; ++tile, ++tc)
 		if (*tc == c) return tile;
 		
-	c = tolower(c);
+	char lc = tolower(c);
+	
+	if (lc == c) return NULL;
 		
 	for (tile = font->tiledescriptor, tc = font->charmap; *tc ; ++tile, ++tc)
-		if (tolower(*tc) == c) return tile;
+		if (tolower(*tc) == lc) return tile;
 	//debug("Could not find character '%c'", c);
 	return NULL;
 }
@@ -180,13 +182,35 @@ static int font_load_inner(Font *font, Bundle *fb)
 				{
 					if (*c == '\\' && len > 1)
 					{
-						char hex = tolower(*(c + 1));
+						char hex = 0;
+						int digits = 0;
 						
-						if (!((hex >= '0' && hex <= '9') || (hex >= 'a' && hex <= 'f'))) goto not_hex;
+						while (len > 1 && digits < 2)
+						{
+							char digit = tolower(*(c + 1));
+							
+							if (!((digit >= '0' && digit <= '9') || (digit >= 'a' && digit <= 'f'))) 
+							{
+								if (digits < 1)
+									goto not_hex;
+
+								break;
+							}
 						
-						*(m++) = hex >= 'a' ? hex - 'a' + 10 : hex - '0';
-						c += 2;
-						len -= 2;
+							hex <<= 4;
+							
+							hex |= (digit >= 'a' ? digit - 'a' + 10 : digit - '0') & 0x0f;
+						
+							--len;
+							++digits;
+							++c;
+						}
+						
+						if (digits < 1) goto not_hex;
+						
+						++c;
+						
+						*(m++) = hex;
 					}
 					else
 					{	
