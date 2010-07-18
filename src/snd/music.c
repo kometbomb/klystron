@@ -523,6 +523,23 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 static void mus_exec_track_command(MusEngine *mus, int chan)
 {
 	const Uint16 inst = mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].command;
+	const Uint8 vol = mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].volume;
+	
+	switch (vol & 0xf0)
+	{
+		case MUS_NOTE_VOLUME_FADE_UP:
+			do_command(mus, chan, mus->song_counter, MUS_FX_FADE_VOLUME | ((Uint16)(vol & 0xf) << 4), 0);
+			break;
+			
+		case MUS_NOTE_VOLUME_FADE_DN:
+			do_command(mus, chan, mus->song_counter, MUS_FX_FADE_VOLUME | ((Uint16)(vol & 0xf)), 0);
+			break;
+			
+		default:
+			if (vol <= MAX_VOLUME)
+				do_command(mus, chan, mus->song_counter, MUS_FX_SET_VOLUME | (Uint16)(vol), 0);
+			break;
+	}
 	
 	switch (inst & 0xff00)
 	{
@@ -539,8 +556,6 @@ static void mus_exec_track_command(MusEngine *mus, int chan)
 		do_command(mus, chan, mus->song_counter, inst, 0);
 		break;
 	}
-	
-	
 }
 
 
