@@ -512,6 +512,17 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					cyd_set_waveform(&mus->cyd->channel[chan], inst & 0xff);
 				}
 				break;
+				
+				case MUS_FX_RESTART_PROGRAM:
+				{
+					if (!from_program)
+					{
+						chn->program_counter = 0;
+						chn->program_tick = 0;
+						chn->program_loop = 1;
+					}
+				}
+				break;
 			}
 			
 			break;
@@ -754,9 +765,12 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	if (ins->prog_period > 0) chn->flags |= MUS_CHN_PROGRAM_RUNNING;
 	chn->prog_period = ins->prog_period;
 	chn->instrument = ins;
-	chn->program_counter = 0;
-	chn->program_tick = 0;
-	chn->program_loop = 1;
+	if (!(ins->flags & MUS_INST_NO_PROG_RESTART))
+	{
+		chn->program_counter = 0;
+		chn->program_tick = 0;
+		chn->program_loop = 1;
+	}
 	mus->cyd->channel[chan].flags = ins->cydflags;
 	chn->arpeggio_note = 0;
 	chn->fixed_note = 0xffff;
