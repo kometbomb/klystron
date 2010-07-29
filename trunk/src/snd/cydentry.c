@@ -68,6 +68,7 @@ void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_sa
 	{
 		free(entry->data);
 		entry->data = NULL;
+		memset(entry, 0, sizeof(*entry));
 	}
 	
 	/* default stuff */
