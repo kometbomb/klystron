@@ -63,15 +63,13 @@ void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_sa
 			
 			entry->data[i] = v * denom / nom;
 		}
+		
+		entry->samples = n_samples;
 	}
 	else
 	{
 		free(entry->data);
 		entry->data = NULL;
-		memset(entry, 0, sizeof(*entry));
+		entry->samples = 0;
 	}
-	
-	/* default stuff */
-	
-	entry->samples = n_samples;
 }
