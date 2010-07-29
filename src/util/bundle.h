@@ -56,6 +56,7 @@ int bnd_open(Bundle *bundle, const char * filename);
 int bnd_open_file(Bundle *bundle, FILE *f, const char * filename);
 void bnd_free(Bundle *bundle);
 FILE *bnd_locate(Bundle *bundle, const char *filename, int static_handle);
+int bnd_exists(const Bundle *bundle, const char *filename);
 SDL_RWops *SDL_RWFromBundle(Bundle *bundle, const char *filename);
 
 #endif

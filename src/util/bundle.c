@@ -279,3 +279,17 @@ SDL_RWops *SDL_RWFromBundle(Bundle *bundle, const char *filename)
 	
 	return(rwops);
 }
+
+
+int bnd_exists(const Bundle *bundle, const char *filename)
+{
+	for (int i = 0 ; i < bundle->n_files ; ++i)
+	{
+		if (strcmp(bundle->file[i].name, filename) == 0)
+		{
+			return 1;
+		}
+	}
+	
+	return 0;
+}
