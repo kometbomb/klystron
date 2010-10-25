@@ -31,7 +31,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 enum
 {
 	CYD_WAVE_LOOP = 1,
-	CYD_WAVE_PINGPONG = 2 // ping-pong loop as in FT2
+	CYD_WAVE_PINGPONG = 2, // ping-pong loop as in FT2
+	CYD_WAVE_NO_INTERPOLATION = 4
 };
 
 typedef enum
