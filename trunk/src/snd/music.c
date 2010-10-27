@@ -998,202 +998,220 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 }
 
 
+Uint32 mus_ext_sync(MusEngine *mus)
+{
+	cyd_lock(mus->cyd, 1);
+	
+	Uint32 s = ++mus->ext_sync_ticks;
+	
+	cyd_lock(mus->cyd, 0);
+	
+	return s;
+}
+
+
 int mus_advance_tick(void* udata)
 {
 	MusEngine *mus = udata;
 	
-	if (mus->song)
+	if (!(mus->flags & MUS_EXT_SYNC))
+		mus->ext_sync_ticks = 1;
+	
+	while (mus->ext_sync_ticks-- > 0)
 	{
-		for (int i = 0 ; i < mus->song->num_channels ; ++i)
+		if (mus->song)
 		{
-			if (mus->song_counter == 0)
+			for (int i = 0 ; i < mus->song->num_channels ; ++i)
 			{
-				while (mus->song_track[i].sequence_position < mus->song->num_sequences[i] && mus->song->sequence[i][mus->song_track[i].sequence_position].position <= mus->song_position)
+				if (mus->song_counter == 0)
 				{
-					mus->song_track[i].pattern = &mus->song->pattern[mus->song->sequence[i][mus->song_track[i].sequence_position].pattern];
-					mus->song_track[i].pattern_step = mus->song_position - mus->song->sequence[i][mus->song_track[i].sequence_position].position;
-					if (mus->song_track[i].pattern_step >= mus->song->pattern[mus->song->sequence[i][mus->song_track[i].sequence_position].pattern].num_steps) 
-						mus->song_track[i].pattern = NULL;
-					mus->song_track[i].note_offset = mus->song->sequence[i][mus->song_track[i].sequence_position].note_offset;
-					++mus->song_track[i].sequence_position;
+					while (mus->song_track[i].sequence_position < mus->song->num_sequences[i] && mus->song->sequence[i][mus->song_track[i].sequence_position].position <= mus->song_position)
+					{
+						mus->song_track[i].pattern = &mus->song->pattern[mus->song->sequence[i][mus->song_track[i].sequence_position].pattern];
+						mus->song_track[i].pattern_step = mus->song_position - mus->song->sequence[i][mus->song_track[i].sequence_position].position;
+						if (mus->song_track[i].pattern_step >= mus->song->pattern[mus->song->sequence[i][mus->song_track[i].sequence_position].pattern].num_steps) 
+							mus->song_track[i].pattern = NULL;
+						mus->song_track[i].note_offset = mus->song->sequence[i][mus->song_track[i].sequence_position].note_offset;
+						++mus->song_track[i].sequence_position;
+					}
+				}
+				
+				int delay = 0;
+				
+				if (mus->song_track[i].pattern)
+				{
+					if ((mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command & 0x7FF0) == MUS_FX_EXT_NOTE_DELAY)
+						delay = mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command & 0xf;
+				}
+				
+				if (mus->song_counter == delay)
+				{			
+					if (mus->song_track[i].pattern)
+					{
+						
+						if (1 || mus->song_track[i].pattern_step == 0)
+						{
+							Uint8 note = mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].note < 0xf0 ? 
+								mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].note + mus->song_track[i].note_offset :
+								mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].note;
+							Uint8 inst = mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].instrument;
+							MusInstrument *pinst = NULL;
+							
+							if (inst == MUS_NOTE_NO_INSTRUMENT)
+							{
+								pinst = mus->channel[i].instrument;
+							}
+							else
+							{
+								pinst = &mus->song->instrument[inst];
+								mus->channel[i].instrument = pinst;
+							}
+							
+							if (note == MUS_NOTE_RELEASE)
+							{
+								cyd_enable_gate(mus->cyd, &mus->cyd->channel[i], 0);
+							}
+							else if (pinst && note != MUS_NOTE_NONE)
+							{
+								mus->song_track[i].slide_speed = 0;
+								int speed = pinst->slide_speed | 1;
+								Uint8 ctrl = mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].ctrl;
+								
+								if ((mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command & 0xff00) == MUS_FX_SLIDE)
+								{
+									ctrl |= MUS_CTRL_SLIDE | MUS_CTRL_LEGATO; 
+									speed = (mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command & 0xff);
+								}
+								
+								if (ctrl & MUS_CTRL_SLIDE)
+								{
+									if (ctrl & MUS_CTRL_LEGATO)
+									{
+										mus_set_slide(mus, i, ((Uint16)note + pinst->base_note - MIDDLE_C) << 8);
+									}
+									else
+									{
+										Uint16 oldnote = mus->channel[i].note;
+										mus_trigger_instrument_internal(mus, i, pinst, note);
+										mus->channel[i].note = oldnote;
+									}
+									mus->song_track[i].slide_speed = speed;
+								}
+								else if (ctrl & MUS_CTRL_LEGATO)
+								{
+									mus_set_note(mus, i, ((Uint16)note + pinst->base_note - MIDDLE_C) << 8, 1, pinst->flags & MUS_INST_QUARTER_FREQ ? 4 : 1);
+									mus->channel[i].target_note = ((Uint16)note + pinst->base_note - MIDDLE_C) << 8;
+								}
+								else 
+								{
+									Uint8 prev_vol_track = mus->song_track[i].volume;
+									Uint8 prev_vol_cyd = mus->cyd->channel[i].volume;
+									mus_trigger_instrument_internal(mus, i, pinst, note);
+									mus->channel[i].target_note = ((Uint16)note + pinst->base_note - MIDDLE_C) << 8;
+									
+									if (inst == MUS_NOTE_NO_INSTRUMENT)
+									{
+										mus->song_track[i].volume = prev_vol_track;
+										mus->cyd->channel[i].volume = prev_vol_cyd;
+									}
+								}
+								
+								if (inst != MUS_NOTE_NO_INSTRUMENT)
+								{
+									if (pinst->flags & MUS_INST_RELATIVE_VOLUME)
+									{
+										mus->song_track[i].volume = MAX_VOLUME;
+										mus->cyd->channel[i].volume = (mus->channel[i].flags & MUS_CHN_DISABLED) 
+											? 0 
+											: (int)pinst->volume * (int)mus->volume / MAX_VOLUME * (int)mus->play_volume / MAX_VOLUME * (int)mus->channel[i].volume / MAX_VOLUME;
+									}
+									else
+									{
+										mus->song_track[i].volume = pinst->volume;
+										mus->cyd->channel[i].volume = (mus->channel[i].flags & MUS_CHN_DISABLED) ? 0 : (int)pinst->volume * (int)mus->volume / MAX_VOLUME * (int)mus->play_volume / MAX_VOLUME * (int)mus->channel[i].volume / MAX_VOLUME;
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 			
-			int delay = 0;
-			
-			if (mus->song_track[i].pattern)
+			for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
 			{
-				if ((mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command & 0x7FF0) == MUS_FX_EXT_NOTE_DELAY)
-					delay = mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command & 0xf;
+				if (mus->song_track[i].pattern) mus_exec_track_command(mus, i);
 			}
 			
-			if (mus->song_counter == delay)
-			{			
-				if (mus->song_track[i].pattern)
+			++mus->song_counter;
+			if (mus->song_counter >= ((!(mus->song_position & 1)) ? mus->song->song_speed : mus->song->song_speed2))
+			{
+				for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
 				{
-					
-					if (1 || mus->song_track[i].pattern_step == 0)
+					if (mus->song_track[i].pattern)
 					{
-						Uint8 note = mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].note < 0xf0 ? 
-							mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].note + mus->song_track[i].note_offset :
-							mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].note;
-						Uint8 inst = mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].instrument;
-						MusInstrument *pinst = NULL;
-						
-						if (inst == MUS_NOTE_NO_INSTRUMENT)
+						Uint32 command = mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command;
+						if ((command & 0xff00) == MUS_FX_LOOP_PATTERN)
 						{
-							pinst = mus->channel[i].instrument;
+							Uint16 step = command & 0xff;
+							mus->song_track[i].pattern_step = step;
 						}
 						else
 						{
-							pinst = &mus->song->instrument[inst];
-							mus->channel[i].instrument = pinst;
+							++mus->song_track[i].pattern_step;
 						}
 						
-						if (note == MUS_NOTE_RELEASE)
+						if (mus->song_track[i].pattern_step >= mus->song_track[i].pattern->num_steps)
 						{
-							cyd_enable_gate(mus->cyd, &mus->cyd->channel[i], 0);
-						}
-						else if (pinst && note != MUS_NOTE_NONE)
-						{
-							mus->song_track[i].slide_speed = 0;
-							int speed = pinst->slide_speed | 1;
-							Uint8 ctrl = mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].ctrl;
-							
-							if ((mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command & 0xff00) == MUS_FX_SLIDE)
-							{
-								ctrl |= MUS_CTRL_SLIDE | MUS_CTRL_LEGATO; 
-								speed = (mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command & 0xff);
-							}
-							
-							if (ctrl & MUS_CTRL_SLIDE)
-							{
-								if (ctrl & MUS_CTRL_LEGATO)
-								{
-									mus_set_slide(mus, i, ((Uint16)note + pinst->base_note - MIDDLE_C) << 8);
-								}
-								else
-								{
-									Uint16 oldnote = mus->channel[i].note;
-									mus_trigger_instrument_internal(mus, i, pinst, note);
-									mus->channel[i].note = oldnote;
-								}
-								mus->song_track[i].slide_speed = speed;
-							}
-							else if (ctrl & MUS_CTRL_LEGATO)
-							{
-								mus_set_note(mus, i, ((Uint16)note + pinst->base_note - MIDDLE_C) << 8, 1, pinst->flags & MUS_INST_QUARTER_FREQ ? 4 : 1);
-								mus->channel[i].target_note = ((Uint16)note + pinst->base_note - MIDDLE_C) << 8;
-							}
-							else 
-							{
-								Uint8 prev_vol_track = mus->song_track[i].volume;
-								Uint8 prev_vol_cyd = mus->cyd->channel[i].volume;
-								mus_trigger_instrument_internal(mus, i, pinst, note);
-								mus->channel[i].target_note = ((Uint16)note + pinst->base_note - MIDDLE_C) << 8;
-								
-								if (inst == MUS_NOTE_NO_INSTRUMENT)
-								{
-									mus->song_track[i].volume = prev_vol_track;
-									mus->cyd->channel[i].volume = prev_vol_cyd;
-								}
-							}
-							
-							if (inst != MUS_NOTE_NO_INSTRUMENT)
-							{
-								if (pinst->flags & MUS_INST_RELATIVE_VOLUME)
-								{
-									mus->song_track[i].volume = MAX_VOLUME;
-									mus->cyd->channel[i].volume = (mus->channel[i].flags & MUS_CHN_DISABLED) 
-										? 0 
-										: (int)pinst->volume * (int)mus->volume / MAX_VOLUME * (int)mus->play_volume / MAX_VOLUME * (int)mus->channel[i].volume / MAX_VOLUME;
-								}
-								else
-								{
-									mus->song_track[i].volume = pinst->volume;
-									mus->cyd->channel[i].volume = (mus->channel[i].flags & MUS_CHN_DISABLED) ? 0 : (int)pinst->volume * (int)mus->volume / MAX_VOLUME * (int)mus->play_volume / MAX_VOLUME * (int)mus->channel[i].volume / MAX_VOLUME;
-								}
-							}
+							mus->song_track[i].pattern = NULL;
+							mus->song_track[i].pattern_step = 0;
 						}
 					}
 				}
-			}
-		}
-		
-		for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
-		{
-			if (mus->song_track[i].pattern) mus_exec_track_command(mus, i);
-		}
-		
-		++mus->song_counter;
-		if (mus->song_counter >= ((!(mus->song_position & 1)) ? mus->song->song_speed : mus->song->song_speed2))
-		{
-			for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
-			{
-				if (mus->song_track[i].pattern)
+				mus->song_counter = 0;
+				++mus->song_position;
+				if (mus->song_position >= mus->song->song_length)
 				{
-					Uint32 command = mus->song_track[i].pattern->step[mus->song_track[i].pattern_step].command;
-					if ((command & 0xff00) == MUS_FX_LOOP_PATTERN)
-					{
-						Uint16 step = command & 0xff;
-						mus->song_track[i].pattern_step = step;
-					}
-					else
-					{
-						++mus->song_track[i].pattern_step;
-					}
+					if (mus->song->flags & MUS_NO_REPEAT)
+						return 0;
 					
-					if (mus->song_track[i].pattern_step >= mus->song_track[i].pattern->num_steps)
+					mus->song_position = mus->song->loop_point;
+					for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
 					{
 						mus->song_track[i].pattern = NULL;
 						mus->song_track[i].pattern_step = 0;
+						mus->song_track[i].sequence_position = 0;
 					}
 				}
 			}
-			mus->song_counter = 0;
-			++mus->song_position;
-			if (mus->song_position >= mus->song->song_length)
-			{
-				if (mus->song->flags & MUS_NO_REPEAT)
-					return 0;
-				
-				mus->song_position = mus->song->loop_point;
-				for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
-				{
-					mus->song_track[i].pattern = NULL;
-					mus->song_track[i].pattern_step = 0;
-					mus->song_track[i].sequence_position = 0;
-				}
-			}
 		}
-	}
-	
-	for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
-	{
-		if (mus->channel[i].flags & MUS_CHN_PLAYING || mus->song_track[i].delayed.instrument) 
-		{
-			mus_advance_channel(mus, i);
-		}
-	}
-	
-	if (mus->song && (mus->song->flags & MUS_ENABLE_MULTIPLEX) && mus->song->multiplex_period > 0)
-	{
+		
 		for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
 		{
-			CydChannel *cydchn = &mus->cyd->channel[i];
-			
-			if ((mus->multiplex_ctr / mus->song->multiplex_period) == i)
+			if (mus->channel[i].flags & MUS_CHN_PLAYING || mus->song_track[i].delayed.instrument) 
 			{
-				update_volumes(mus, &mus->song_track[i], &mus->channel[i], cydchn, mus->song_track[i].volume);
-			}
-			else
-			{
-				cydchn->volume = 0;
+				mus_advance_channel(mus, i);
 			}
 		}
 		
-		if (++mus->multiplex_ctr >= mus->song->num_channels * mus->song->multiplex_period)
-			mus->multiplex_ctr = 0;
+		if (mus->song && (mus->song->flags & MUS_ENABLE_MULTIPLEX) && mus->song->multiplex_period > 0)
+		{
+			for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
+			{
+				CydChannel *cydchn = &mus->cyd->channel[i];
+				
+				if ((mus->multiplex_ctr / mus->song->multiplex_period) == i)
+				{
+					update_volumes(mus, &mus->song_track[i], &mus->channel[i], cydchn, mus->song_track[i].volume);
+				}
+				else
+				{
+					cydchn->volume = 0;
+				}
+			}
+			
+			if (++mus->multiplex_ctr >= mus->song->num_channels * mus->song->multiplex_period)
+				mus->multiplex_ctr = 0;
+		}
 	}
 	
 	return 1;

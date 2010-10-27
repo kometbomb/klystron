@@ -166,6 +166,8 @@ typedef struct
 	Uint8 current_tick;
 	Uint8 volume, play_volume; // 0..128
 	Uint8 multiplex_ctr;
+	Uint32 flags;
+	Uint32 ext_sync_ticks;
 } MusEngine;
 
 
@@ -190,6 +192,11 @@ enum
 	MUS_PAK_BIT_CMD = 8,
 	/* -- these go in ctrl byte -- */
 	MUS_PAK_BIT_VOLUME = 128
+};
+
+enum
+{
+	MUS_EXT_SYNC = 1
 };
 
 #define MUS_NOTE_VOLUME_FADE_UP 0xe0
@@ -297,5 +304,6 @@ int mus_load_song(const char *path, MusSong *song, CydWavetableEntry *wavetable_
 int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entries);
 void mus_free_song(MusSong *song);
 void mus_set_fx(MusEngine *mus, MusSong *song);
+Uint32 mus_ext_sync(MusEngine *mus);
 
 #endif
