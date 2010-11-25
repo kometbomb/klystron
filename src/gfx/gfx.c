@@ -120,8 +120,13 @@ GfxSurface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
 	if (flags & GFX_KEYED)
 	{
 		SDL_Surface* optimal = NULL;
-		SDL_SetColorKey(loaded, SDL_RLEACCEL | SDL_SRCCOLORKEY,
-			SDL_MapRGB(loaded->format, 255, 0, 255));
+		Uint32 c = SDL_MapRGB(loaded->format, 255, 0, 255);
+		Uint8 r, g, b;
+		SDL_GetRGB(c, loaded->format, &r, &g, &b);
+		
+		if (r == 255 && g == 0 && b == 255)
+			SDL_SetColorKey(loaded, SDL_RLEACCEL | SDL_SRCCOLORKEY, c);
+			
 		optimal = SDL_DisplayFormat(loaded);
 		
 		if (!optimal)
