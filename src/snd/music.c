@@ -1697,7 +1697,12 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 			
 			if (version < 8)
 			{
-				size_t s = (version < 2) ? sizeof(Uint8)*3 : sizeof(song->pattern[i].step[0]);
+				size_t s = sizeof(song->pattern[i].step[0]);
+				if (version < 2) 
+					s = sizeof(Uint8)*3;
+				else
+					s = sizeof(Uint8)*3 + sizeof(Uint16) + 1; // aligment issue in version 6 songs
+					
 				for (int step = 0 ; step < song->pattern[i].num_steps ; ++step)
 				{
 					fread(&song->pattern[i].step[step], 1, s, f);
