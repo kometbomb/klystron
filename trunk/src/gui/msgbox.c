@@ -32,15 +32,26 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 static int draw_box(SDL_Surface *dest, SDL_Surface *gfx, const Font *font, const SDL_Event *event, const char *msg, int buttons, int *selected)
 {
-	SDL_Rect area = { dest->w / 2 - 100, dest->h / 2 - 24, 200, 48 };
+	int w = 0, max_w = 200, h = font->h;
+	
+	for (const char *c = msg ; *c ; ++c)
+	{
+		w += font->w;
+		max_w = my_max(max_w, w + 16);
+		if (*c == '\n')
+		{
+			w = 0;
+			h += font->h;
+		}
+	}
+	
+	SDL_Rect area = { dest->w / 2 - max_w / 2, dest->h / 2 - h / 2 - 8, max_w, h + 16 + 16 + 4 };
 	
 	bevel(dest, &area, gfx, BEV_MENU);
 	SDL_Rect content, pos;
 	copy_rect(&content, &area);
 	adjust_rect(&content, 8);
 	copy_rect(&pos, &content);
-	
-	pos.h = 18;
 	
 	font_write(font, dest, &pos, msg);
 	update_rect(&content, &pos);
@@ -54,6 +65,7 @@ static int draw_box(SDL_Surface *dest, SDL_Surface *gfx, const Font *font, const
 	pos.w = 50;
 	pos.h = 14;
 	pos.x = content.x + content.w / 2 - b * (pos.w + ELEMENT_MARGIN) / 2 + ELEMENT_MARGIN / 2;
+	pos.y -= 8 + 4;
 	
 	int r = 0;
 	static const char *label[] = { "YES", "NO", "CANCEL", "OK" };
