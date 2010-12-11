@@ -428,6 +428,23 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 				}
 				break;
 				
+				case MUS_FX_CUTOFF_SET_COMBINED:
+				{
+					if ((inst & 0xff) < 0x80)
+					{
+						mus->song_track[chan].filter_cutoff = (inst & 0xff) << 4;
+						cydchn->flttype = FLT_LP;
+						cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
+					}
+					else
+					{
+						mus->song_track[chan].filter_cutoff = ((inst & 0xff) - 0x80) << 4;
+						cydchn->flttype = FLT_HP;
+						cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
+					}
+				}
+				break;
+				
 				case MUS_FX_RESONANCE_SET:
 				{
 					cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, inst & 3);
