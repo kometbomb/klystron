@@ -26,6 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cydentry.h"
 #include "cyddefs.h"
 #include "freqs.h"
+#include "SDL_endian.h"
 
 void cyd_wave_entry_deinit(CydWavetableEntry *entry)
 {
@@ -49,7 +50,7 @@ void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_sa
 				switch (sample_type)
 				{
 					case CYD_WAVE_TYPE_SINT16:
-						v += ((Sint16*)data)[i * channels + c];
+						v += SDL_SwapLE16(((Sint16*)data)[i * channels + c]);
 						break;
 						
 					case CYD_WAVE_TYPE_SINT8:
