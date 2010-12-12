@@ -498,6 +498,20 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 										{
 											strncat(buffer, ".", buffer_size);
 											strncat(buffer, extension, buffer_size);
+											
+											char * exp = expand_tilde(buffer);
+				
+											int s = stat(exp ? exp : buffer, &attribute);
+											
+											if (exp) free(exp);
+											
+											if (s != -1 && mode == FB_SAVE)
+											{
+												if (msgbox(domain, gfx, largefont, "Overwrite?", MB_YES|MB_NO) == MB_NO)
+												{
+													break;
+												}
+											}
 										}
 										
 										free_files();
