@@ -115,22 +115,22 @@ bin.$(CFG)/lib${TARGET}_gui.a: ${Group3_OBJ} | inform
 objs.$(CFG)/Group0_%.o: snd/%.c 
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
-	@$(CC) $(CFLAGS) -c $(CFLAGS) -o $@ $<
+	@$(CC) -c $(CFLAGS) -o $@ $<
 
 objs.$(CFG)/Group1_%.o: gfx/%.c 
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
-	@$(CC) $(CFLAGS) -c $(CFLAGS) -o $@ $<
+	@$(CC) -c $(CFLAGS) -o $@ $<
 
 objs.$(CFG)/Group2_%.o: util/%.c
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
-	@$(CC) $(CFLAGS) -c $(CFLAGS) -o $@ $<
+	@$(CC) -c $(CFLAGS) -o $@ $<
 
 objs.$(CFG)/Group3_%.o: gui/%.c
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
-	@$(CC) $(CFLAGS) -c $(CFLAGS) -o $@ $<
+	@$(CC) -c $(CFLAGS) -o $@ $<
 
 deps/Group0_$(CFG)_%.d: snd/%.c 
 	@mkdir -p deps
