@@ -5,21 +5,21 @@ CFG = debug
 REV = SubWCRev.exe .
 MACHINE = -march=pentium2 
 
-Group2_SRC = $(notdir ${wildcard src/util/*.c}) 
-Group2_DEP = $(patsubst %.c, deps/Group2_$(CFG)_%.d, ${Group2_SRC})
-Group2_OBJ = $(patsubst %.c, objs.$(CFG)/Group2_%.o, ${Group2_SRC})
+util_SRC = $(notdir ${wildcard src/util/*.c}) 
+util_DEP = $(patsubst %.c, deps/util_$(CFG)_%.d, ${util_SRC})
+util_OBJ = $(patsubst %.c, objs.$(CFG)/util_%.o, ${util_SRC})
 
-Group0_SRC = $(notdir ${wildcard src/snd/*.c}) 
-Group0_DEP = $(patsubst %.c, deps/Group0_$(CFG)_%.d, ${Group0_SRC})
-Group0_OBJ = $(patsubst %.c, objs.$(CFG)/Group0_%.o, ${Group0_SRC}) 
+snd_SRC = $(notdir ${wildcard src/snd/*.c}) 
+snd_DEP = $(patsubst %.c, deps/snd_$(CFG)_%.d, ${snd_SRC})
+snd_OBJ = $(patsubst %.c, objs.$(CFG)/snd_%.o, ${snd_SRC}) 
 
-Group1_SRC = $(notdir ${wildcard src/gfx/*.c}) 
-Group1_DEP = $(patsubst %.c, deps/Group1_$(CFG)_%.d, ${Group1_SRC})
-Group1_OBJ = $(patsubst %.c, objs.$(CFG)/Group1_%.o, ${Group1_SRC}) 
+gfx_SRC = $(notdir ${wildcard src/gfx/*.c}) 
+gfx_DEP = $(patsubst %.c, deps/gfx_$(CFG)_%.d, ${gfx_SRC})
+gfx_OBJ = $(patsubst %.c, objs.$(CFG)/gfx_%.o, ${gfx_SRC}) 
 
-Group3_SRC = $(notdir ${wildcard src/gui/*.c}) 
-Group3_DEP = $(patsubst %.c, deps/Group3_$(CFG)_%.d, ${Group3_SRC})
-Group3_OBJ = $(patsubst %.c, objs.$(CFG)/Group3_%.o, ${Group3_SRC}) $(Group2_OBJ) $(Group1_OBJ)
+gui_SRC = $(notdir ${wildcard src/gui/*.c}) 
+gui_DEP = $(patsubst %.c, deps/gui_$(CFG)_%.d, ${gui_SRC})
+gui_OBJ = $(patsubst %.c, objs.$(CFG)/gui_%.o, ${gui_SRC}) $(util_OBJ) $(gfx_OBJ)
 	
 CC = gcc -shared -std=gnu99 --no-strict-aliasing
 CDEP = gcc -E -std=gnu99
@@ -92,75 +92,75 @@ inform:
 	@echo "Configuration "$(CFG)
 	@echo "------------------------"
 	
-bin.$(CFG)/lib${TARGET}_snd.a: ${Group0_OBJ} | inform
+bin.$(CFG)/lib${TARGET}_snd.a: ${snd_OBJ} | inform
 	@$(ECHO) "Linking "$(TARGET)"..."
 	@mkdir -p bin.$(CFG)
 	@ar rcs $@ $^
 	
-bin.$(CFG)/lib${TARGET}_gfx.a: ${Group1_OBJ} | inform
+bin.$(CFG)/lib${TARGET}_gfx.a: ${gfx_OBJ} | inform
 	@$(ECHO) "Linking "$(TARGET)"..."
 	@mkdir -p bin.$(CFG)
 	@ar rcs $@ $^
 	
-bin.$(CFG)/lib${TARGET}_util.a: ${Group2_OBJ} | inform
+bin.$(CFG)/lib${TARGET}_util.a: ${util_OBJ} | inform
 	@$(ECHO) "Linking "$(TARGET)"..."
 	@mkdir -p bin.$(CFG)
 	@ar rcs $@ $^
 	
-bin.$(CFG)/lib${TARGET}_gui.a: ${Group3_OBJ} | inform
+bin.$(CFG)/lib${TARGET}_gui.a: ${gui_OBJ} | inform
 	@$(ECHO) "Linking "$(TARGET)"..."
 	@mkdir -p bin.$(CFG)
 	@ar rcs $@ $^
 	
-objs.$(CFG)/Group0_%.o: snd/%.c 
+objs.$(CFG)/snd_%.o: snd/%.c 
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
 	@$(CC) -c $(CFLAGS) -o $@ $<
 
-objs.$(CFG)/Group1_%.o: gfx/%.c 
+objs.$(CFG)/gfx_%.o: gfx/%.c 
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
 	@$(CC) -c $(CFLAGS) -o $@ $<
 
-objs.$(CFG)/Group2_%.o: util/%.c
+objs.$(CFG)/util_%.o: util/%.c
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
 	@$(CC) -c $(CFLAGS) -o $@ $<
 
-objs.$(CFG)/Group3_%.o: gui/%.c
+objs.$(CFG)/gui_%.o: gui/%.c
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
 	@$(CC) -c $(CFLAGS) -o $@ $<
 
-deps/Group0_$(CFG)_%.d: snd/%.c 
+deps/snd_$(CFG)_%.d: snd/%.c 
 	@mkdir -p deps
 	@$(ECHO) "Generating dependencies for $<"
 	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
-	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/Group0_\1.o $@ : ,g' \
+	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/snd_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
-deps/Group1_$(CFG)_%.d: gfx/%.c 
+deps/gfx_$(CFG)_%.d: gfx/%.c 
 	@mkdir -p deps
 	@$(ECHO) "Generating dependencies for $<"
 	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
-	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/Group1_\1.o $@ : ,g' \
+	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/gfx_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
-deps/Group2_$(CFG)_%.d: util/%.c
+deps/util_$(CFG)_%.d: util/%.c
 	@mkdir -p deps
 	@$(ECHO) "Generating dependencies for $<"
 	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
-	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/Group2_\1.o $@ : ,g' \
+	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/util_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
-deps/Group3_$(CFG)_%.d: gui/%.c
+deps/gui_$(CFG)_%.d: gui/%.c
 	@mkdir -p deps
 	@$(ECHO) "Generating dependencies for $<"
 	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
-	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/Group3_\1.o $@ : ,g' \
+	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/gui_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
 	
@@ -172,10 +172,10 @@ clean:
 # (-include), since they will be missing in the first 
 # invocation!
 ifneq ($(MAKECMDGOALS),clean)
--include ${Group0_DEP}
--include ${Group1_DEP}
--include ${Group2_DEP}
--include ${Group3_DEP}
+-include ${snd_DEP}
+-include ${gfx_DEP}
+-include ${util_DEP}
+-include ${gui_DEP}
 endif
 
 tools/bin/makebundle.exe: tools/makebundle/*.c
