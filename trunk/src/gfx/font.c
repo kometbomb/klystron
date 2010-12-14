@@ -144,13 +144,21 @@ static void inner_write(const Font *font, SDL_Surface *dest, const SDL_Rect *r, 
 
 void font_write_va(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text, va_list va)
 {
-	int len = vsnprintf(NULL, 0, text, va) + 1;
+#ifdef USESTATICTEMPSTRINGS
+	const int len = 2048;
+	char formatted[len];
+#else
+	const int len = vsnprintf(NULL, 0, text, va) + 1;
 	char * formatted = malloc(len * sizeof(*formatted));
+#endif
+	
 	vsnprintf(formatted, len, text, va);
 	
 	inner_write(font, dest, r, cursor, bounds, formatted);
 	
+#ifndef USESTATICTEMPSTRINGS	
 	free(formatted);
+#endif
 }
 
 
