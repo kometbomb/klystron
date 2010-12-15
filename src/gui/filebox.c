@@ -254,8 +254,19 @@ static int checkext(const char * filename, const char *extension)
 	}
 	
 	if (i < 0) return 0;
+
+	if (strcasecmp(&filename[i + 1], extension) == 0) return 1;
 	
-	return strcasecmp(&filename[i + 1], extension) == 0;
+#ifdef __amigaos4__
+	// check for old amiga-style file extensions (e.g. mod.amegas)
+	
+	if (i == strlen(extension) && strncasecmp(filename, extension, strlen(extension)) == 0)
+	{
+		return 1;
+	}
+#endif
+	
+	return 0;
 }
 
 
