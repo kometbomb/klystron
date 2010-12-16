@@ -21,17 +21,17 @@ Mix_AllocateChannels(1);
 Next, we need a Cyd for the MusEngine and that should have MUS_MAX_CHANNELS channels allocated (since a song might have that many channels). You can use less channels if you know a song doesn't use more than that.
 
 {{{
-Cyd cyd;
+CydEngine cyd;
 MusEngine mus;
 cyd_init(&cyd, 44100, MUS_MAX_CHANNELS);
 mus_init_engine(&mus, &cyd);
 }}}
 
-Let's load a song. You can either use mus_load_song() or mus_load_song_file() to load the song. The latter can be used to read a song from any FILE* stream, including the klystron bundle.
+Let's load a song. You can either use mus_load_song() or mus_load_song_file() to load the song. The latter can be used to read a song from any FILE* stream, including the klystron bundle. We need to supply an array where wavetable data is loaded. That is, pass {{{cyd.wavetable_entries}}} and they will be loaded (and released automatically) by Cyd.
 
 {{{
 MusSong song;
-mus_load_song("AwesomeTune.sng", &song);
+mus_load_song("AwesomeTune.sng", &song, cyd.wavetable_entries);
 }}}
 
 Now all that is left is to tell SDL_mixer to use Cyd to output sound. We also need to tell Cyd to update the music state and MusEngine to start playing.
@@ -43,7 +43,7 @@ cyd_set_callback(&cyd, mus_advance_tick, &mus, song.song_rate);
 
 cyd_set_callback() can be used to set the playback rate even when playing.
 
-mus_set_reverb() has to be used to set the reverb from the song file.
+mus_set_fx() has to be used to set the effects from the song file.
 
 == Playing and stopping music ==
 
