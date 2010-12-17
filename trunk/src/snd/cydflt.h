@@ -27,7 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 
-#include "SDL.h"
+#include "cydtypes.h"
 
 typedef struct
 {

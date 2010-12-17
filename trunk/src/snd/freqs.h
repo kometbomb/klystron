@@ -26,7 +26,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "SDL.h"
+#include "cydtypes.h"
 
 #define FREQ_TAB_SIZE 96
 #define MIDDLE_C (12*4)

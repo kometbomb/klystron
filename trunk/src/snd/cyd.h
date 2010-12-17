@@ -26,11 +26,8 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-
-#include "SDL.h"
-
 #include <signal.h>
-
+#include "cydtypes.h"
 #include "cydflt.h"
 #include "cydfx.h"
 #include "cydentry.h"
@@ -130,7 +127,7 @@ typedef struct
 	Uint16 *lookup_table, *lookup_table_ym;
 	CydFx fx[CYD_MAX_FX_CHANNELS];
 #ifdef USESDLMUTEXES
-	SDL_mutex *mutex;	
+	CydMutex mutex;	
 #else
 	volatile sig_atomic_t lock_request;
 	volatile sig_atomic_t lock_locked;
