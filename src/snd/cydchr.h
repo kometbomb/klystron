@@ -28,7 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define CYDCHR_SIZE 50
 
-#include "SDL.h"
+#include "cydtypes.h"
 
 typedef struct
 {

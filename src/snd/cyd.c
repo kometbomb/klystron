@@ -23,11 +23,9 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-
 #include "cyd.h"
 #include "macros.h"
 #include <assert.h>
-#include "SDL_mixer.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -38,6 +36,18 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cyddefs.h"
 #include "cydwave.h"
 #include "freqs.h"
+
+#ifndef USENATIVEAPIS
+
+# include "SDL_mixer.h"
+
+#else
+
+# ifdef WIN32
+# endif
+
+#endif
+
 
 #define envspd(cyd,slope) (slope!=0?((0xff0000 / ((slope) * (slope) * 256)) * CYD_BASE_FREQ / cyd->sample_rate):0xff0000)
 
@@ -108,8 +118,18 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	cyd->channel = calloc(sizeof(*cyd->channel), cyd->n_channels);
 	
 	
-#ifdef USESDLMUTEXES
+#ifndef USENATIVEAPIS
+
+# ifdef USESDLMUTEXES
 	cyd->mutex = SDL_CreateMutex();
+# endif
+
+#else
+
+# ifdef WIN32
+	InitializeCriticalSection(&cyd->mutex);
+# endif
+
 #endif
 	
 	cyd_init_log_tables(cyd);
@@ -148,11 +168,21 @@ void cyd_deinit(CydEngine *cyd)
 	for (int i = 0 ; i < CYD_MAX_FX_CHANNELS ; ++i)
 		cydfx_deinit(&cyd->fx[i]);
 	
-#ifdef USESDLMUTEXES
+#ifndef USENATIVEAPIS
+
+# ifdef USESDLMUTEXES
 	if (cyd->mutex)
 		SDL_DestroyMutex(cyd->mutex);
 	cyd->mutex = NULL;
-#endif	
+# endif	
+
+#else
+
+# ifdef WIN32
+	DeleteCriticalSection(&cyd->mutex);
+# endif
+
+#endif
 
 #ifdef ENABLEAUDIODUMP
 	if (cyd->dump) fclose(cyd->dump);
@@ -557,6 +587,9 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 	
 	for (int i = 0 ; i < len ; i += sizeof(Sint16), ++stream, ++cyd->samples_output)
 	{
+	
+#ifndef USENATIVEAPIS
+
 #ifndef USESDLMUTEXES
 #ifdef DEBUG
 		Uint32 waittime = SDL_GetTicks();
@@ -574,6 +607,7 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 		}
 #endif
 
+#endif
 	
 		if (cyd->flags & CYD_PAUSED) continue;
 		
@@ -624,6 +658,8 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 	
 	for (int i = 0 ; i < len ; i += sizeof(Sint16)*2, stream += 2, ++cyd->samples_output)
 	{
+#ifndef USENATIVEAPIS
+	
 #ifndef USESDLMUTEXES
 #ifdef DEBUG
 		Uint32 waittime = SDL_GetTicks();
@@ -641,6 +677,7 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 		}
 #endif
 
+#endif
 	
 		if (cyd->flags & CYD_PAUSED) continue;
 		
@@ -808,6 +845,7 @@ void cyd_pause(CydEngine *cyd, Uint8 enable)
 
 int cyd_register(CydEngine * cyd)
 {
+#ifndef USENATIVEAPIS
 	int frequency, channels;
 	Uint16 format;
 	if (Mix_QuerySpec(&frequency, &format, &channels))
@@ -832,11 +870,15 @@ int cyd_register(CydEngine * cyd)
 		return 1;
 	}
 	else return 0;
+#else
+	return 0;
+#endif
 }
 
 
 int cyd_unregister(CydEngine * cyd)
 {
+#ifndef USENATIVEAPIS
 	int frequency, channels;
 	Uint16 format;
 	if (Mix_QuerySpec(&frequency, &format, &channels))
@@ -854,6 +896,9 @@ int cyd_unregister(CydEngine * cyd)
 		return 1;
 	}
 	else return 0;
+#else
+	return 0;
+#endif
 }
 
 
@@ -868,8 +913,10 @@ void cyd_lock(CydEngine *cyd, Uint8 enable)
 {
 	if (cyd->flags & CYD_SINGLE_THREAD) return; // For export, mainly
 
+#ifndef USENATIVEAPIS
+
 #ifndef USESDLMUTEXES
-	 if (enable)
+	if (enable)
 	{
 #ifdef DEBUG
 		Uint32 waittime = SDL_GetTicks();
@@ -904,6 +951,20 @@ void cyd_lock(CydEngine *cyd, Uint8 enable)
 	{
 		SDL_mutexV(cyd->mutex);
 	}
+#endif
+#else
+
+# ifdef WIN32
+	if (enable)
+	{
+		EnterCriticalSection(&cyd->mutex);
+	}
+	else
+	{
+		LeaveCriticalSection(&cyd->mutex);
+	}
+# endif
+
 #endif
 }
 
