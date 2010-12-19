@@ -246,6 +246,8 @@ static int file_sorter(const void *_left, const void *_right)
 
 static int checkext(const char * filename, const char *extension)
 {
+	if (extension[0] == '\0') return 1;
+
 	int i = strlen(filename);
 	while (i > 0)
 	{
