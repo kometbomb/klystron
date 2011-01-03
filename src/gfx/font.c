@@ -181,9 +181,12 @@ static int font_load_inner(Font *font, Bundle *fb)
 				rw->read(rw, temp, 1, sizeof(temp)-1);
 				SDL_RWclose(rw);
 				
-				size_t len = strlen(temp);
+				size_t len = my_min(strlen(temp), 256);
 				const char *c = temp;
 				char *m = map;
+				
+				debug("Read charmap (%u chars)", len);
+				
 				while (*c)
 				{
 					if (*c == '\\' && len > 1)
@@ -222,9 +225,13 @@ static int font_load_inner(Font *font, Bundle *fb)
 					{	
 					not_hex:
 						*(m++) = *(c++);
+							
 						--len;
 					}
 				}
+				
+				if (*c && len == 0)
+					warning("Excess font charmap chars (max. 256)");
 			}
 			else
 			{
