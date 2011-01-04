@@ -432,10 +432,11 @@ read_error:
 
 
 /* Compress with best combination of options */
-Uint8 * bitpack_best(const Sint16 *data, Uint32 data_size, Uint32 *_packed_size)
+Uint8 * bitpack_best(const Sint16 *data, Uint32 data_size, Uint32 *_packed_size, int *flags)
 {
 	Uint32 best_packed_size = 0;
 	Uint8 *best = NULL;
+	int best_flags = 0;
 	
 	for (int i = 0 ; i < 4 ; ++i)
 	{
@@ -447,12 +448,14 @@ Uint8 * bitpack_best(const Sint16 *data, Uint32 data_size, Uint32 *_packed_size)
 		{
 			best_packed_size = packed_size;
 			best = cdata;
+			best_flags = i;
 		}
 		else
 			free(cdata);
 	}
 	
 	*_packed_size = best_packed_size;
+	*flags = best_flags;
 	
 	return best;
 }

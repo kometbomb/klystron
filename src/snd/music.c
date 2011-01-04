@@ -29,6 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <stdio.h>
 #include "freqs.h"
 #include "macros.h"
+#include "pack.h"
 
 #define VIB_TAB_SIZE 128
 
@@ -1366,13 +1367,39 @@ static void load_wavetable_entry(Uint8 version, CydWavetableEntry * e, FILE *f)
 	
 	if (e->samples > 0)
 	{
-		Sint16 *data = malloc(sizeof(data[0]) * e->samples);
-		
-		fread(data, sizeof(data[0]), e->samples, f);
-		
-		cyd_wave_entry_init(e, data, e->samples, CYD_WAVE_TYPE_SINT16, 1, 1, 1);
-		
-		free(data);
+		if (version < 15)
+		{
+			Sint16 *data = malloc(sizeof(data[0]) * e->samples);
+			
+			fread(data, sizeof(data[0]), e->samples, f);
+			
+			cyd_wave_entry_init(e, data, e->samples, CYD_WAVE_TYPE_SINT16, 1, 1, 1);
+			
+			free(data);
+		}
+		else
+		{
+			Uint32 data_size; 
+			VER_READ(version, 15, 0xff, &data_size, 0);
+			FIX_ENDIAN(data_size);
+			Uint8 *compressed = malloc(sizeof(Uint8) * data_size);
+			
+			fread(compressed, sizeof(Uint8), (data_size + 7) / 8, f); // data_size is in bits
+			
+			Sint16 *data = bitunpack(compressed, data_size, e->samples, (e->flags >> 3) & 3);
+			
+			if (data)
+			{
+				cyd_wave_entry_init(e, data, e->samples, CYD_WAVE_TYPE_SINT16, 1, 1, 1);
+				free(data);
+			}
+			else
+			{
+				warning("Sample data unpack failed");
+			}
+			
+			free(compressed);
+		}
 	}
 }
 

@@ -37,6 +37,6 @@ enum
 
 Uint8 * bitpack(const Sint16 *_buffer, const int n, int flags, Uint32 *packed_size);
 Sint16 * bitunpack(const Uint8 *packed_data, const Uint32 packed_size, Uint32 unpacked_size, int flags);
-Uint8 * bitpack_best(const Sint16 *data, Uint32 data_size, Uint32 *_packed_size);
+Uint8 * bitpack_best(const Sint16 *data, Uint32 data_size, Uint32 *_packed_size, int *flags);
 
 #endif
