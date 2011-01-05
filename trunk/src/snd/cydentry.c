@@ -52,6 +52,10 @@ void cyd_wave_entry_init(CydWavetableEntry *entry, const void *data, Uint32 n_sa
 					case CYD_WAVE_TYPE_SINT16:
 						v += SDL_SwapLE16(((Sint16*)data)[i * channels + c]);
 						break;
+					
+					case CYD_WAVE_TYPE_UINT8:					
+						v += ((Sint16)(((Uint8*)data)[i * channels + c]) - 0x80) << 8;
+						break;
 						
 					case CYD_WAVE_TYPE_SINT8:
 						v += (Sint16)(((Sint8*)data)[i * channels + c]) << 8;

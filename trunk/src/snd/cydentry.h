@@ -40,7 +40,8 @@ enum
 typedef enum
 {
 	CYD_WAVE_TYPE_SINT16, 	// internal format
-	CYD_WAVE_TYPE_SINT8 	// amiga modules?
+	CYD_WAVE_TYPE_SINT8, 	// amiga modules?
+	CYD_WAVE_TYPE_UINT8 	// atari YM files?
 } CydWaveType;
 
 typedef struct
