@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define MUS_PROG_LEN 32
 #define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
 
-#define MUS_VERSION 15
+#define MUS_VERSION 16
 
 #define MUS_SONG_TITLE_LEN 64
 #define MUS_INSTRUMENT_NAME_LEN 32
@@ -123,7 +123,7 @@ typedef struct
 	Uint16 time_signature;
 	Uint32 flags;
 	Uint8 num_channels;
-	Uint8 multiplex_period;
+	Uint8 multiplex_period, pitch_inaccuracy;
 	char title[MUS_SONG_TITLE_LEN + 1];
 	CydFxSerialized fx[CYD_MAX_FX_CHANNELS];
 	Uint8 master_volume;
@@ -168,6 +168,7 @@ typedef struct
 	Uint8 multiplex_ctr;
 	Uint32 flags;
 	Uint32 ext_sync_ticks;
+	Uint32 pitch_mask;
 } MusEngine;
 
 

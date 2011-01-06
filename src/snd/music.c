@@ -63,7 +63,7 @@ static void mus_set_buzz_frequency(MusEngine *mus, int chan, Uint16 note)
 	MusChannel *chn = &mus->channel[chan];
 	if (chn->instrument && chn->instrument->flags & MUS_INST_YM_BUZZ)
 	{
-		Uint16 buzz_frequency = get_freq(note + chn->buzz_offset);
+		Uint16 buzz_frequency = get_freq(note + chn->buzz_offset) & mus->pitch_mask;
 		cyd_set_env_frequency(mus->cyd, &mus->cyd->channel[chan], buzz_frequency);
 	}
 }
@@ -76,7 +76,7 @@ static void mus_set_wavetable_frequency(MusEngine *mus, int chan, Uint16 note)
 	
 	if (chn->instrument && (chn->instrument->cydflags & CYD_CHN_ENABLE_WAVE) && (cydchn->wave_entry))
 	{
-		Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : note);
+		Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : note) & mus->pitch_mask;
 		cyd_set_wavetable_frequency(mus->cyd, cydchn, wave_frequency);
 	}
 }
@@ -88,7 +88,7 @@ static void mus_set_note(MusEngine *mus, int chan, Uint16 note, int update_note,
 	
 	if (update_note) chn->note = note;
 	
-	Uint16 frequency = get_freq(note);
+	Uint16 frequency = get_freq(note) & mus->pitch_mask;
 		
 	cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], frequency / divider);
 	
@@ -1251,6 +1251,7 @@ void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position)
 	{
 		mus->song_counter = 0;
 		mus->multiplex_ctr = 0;
+		mus->pitch_mask = (~0) << song->pitch_inaccuracy;
 	}
 	
 	mus->song_position = position;
@@ -1533,6 +1534,9 @@ void mus_set_fx(MusEngine *mus, MusSong *song)
 	{
 		cydfx_set(&mus->cyd->fx[f], &song->fx[f]);
 	}
+	
+	mus->pitch_mask = (~0) << song->pitch_inaccuracy;
+	
 	cyd_lock(mus->cyd, 0);
 }
 
@@ -1587,6 +1591,15 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 		
 		if (version >= 9) fread(&song->multiplex_period, 1, sizeof(song->multiplex_period), f);
 		else song->multiplex_period = 3;
+		
+		if (version >= 16)
+		{
+			fread(&song->pitch_inaccuracy, 1, sizeof(song->pitch_inaccuracy), f);
+		}
+		else
+		{
+			song->pitch_inaccuracy = 0;
+		}
 		
 		/* The file format is little-endian, the following only does something on big-endian machines */
 		
