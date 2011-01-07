@@ -115,6 +115,8 @@ void mus_init_engine(MusEngine *mus, CydEngine *cyd)
 	
 	for (int i = 0 ; i < MUS_MAX_CHANNELS ; ++i)
 		mus->channel[i].volume = MAX_VOLUME;
+		
+	mus->pitch_mask = ~0;
 }
 
 
