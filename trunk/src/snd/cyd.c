@@ -86,7 +86,8 @@ static void cyd_init_log_tables(CydEngine *cyd)
 	
 	for (int i = 0 ; i < YM_LUT_SIZE ; ++i)
 	{
-		cyd->lookup_table_ym[i] = (Uint32)32767 * (Uint32)(i+1) * (Uint32)(i+1) * (Uint32)(i+1) / (Uint32)(YM_LUT_SIZE * YM_LUT_SIZE * YM_LUT_SIZE);
+		static const int ymVolumeTable[16] = { 62,161,265,377,580,774,1155,1575,2260,3088,4570,6233,9330,13187,21220,32767}; // from leonard's code
+		cyd->lookup_table_ym[i] = ymVolumeTable[i]; //(Uint32)32767 * (Uint32)(i+1) * (Uint32)(i+1) * (Uint32)(i+1) / (Uint32)(YM_LUT_SIZE * YM_LUT_SIZE * YM_LUT_SIZE);
 	}
 	
 	cyd->lookup_table_ym[0] = 0;
