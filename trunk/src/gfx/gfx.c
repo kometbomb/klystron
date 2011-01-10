@@ -752,14 +752,14 @@ void gfx_domain_update(GfxDomain *domain)
 
 void gfx_domain_flip(GfxDomain *domain)
 {
+#ifdef USEOPENGL	
+	SDL_Surface *screen = domain->opengl_screen;
+#else
+	SDL_Surface *screen = domain->screen;
+#endif
+
 	if (domain->scale > 1)
 	{
-#ifdef USEOPENGL	
-		SDL_Surface *screen = domain->opengl_screen;
-#else
-		SDL_Surface *screen = domain->screen;
-#endif
-		
 		if (domain->scale_type == GFX_SCALE_FAST)
 		{
 			my_lock(screen);
