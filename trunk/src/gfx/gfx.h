@@ -32,6 +32,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "tiledescriptor.h"
 #include "gfxsurf.h"
 
+#ifdef USEOPENGL
+#include <glu.h>
+#endif
+
 enum
 {
 	GFX_KEYED = 1,
@@ -55,6 +59,10 @@ typedef Uint32 FramerateTimer;
 typedef struct
 {
 	SDL_Surface *screen, *buf, *buf2;
+#ifdef USEOPENGL
+	SDL_Surface *opengl_screen;
+	GLuint texture;
+#endif
 	int screen_w, screen_h;
 	int scale, fullscreen, fps;
 	GfxScaleType scale_type;
