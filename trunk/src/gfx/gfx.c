@@ -875,8 +875,8 @@ GfxDomain * gfx_create_domain()
 	d->flags = 0;
 	
 #ifdef USEOPENGL
-	domain->texture = 0;
-	domain->opengl_screen = NULL;
+	d->texture = 0;
+	d->opengl_screen = NULL;
 #endif
 	
 	gfx_domain_set_framerate(d);
