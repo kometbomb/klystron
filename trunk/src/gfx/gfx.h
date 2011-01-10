@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "gfxsurf.h"
 
 #ifdef USEOPENGL
-#include <gl.h>
+#include <GL/gl.h>
 #endif
 
 enum
