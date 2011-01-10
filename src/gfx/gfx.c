@@ -670,13 +670,47 @@ void gfx_domain_update(GfxDomain *domain)
 {
 	debug("Setting screen mode (scale = %d%s)", domain->scale, domain->fullscreen ? ", fullscreen" : "");
 	
-	domain->screen = SDL_SetVideoMode(domain->screen_w * domain->scale, domain->screen_h * domain->scale, 32, (domain->fullscreen ? SDL_FULLSCREEN : 0) | SDL_HWSURFACE | SDL_DOUBLEBUF | domain->flags);
+#ifdef USEOPENGL
+	const int flags = SDL_OPENGL;
+#else
+	int flags = 0;
+#endif
+	
+	domain->screen = SDL_SetVideoMode(domain->screen_w * domain->scale, domain->screen_h * domain->scale, 32, (domain->fullscreen ? SDL_FULLSCREEN : 0) | SDL_HWSURFACE | SDL_DOUBLEBUF | domain->flags | flags);
 	
 	if (!domain->screen)
 	{
-		fatal("%s",  SDL_GetError());
+		fatal("SDL_SetVideoMode failed: %s",  SDL_GetError());
 		exit(1);
 	}
+
+#ifdef USEOPENGL	
+	if (domain->opengl_screen) SDL_FreeSurface(domain->opengl_screen);
+	domain->opengl_screen = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w * domain->scale, domain->screen_h * domain->scale, 32, 0xff0000, 0x00ff00, 0x0000ff);
+
+	if (!domain->opengl_screen)
+	{
+		fatal("OGL texture surface init failed: %s",  SDL_GetError());
+		exit(1);
+	}
+	
+	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 0);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	
+	if (domain->texture) glDeleteTextures(1, &domain->texture);
+	glGenTextures(1, &domain->texture);
+	glBindTexture(GL_TEXTURE_2D, domain->texture);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glEnable(GL_TEXTURE_2D);
+#endif
 		
 	if (domain->scale > 1) 
 	{
@@ -720,52 +754,70 @@ void gfx_domain_flip(GfxDomain *domain)
 {
 	if (domain->scale > 1)
 	{
+#ifdef USEOPENGL	
+		SDL_Surface *screen = domain->opengl_screen;
+#else
+		SDL_Surface *screen = domain->screen;
+#endif
+		
 		if (domain->scale_type == GFX_SCALE_FAST)
 		{
-			my_lock(domain->screen);
+			my_lock(screen);
 			my_lock(domain->buf);
 			switch (domain->scale)
 			{
 				default: break;
 				case 2: 
-					gfx_blit_2x(domain->screen, domain->buf); 
+					gfx_blit_2x(screen, domain->buf); 
 				break;
 				case 3: 
-					gfx_blit_3x(domain->screen, domain->buf); 
+					gfx_blit_3x(screen, domain->buf); 
 				break;
 				case 4: 
-					gfx_blit_4x(domain->screen, domain->buf); 
+					gfx_blit_4x(screen, domain->buf); 
 				break;
 			}
-			my_unlock(domain->screen);
+			my_unlock(screen);
 			my_unlock(domain->buf);
 		}
 		else
 		{
-			my_lock(domain->screen);
+			my_lock(screen);
 			my_lock(domain->buf);
 			switch (domain->scale)
 			{
 				default: break;
 				case 2: 
-					gfx_blit_2x_resample(domain->screen, domain->buf); 
+					gfx_blit_2x_resample(screen, domain->buf); 
 				break;
 				case 3: 
-					gfx_blit_3x_resample(domain->screen, domain->buf); 
+					gfx_blit_3x_resample(screen, domain->buf); 
 				break;
 				case 4: 
 					my_lock(domain->buf2);
 					gfx_blit_2x_resample(domain->buf2, domain->buf); 
-					gfx_blit_2x_resample(domain->screen, domain->buf2);
+					gfx_blit_2x_resample(screen, domain->buf2);
 					my_unlock(domain->buf2);
 				break;
 			}
-			my_unlock(domain->screen);
+			my_unlock(screen);
 			my_unlock(domain->buf);
 		}
 	}
 	
+#ifdef USEOPENGL
+	glTexImage2D(GL_TEXTURE_2D, 0, 4, screen->w, screen->h, 0, GL_RGB, GL_UNSIGNED_BYTE, screen->pixels);
+
+	glBegin( GL_QUADS );
+	glTexCoord2d(0.0,0.0); glVertex2d(0.0,0.0);
+	glTexCoord2d(1.0,0.0); glVertex2d(1.0,0.0);
+	glTexCoord2d(1.0,1.0); glVertex2d(1.0,1.0);
+	glTexCoord2d(0.0,1.0); glVertex2d(0.0,1.0);
+	glEnd();
+	SDL_GL_SwapBuffers();
+#else
 	SDL_Flip(domain->screen);
+#endif
 }
 
 
@@ -783,8 +835,12 @@ void gfx_domain_free(GfxDomain *domain)
 	if (domain->buf) SDL_FreeSurface(domain->buf);
 	if (domain->buf2) SDL_FreeSurface(domain->buf2);
 	
-	free (domain);
+#ifdef USEOPENGL
+	if (domain->opengl_screen) SDL_FreeSurface(domain->opengl_screen);
+	if (domain->texture) glDeleteTextures(1, &domain->texture);
+#endif
 	
+	free(domain);
 }
 
 
