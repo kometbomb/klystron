@@ -819,7 +819,7 @@ void gfx_domain_flip(GfxDomain *domain)
 	}
 	
 #ifdef USEOPENGL
-	glTexImage2D(GL_TEXTURE_2D, 0, 4, screen->w, screen->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels);
+	glTexImage2D(GL_TEXTURE_2D, 0, 4, screen->w, screen->h, 0, GL_BGRA, GL_UNSIGNED_BYTE, screen->pixels);
 	glBegin(GL_QUADS);
 	glTexCoord2d(0.0,0.0); glVertex2d(-1.0,1.0);
 	glTexCoord2d(1.0,0.0); glVertex2d(1.0,1.0);
