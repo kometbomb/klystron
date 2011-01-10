@@ -686,7 +686,7 @@ void gfx_domain_update(GfxDomain *domain)
 
 #ifdef USEOPENGL	
 	if (domain->opengl_screen) SDL_FreeSurface(domain->opengl_screen);
-	domain->opengl_screen = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w * domain->scale, domain->screen_h * domain->scale, 32, 0x0000ff, 0x00ff00, 0xff0000, 0);
+	domain->opengl_screen = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w * domain->scale, domain->screen_h * domain->scale, 32, 0xff0000, 0x00ff00, 0x0000ff, 0);
 
 	if (!domain->opengl_screen)
 	{
