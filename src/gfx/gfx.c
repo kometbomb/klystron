@@ -710,6 +710,19 @@ void gfx_domain_update(GfxDomain *domain)
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 	glEnable(GL_TEXTURE_2D);
+	glViewport(0, 0, domain->screen_w * domain->scale, domain->screen_h * domain->scale);
+
+	// Select The Projection Matrix
+	glMatrixMode(GL_PROJECTION);
+
+	// Reset The Projection Matrix
+	glLoadIdentity();
+
+	// Select The Modelview Matrix
+	glMatrixMode(GL_MODELVIEW);
+
+	// Reset The Modelview Matrix
+	glLoadIdentity();
 #endif
 		
 	if (domain->scale > 1) 
@@ -826,7 +839,11 @@ SDL_Surface * gfx_domain_get_surface(GfxDomain *domain)
 	if (domain->scale > 1)
 		return domain->buf;
 	else
+#ifdef USEOPENGL	
+		return domain->opengl_screen;
+#else
 		return domain->screen;
+#endif
 }
 
 
@@ -855,6 +872,11 @@ GfxDomain * gfx_create_domain()
 	d->fullscreen = 0;
 	d->fps = 50;
 	d->flags = 0;
+	
+#ifdef USEOPENGL
+	domain->texture = 0;
+	domain->opengl_screen = NULL;
+#endif
 	
 	gfx_domain_set_framerate(d);
 	
