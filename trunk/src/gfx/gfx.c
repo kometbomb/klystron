@@ -731,7 +731,9 @@ void gfx_domain_update(GfxDomain *domain)
 		
 	if (domain->scale > 1) 
 	{
-		domain->buf = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w, domain->screen_h, 32, 0, 0, 0, 0);
+		SDL_Surface *temp = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w, domain->screen_h, 32, 0, 0, 0, 0);
+		domain->buf = SDL_ConvertSurface(temp, domain->screen->format, SDL_SWSURFACE);
+		SDL_FreeSurface(temp);
 		
 		if (!domain->buf)
 		{
@@ -741,7 +743,9 @@ void gfx_domain_update(GfxDomain *domain)
 		
 		if (domain->scale == 4 && domain->scale_type == GFX_SCALE_SMOOTH)
 		{
-			domain->buf2 = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w*2, domain->screen_h*2, 32, 0, 0, 0, 0);
+			SDL_Surface *temp = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w * 2, domain->screen_h * 2, 32, 0, 0, 0, 0);
+			domain->buf2 = SDL_ConvertSurface(temp, domain->screen->format, SDL_SWSURFACE);
+			SDL_FreeSurface(temp);
 			
 			if (!domain->buf2)
 			{
