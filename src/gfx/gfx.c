@@ -690,7 +690,11 @@ void gfx_domain_update(GfxDomain *domain)
 
 #ifdef USEOPENGL	
 	if (domain->opengl_screen) SDL_FreeSurface(domain->opengl_screen);
-	domain->opengl_screen = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w * domain->scale, domain->screen_h * domain->scale, 32, 0xff0000, 0x00ff00, 0x0000ff, 0);
+	
+	if (domain->scale > 1 && domain->scale_type == GFX_SCALE_SMOOTH)
+		domain->opengl_screen = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w * domain->scale, domain->screen_h * domain->scale, 32, 0xff0000, 0x00ff00, 0x0000ff, 0);
+	else
+		domain->opengl_screen = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w, domain->screen_h, 32, 0xff0000, 0x00ff00, 0x0000ff, 0);
 
 	if (!domain->opengl_screen)
 	{
@@ -728,8 +732,17 @@ void gfx_domain_update(GfxDomain *domain)
 	// Reset The Modelview Matrix
 	glLoadIdentity();
 #endif
+
+	if (domain->buf) SDL_FreeSurface(domain->buf);
+	domain->buf = NULL;
+	if (domain->buf2) SDL_FreeSurface(domain->buf2);
+	domain->buf2 = NULL;
 		
+#ifndef USEOPENGL
 	if (domain->scale > 1) 
+#else
+	if (domain->scale > 1 && domain->scale_type == GFX_SCALE_SMOOTH) 
+#endif
 	{
 		SDL_Surface *temp = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w, domain->screen_h, 32, 0, 0, 0, 0);
 		domain->buf = SDL_ConvertSurface(temp, domain->screen->format, SDL_SWSURFACE);
@@ -759,13 +772,6 @@ void gfx_domain_update(GfxDomain *domain)
 			domain->buf2 = NULL;
 		}
 	}
-	else
-	{
-		if (domain->buf) SDL_FreeSurface(domain->buf);
-		domain->buf = NULL;
-		if (domain->buf2) SDL_FreeSurface(domain->buf2);
-		domain->buf2 = NULL;
-	}
 	
 	gfx_domain_set_framerate(domain);
 }
@@ -783,6 +789,8 @@ void gfx_domain_flip(GfxDomain *domain)
 	{
 		if (domain->scale_type == GFX_SCALE_FAST)
 		{
+#ifndef USEOPENGL
+			// opengl nearest does the same thing
 			my_lock(screen);
 			my_lock(domain->buf);
 			switch (domain->scale)
@@ -800,6 +808,7 @@ void gfx_domain_flip(GfxDomain *domain)
 			}
 			my_unlock(screen);
 			my_unlock(domain->buf);
+#endif
 		}
 		else
 		{
@@ -844,7 +853,18 @@ void gfx_domain_flip(GfxDomain *domain)
 SDL_Surface * gfx_domain_get_surface(GfxDomain *domain)
 {
 	if (domain->scale > 1)
+	{
+#ifndef USEOPENGL
 		return domain->buf;
+#else
+		// opengl nearest is used for fast scaling (no resample)
+		// smooth scaling is still done in software (TODO: shader)
+		if (domain->scale_type == GFX_SCALE_FAST)
+			return domain->opengl_screen;
+		else
+			return domain->buf;
+#endif
+	}
 	else
 #ifdef USEOPENGL	
 		return domain->opengl_screen;
@@ -852,6 +872,7 @@ SDL_Surface * gfx_domain_get_surface(GfxDomain *domain)
 		return domain->screen;
 #endif
 }
+
 
 
 void gfx_domain_free(GfxDomain *domain)
