@@ -179,3 +179,10 @@ void bg_create(Background *bg, int w, int h)
 	bg->w = w;
 	bg->h = h;
 }
+
+
+void bg_destroy(Background *bg)
+{
+	free(bg->data);
+	memset(bg, 0, sizeof(*bg));
+}

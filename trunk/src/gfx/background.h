@@ -54,5 +54,6 @@ const ObjHdr * bg_check_collision_chained(const Background *bg, const ObjHdr *he
 void bg_draw(SDL_Surface *surface, const SDL_Rect * dest, const Background *bg, int xofs, int yofs);
 int bg_create_tile_objhdr(ObjHdr* object_array, const Background *bg, int x, int y, int w, int h, int zero_src);
 void bg_create(Background *bg, int w, int h);
+void bg_destroy(Background *bg);
 
 #endif
