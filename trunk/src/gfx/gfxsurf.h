@@ -31,7 +31,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 typedef struct
 {
 	SDL_Surface *surface; // this can now be a hw surface
-	int *mask; // collision mask (needs to be sw)
+	int *mask; // collision mask 
+	int flags;
 } GfxSurface;
 
 #endif

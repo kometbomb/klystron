@@ -185,6 +185,8 @@ GfxSurface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
 	
 	if (flags & GFX_COL_MASK) gs->mask = gfx_build_collision_mask(gs->surface);
 	
+	gs->flags = flags;
+	
 	return gs;
 }
 
@@ -343,7 +345,7 @@ TileDescriptor *gfx_build_tiledescriptor(GfxSurface *tiles, const int cellwidth,
 		
 		int pixels = has_pixels(&descriptor[i]);
 		
-		if (pixels == CELLSIZE*CELLSIZE)
+		if (pixels == CELLSIZE*CELLSIZE || !(tiles->flags & GFX_COL_MASK))
 			descriptor[i].flags = TILE_COL_NORMAL;
 		else if (pixels > 0)
 			descriptor[i].flags = TILE_COL_PIXEL;
