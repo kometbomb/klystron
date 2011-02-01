@@ -42,7 +42,7 @@ else
 	INCLUDEFLAGS := `sdl-config --cflags` -U_FORTIFY_SOURCE -I ../../src 
 endif
 
-LDFLAGS = -L ../../bin.$(CFG) -lengine_gfx -lengine_util -lengine_gui -lmingw32 -lSDLmain -lSDL -lconfig
+LDFLAGS = -L ../../bin.$(CFG) -lengine_gfx -lengine_util -lengine_gui -lmingw32 -lSDLmain -lSDL -lopengl32 -lconfig
 
 # Separate compile options per configuration
 ifeq ($(CFG),debug)
