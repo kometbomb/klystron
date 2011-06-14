@@ -629,7 +629,7 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 		cyd_output(cyd, &left, &right);
 		output = (left + right) / 2;
 #else
-		output = cyd_output(cyd);
+		Sint32 output = cyd_output(cyd);
 #endif
 
 		Sint32 o = (Sint32)*(Sint16*)stream + output * PRE_GAIN;
