@@ -200,26 +200,37 @@ int main(int argc, char **argv)
 	
 	fclose(data);
 	
-	struct stat attribute;
-	if (stat( TEMP_NAME, &attribute ) != -1)
+	int err_code = 0;
+	
+	if (num_files == 0)
 	{
-		fputs("Copying data to bundle: ", stderr);
-		copydata(bundle, TEMP_NAME, attribute.st_size, key);
+		fputs("No files found, no file created.\n", stderr);
+		err_code = 1;
 	}
 	else
 	{
-		fputs("Error while opening temp file.\n", stderr);
+		struct stat attribute;
+		if (stat( TEMP_NAME, &attribute ) != -1)
+		{
+			fputs("Copying data to bundle: ", stderr);
+			copydata(bundle, TEMP_NAME, attribute.st_size, key);
+		}
+		else
+		{
+			fputs("Error while opening temp file.\n", stderr);
+		}
+		
+		fseek(bundle, num_pos, SEEK_SET);
+		FIX_ENDIAN(num_files);
+		fwrite(&num_files, 1, sizeof(num_files), bundle); //write real value
 	}
 	
-	fseek(bundle, num_pos, SEEK_SET);
-	FIX_ENDIAN(num_files);
-	fwrite(&num_files, 1, sizeof(num_files), bundle); //write real value
-	
 	fclose(bundle);
+	
 	
 	fputs("Cleaning up.\n", stderr);
 	
 	unlink(TEMP_NAME);
 	
-	return 0;
+	return err_code;
 }
