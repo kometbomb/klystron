@@ -48,6 +48,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #endif
 
+#define BUFFER_GRANULARITY 150 // mutex is locked and audio generated in 150 sample blocks
 
 #define envspd(cyd,slope) (slope!=0?((0xff0000 / ((slope) * (slope) * 256)) * CYD_BASE_FREQ / cyd->sample_rate):0xff0000)
 
@@ -610,36 +611,45 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 
 #endif
 	
-		if (cyd->flags & CYD_PAUSED) continue;
+		if (cyd->flags & CYD_PAUSED) 
+		{ 
+			i += BUFFER_GRANULARITY * 2 * sizeof(Sint16); 
+			stream += BUFFER_GRANULARITY * 2;
+			continue; 
+		}
 		
 		cyd_lock(cyd, 1);
 		
-		if (cyd->callback && cyd->callback_counter-- == 0)
+		for (int g = 0 ; g < BUFFER_GRANULARITY && i < len ; i += sizeof(Sint16)*2, stream += 2, ++cyd->samples_output)
 		{
-			cyd->callback_counter = cyd->callback_period-1;
-			if (!cyd->callback(cyd->callback_parameter))
-			{
-				cyd_lock(cyd, 0);
-				return;
-			}
-		}
 		
+			if (cyd->callback && cyd->callback_counter-- == 0)
+			{
+				cyd->callback_counter = cyd->callback_period-1;
+				if (!cyd->callback(cyd->callback_parameter))
+				{
+					cyd_lock(cyd, 0);
+					return;
+				}
+			}
+			
 #ifdef STEREOOUTPUT
-		Sint32 output, left, right;
-		cyd_output(cyd, &left, &right);
-		output = (left + right) / 2;
+			Sint32 output, left, right;
+			cyd_output(cyd, &left, &right);
+			output = (left + right) / 2;
 #else
-		Sint32 output = cyd_output(cyd);
+			Sint32 output = cyd_output(cyd);
 #endif
 
-		Sint32 o = (Sint32)*(Sint16*)stream + output * PRE_GAIN;
-		
-		if (o < -32768) o = -32768;
-		else if (o > 32767) o = 32767;
-		
-		*(Sint16*)stream = o;
-		
-		cyd_cycle(cyd);
+			Sint32 o = (Sint32)*(Sint16*)stream + output * PRE_GAIN;
+			
+			if (o < -32768) o = -32768;
+			else if (o > 32767) o = 32767;
+			
+			*(Sint16*)stream = o;
+			
+			cyd_cycle(cyd);
+		}
 
 		cyd_lock(cyd, 0);
 	}
@@ -657,7 +667,7 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 	cyd->samples_output = 0;
 	cyd->flags &= ~CYD_CLIPPING;
 	
-	for (int i = 0 ; i < len ; i += sizeof(Sint16)*2, stream += 2, ++cyd->samples_output)
+	for (int i = 0 ; i < len ; )
 	{
 #ifndef USENATIVEAPIS
 	
@@ -680,54 +690,63 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 
 #endif
 	
-		if (cyd->flags & CYD_PAUSED) continue;
+		if (cyd->flags & CYD_PAUSED) 
+		{ 
+			i += BUFFER_GRANULARITY * 2 * sizeof(Sint16); 
+			stream += BUFFER_GRANULARITY * 2;
+			continue; 
+		}
 		
 		cyd_lock(cyd, 1);
 		
-		if (cyd->callback && cyd->callback_counter-- == 0)
+		for (int g = 0 ; g < BUFFER_GRANULARITY && i < len ; i += sizeof(Sint16)*2, stream += 2, ++cyd->samples_output)
 		{
-			cyd->callback_counter = cyd->callback_period-1;
-			cyd->callback(cyd->callback_parameter);
-		}
+		
+			if (cyd->callback && cyd->callback_counter-- == 0)
+			{
+				cyd->callback_counter = cyd->callback_period-1;
+				cyd->callback(cyd->callback_parameter);
+			}
 
-		Sint32 left, right;
+			Sint32 left, right;
 #ifdef STEREOOUTPUT
-		cyd_output(cyd, &left, &right);
+			cyd_output(cyd, &left, &right);
 #else
-		left = right = cyd_output(cyd);
+			left = right = cyd_output(cyd);
 #endif
 
-		Sint32 o1 = (Sint32)*(Sint16*)stream + left * PRE_GAIN;
-		
-		if (o1 < -32768) 
-		{
-			o1 = -32768;
-			cyd->flags |= CYD_CLIPPING;
+			Sint32 o1 = (Sint32)*(Sint16*)stream + left * PRE_GAIN;
+			
+			if (o1 < -32768) 
+			{
+				o1 = -32768;
+				cyd->flags |= CYD_CLIPPING;
+			}
+			else if (o1 > 32767) 
+			{
+				o1 = 32767;
+				cyd->flags |= CYD_CLIPPING;
+			}
+			
+			*(Sint16*)stream = o1;
+			
+			Sint32 o2 = (Sint32)*((Sint16*)stream + 1) + right * PRE_GAIN;
+			
+			if (o2 < -32768) 
+			{
+				o2 = -32768;
+				cyd->flags |= CYD_CLIPPING;
+			}
+			else if (o2 > 32767) 
+			{
+				o2 = 32767;
+				cyd->flags |= CYD_CLIPPING;
+			}
+			
+			*((Sint16*)stream + 1) = o2;
+			
+			cyd_cycle(cyd);
 		}
-		else if (o1 > 32767) 
-		{
-			o1 = 32767;
-			cyd->flags |= CYD_CLIPPING;
-		}
-		
-		*(Sint16*)stream = o1;
-		
-		Sint32 o2 = (Sint32)*((Sint16*)stream + 1) + right * PRE_GAIN;
-		
-		if (o2 < -32768) 
-		{
-			o2 = -32768;
-			cyd->flags |= CYD_CLIPPING;
-		}
-		else if (o2 > 32767) 
-		{
-			o2 = 32767;
-			cyd->flags |= CYD_CLIPPING;
-		}
-		
-		*((Sint16*)stream + 1) = o2;
-		
-		cyd_cycle(cyd);
 
 		cyd_lock(cyd, 0);
 	}
