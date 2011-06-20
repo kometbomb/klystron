@@ -779,15 +779,19 @@ void cyd_set_env_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 void cyd_set_env_shape(CydChannel *chn, Uint8 shape)
 {
 	chn->ym_env_shape = shape;
-	if (shape & CYD_YM_ENV_ATT)
+	
+	if ((chn->flags & CYD_CHN_ENABLE_KEY_SYNC))
 	{
-		chn->envelope = 0;
-		chn->envelope_state = ATTACK;
-	}
-	else
-	{
-		chn->envelope = YM_LENGTH;
-		chn->envelope_state = DECAY;
+		if (shape & CYD_YM_ENV_ATT)
+		{
+			chn->envelope = 0;
+			chn->envelope_state = ATTACK;
+		}
+		else
+		{
+			chn->envelope = YM_LENGTH;
+			chn->envelope_state = DECAY;
+		}
 	}
 }
 
