@@ -105,7 +105,7 @@ void cyd_wave_cycle(CydEngine *cyd, CydChannel *chn)
 		{
 			chn->wave_acc += chn->wave_frequency;
 			
-			if (chn->wave_entry->flags & CYD_WAVE_LOOP)
+			if ((chn->wave_entry->flags & CYD_WAVE_LOOP) && chn->wave_entry->loop_end != chn->wave_entry->loop_begin)
 			{
 				if (chn->wave_acc >= (Uint64)chn->wave_entry->loop_end * WAVETABLE_RESOLUTION)
 				{
@@ -133,7 +133,7 @@ void cyd_wave_cycle(CydEngine *cyd, CydChannel *chn)
 		{
 			chn->wave_acc -= chn->wave_frequency;
 			
-			if (chn->wave_entry->flags & CYD_WAVE_LOOP)
+			if ((chn->wave_entry->flags & CYD_WAVE_LOOP) && chn->wave_entry->loop_end != chn->wave_entry->loop_begin)
 			{
 				if ((Sint64)chn->wave_acc < (Sint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION)
 				{
