@@ -35,9 +35,15 @@ OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 
-FILE *open_dialog(const char *mode, const char *title, const char *filter, GfxDomain *domain, SDL_Surface *gfx, const Font *largefont, const Font *smallfont)
+FILE *open_dialog(const char *mode, const char *title, const char *filter, GfxDomain *domain, SDL_Surface *gfx, const Font *largefont, const Font *smallfont, const char *deffilename)
 {
 	char filename[5000];
+	
+	if (deffilename)
+		strncpy(filename, deffilename, sizeof(filename));
+	else
+		strcpy(filename, "");
+	
 	if (filebox(title, mode[0] == 'w' ? FB_SAVE : FB_OPEN, filename, sizeof(filename) - 1, filter, domain, gfx, largefont, smallfont) == FB_OK)
 	{
 		FILE * f = fopen(filename, mode);
