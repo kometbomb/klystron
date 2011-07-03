@@ -353,7 +353,6 @@ static int populate_files(GfxDomain *domain, SDL_Surface *gfx, const Font *font,
 	data.selected_file = -1;
 	data.list_position = 0;
 	data.editpos = 0;
-	strcpy(data.field, "");
 	
 	qsort(data.files, data.n_files, sizeof(*data.files), file_sorter);
 	
@@ -372,6 +371,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 	data.largefont = largefont;
 	data.smallfont = smallfont;
 	data.gfx = gfx;
+	strncpy(data.field, buffer, sizeof(data.field));
 	
 	if (!populate_files(domain, gfx, largefont, ".", extension)) return FB_CANCEL;
 	
