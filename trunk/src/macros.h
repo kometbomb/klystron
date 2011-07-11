@@ -45,16 +45,34 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define _VER_READ(x, size) VER_READ(version, 0, MUS_VERSION, x, size)
 #define _VER_WRITE(x, size) fwrite(x, !size ? sizeof(*x) : size, 1, f)
 
+#ifndef ANDROID
+
 #ifdef DEBUG
 # define debug(...) do { printf("[DEBUG] "); printf(__VA_ARGS__); printf("\n"); } while(0)
 #else
 # define debug(...) do {} while(0)
 #endif
 
-# define dumpvar(x) debug(#x " = %d", x)
-
 #define warning(...) do { fputs("[WARNING] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
 #define fatal(...) do { fputs("[FATAL] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
+
+#else
+
+#include <android/log.h>
+
+#ifdef DEBUG
+# define debug(...) do { __android_log_print(ANDROID_LOG_DEBUG, "klystron", __VA_ARGS__); } while(0)
+#else
+# define debug(...) do {} while(0)
+#endif
+
+#define warning(...) do { __android_log_print(ANDROID_LOG_WARN, "klystron", __VA_ARGS__); } while(0)
+#define fatal(...) do { __android_log_print(ANDROID_LOG_ERROR, "klystron", __VA_ARGS__); } while(0)
+
+
+#endif
+
+# define dumpvar(x) debug(#x " = %d", x)
 
 #define FIX_ENDIAN(x) do { x = (sizeof(x) < 2 ? x : (sizeof(x) == 2 ? SDL_SwapLE16(x) : SDL_SwapLE32(x))); } while(0)
 

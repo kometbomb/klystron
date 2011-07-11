@@ -1088,8 +1088,11 @@ int mus_advance_tick(void* udata)
 							}
 							else
 							{
-								pinst = &mus->song->instrument[inst];
-								mus->channel[i].instrument = pinst;
+								if (inst < mus->song->num_instruments)
+								{
+									pinst = &mus->song->instrument[inst];
+									mus->channel[i].instrument = pinst;
+								}
 							}
 							
 							if (note == MUS_NOTE_RELEASE)
