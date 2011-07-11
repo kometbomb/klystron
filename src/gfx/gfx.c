@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2009-2010 Tero Lindeman (kometbomb)
+Copyright (c) 2009-2011 Tero Lindeman (kometbomb)
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -60,6 +60,13 @@ int * gfx_build_collision_mask(SDL_Surface *s)
 {
 	int * mask = malloc(sizeof(int) * s->w * s->h);
 	
+#if SDL_VERSION_ATLEAST(1,3,0)
+	Uint32 key;
+	SDL_GetColorKey(s, &key);
+#else	
+	const Uint32 key = s->format->colorkey;
+#endif
+	
 	my_lock(s);
 	for (int y = 0 ; y < s->h ; ++y)
 	{
@@ -72,10 +79,10 @@ int * gfx_build_collision_mask(SDL_Surface *s)
 			switch (s->format->BytesPerPixel) 
 			{
 				default:
-				case 1: p = ((*((Uint8*)pa))) != s->format->colorkey; break;
-				case 2: p = ((*((Uint16*)pa))&0xffff) != s->format->colorkey; break;
-				case 3: p = ((*((Uint32*)pa))&0xffffff) != s->format->colorkey; break;
-				case 4: p = ((*((Uint32*)pa))&0xffffff) != s->format->colorkey; break;
+				case 1: p = ((*((Uint8*)pa))) != key; break;
+				case 2: p = ((*((Uint16*)pa))&0xffff) != key; break;
+				case 3: p = ((*((Uint32*)pa))&0xffffff) != key; break;
+				case 4: p = ((*((Uint32*)pa))&0xffffff) != key; break;
 			}
 			
 			mask[x + y * s->w] = p;
@@ -299,6 +306,13 @@ void gfx_generate_raster(Uint32 *dest, const Uint32 from, const Uint32 to, int l
 
 static int has_pixels(TileDescriptor *desc)
 {
+#if SDL_VERSION_ATLEAST(1,3,0)
+	Uint32 key;
+	SDL_GetColorKey(desc->surface->surface, &key);
+#else	
+	const Uint32 key = desc->surface->surface->format->colorkey;
+#endif
+
 	my_lock(desc->surface->surface);
 	
 	int result = 0;
@@ -310,7 +324,7 @@ static int has_pixels(TileDescriptor *desc)
 		for (int x = 0 ; x < desc->rect.w ; ++x)
 		{
 			//printf("%08x", *(Uint32*)p);
-			if ((*((Uint32*)p)&0xffffff) != desc->surface->surface->format->colorkey)
+			if ((*((Uint32*)p)&0xffffff) != key)
 			{
 				++result;
 			}
