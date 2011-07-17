@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2009-2010 Tero Lindeman (kometbomb)
+Copyright (c) 2009-2011 Tero Lindeman (kometbomb)
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -50,7 +50,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define BUFFER_GRANULARITY 150 // mutex is locked and audio generated in 150 sample blocks
 
-#define envspd(cyd,slope) (slope!=0?((0xff0000 / ((slope) * (slope) * 256)) * CYD_BASE_FREQ / cyd->sample_rate):0xff0000)
+#define envspd(cyd,slope) (slope!=0?(((Uint64)0xff0000 / ((slope) * (slope) * 256)) * CYD_BASE_FREQ / cyd->sample_rate):((Uint64)0xff0000 * CYD_BASE_FREQ / cyd->sample_rate))
 
 
 static Sint32 inline fastrnd(Uint32 fastrnd_rndi)

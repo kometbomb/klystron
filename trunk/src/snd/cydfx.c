@@ -97,8 +97,10 @@ void cydfx_deinit(CydFx *fx)
 void cydfx_set(CydFx *fx, const CydFxSerialized *ser)
 {
 	fx->flags = ser->flags;
-	
+
+#ifdef STEREOOUTPUT
 	cydrvb_set_stereo_spread(&fx->rvb, ser->rvb.spread);
+#endif
 	
 	for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
 	{
