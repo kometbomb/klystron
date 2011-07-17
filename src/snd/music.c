@@ -216,7 +216,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 			}
 		}
 		break;
-		
+#ifdef STEREOOUTPUT
 		case MUS_FX_PAN_RIGHT:
 		case MUS_FX_PAN_LEFT:
 		{
@@ -235,7 +235,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 			cyd_set_panning(mus->cyd, cydchn, p);
 		}
 		break;
-		
+#endif
 		case MUS_FX_EXT:
 		{
 			// Protracker style Exy commands
@@ -410,13 +410,13 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					mus_set_buzz_frequency(mus, chan, chn->note);
 				}
 				break;
-				
+#ifdef STEREOOUTPUT
 				case MUS_FX_SET_PANNING:
 				{
 					cyd_set_panning(mus->cyd, cydchn, inst & 0xff);
 				}
 				break;
-				
+#endif
 				case MUS_FX_FILTER_TYPE:
 				{
 					cydchn->flttype = (inst & 0xf) % FLT_TYPES;
@@ -1274,7 +1274,9 @@ void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position)
 		if (song)
 		{
 			mus->channel[i].volume = song->default_volume[i];
+#ifdef STEREOOUTPUT
 			cyd_set_panning(mus->cyd, &mus->cyd->channel[i], song->default_panning[i] + CYD_PAN_CENTER);
+#endif
 		}
 		else
 		{
@@ -1705,7 +1707,9 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 		}
 		
 		if (song->instrument == NULL)
+		{
 			song->instrument = malloc((size_t)song->num_instruments * sizeof(song->instrument[0]));
+		}
 		
 		for (int i = 0 ; i < song->num_instruments; ++i)
 		{
@@ -1826,7 +1830,7 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 					{
 						song->pattern[i].step[s].volume = MUS_NOTE_NO_VOLUME;	
 					}
-					
+
 					if (s & 1) ++current;
 				}
 				
