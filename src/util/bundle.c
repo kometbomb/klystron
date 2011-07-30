@@ -185,7 +185,11 @@ FILE *bnd_locate(Bundle *bundle, const char *filename, int static_handle)
 }
 
 
+#if SDL_VERSION_ATLEAST(1,3,0)
+static int bnd_seek(struct SDL_RWops *context, long offset, int whence)
+#else
 static int bnd_seek(struct SDL_RWops *context, int offset, int whence)
+#endif
 {
 	RWOpsBundle *b = context->hidden.unknown.data1;
 	
@@ -213,7 +217,11 @@ static int bnd_seek(struct SDL_RWops *context, int offset, int whence)
 }
 
 
+#if SDL_VERSION_ATLEAST(1,3,0)
+static int bnd_read(struct SDL_RWops *context, void *ptr, size_t size, size_t num)
+#else
 static int bnd_read(struct SDL_RWops *context, void *ptr, int size, int num)
+#endif
 {
 	RWOpsBundle *b = context->hidden.unknown.data1;
 	
