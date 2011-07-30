@@ -1342,13 +1342,14 @@ int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, M
 
 int mus_load_instrument(const char *path, MusInstrument *inst, CydWavetableEntry *wavetable_entries)
 {
-	FILE *f = fopen(path, "rb");
+	SDL_RWops *ctx = SDL_RWFromFile(path, "rb");
 	
-	if (f)
+	if (ctx)
 	{
-		int r = mus_load_instrument_file2(f, inst, wavetable_entries);
+		int r = mus_load_instrument_RW2(ctx, inst, wavetable_entries);
 	
-		fclose(f);
+		SDL_RWclose(ctx);
+		SDL_FreeRW(ctx);
 		
 		return r;
 	}
@@ -1357,7 +1358,7 @@ int mus_load_instrument(const char *path, MusInstrument *inst, CydWavetableEntry
 }
 
 
-static void load_wavetable_entry(Uint8 version, CydWavetableEntry * e, FILE *f)
+static void load_wavetable_entry(Uint8 version, CydWavetableEntry * e, SDL_RWops *ctx)
 {
 	VER_READ(version, 12, 0xff, &e->flags, 0);
 	VER_READ(version, 12, 0xff, &e->sample_rate, 0);
@@ -1379,7 +1380,7 @@ static void load_wavetable_entry(Uint8 version, CydWavetableEntry * e, FILE *f)
 		{
 			Sint16 *data = malloc(sizeof(data[0]) * e->samples);
 			
-			fread(data, sizeof(data[0]), e->samples, f);
+			SDL_RWread(ctx, data, sizeof(data[0]), e->samples);
 			
 			cyd_wave_entry_init(e, data, e->samples, CYD_WAVE_TYPE_SINT16, 1, 1, 1);
 			
@@ -1392,7 +1393,7 @@ static void load_wavetable_entry(Uint8 version, CydWavetableEntry * e, FILE *f)
 			FIX_ENDIAN(data_size);
 			Uint8 *compressed = malloc(sizeof(Uint8) * data_size);
 			
-			fread(compressed, sizeof(Uint8), (data_size + 7) / 8, f); // data_size is in bits
+			SDL_RWread(ctx, compressed, sizeof(Uint8), (data_size + 7) / 8); // data_size is in bits
 			
 			Sint16 *data = bitunpack(compressed, data_size, e->samples, (e->flags >> 3) & 3);
 			
@@ -1412,7 +1413,7 @@ static void load_wavetable_entry(Uint8 version, CydWavetableEntry * e, FILE *f)
 }
 
 
-int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst, CydWavetableEntry *wavetable_entries)
+int mus_load_instrument_RW(Uint8 version, SDL_RWops *ctx, MusInstrument *inst, CydWavetableEntry *wavetable_entries)
 {
 	mus_get_default_instrument(inst);
 
@@ -1462,7 +1463,7 @@ int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst, CydWav
 			
 			if (e->samples == 0)
 			{
-				load_wavetable_entry(version, e, f);
+				load_wavetable_entry(version, e, ctx);
 				break;
 			}
 		}
@@ -1483,23 +1484,23 @@ int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst, CydWav
 }
 
 
-int mus_load_instrument_file2(FILE *f, MusInstrument *inst, CydWavetableEntry *wavetable_entries)
+int mus_load_instrument_RW2(SDL_RWops *ctx, MusInstrument *inst, CydWavetableEntry *wavetable_entries)
 {
 	char id[9];
 				
 	id[8] = '\0';
 
-	fread(id, 8, sizeof(id[0]), f);
+	SDL_RWread(ctx, id, 8, sizeof(id[0]));
 	
 	if (strcmp(id, MUS_INST_SIG) == 0)
 	{
 		Uint8 version = 0;
-		fread(&version, 1, sizeof(version), f);
+		SDL_RWread(ctx, &version, 1, sizeof(version));
 		
 		if (version > MUS_VERSION)
 			return 0;
 	
-		mus_load_instrument_file(version, f, inst, wavetable_entries);
+		mus_load_instrument_RW(version, ctx, inst, wavetable_entries);
 		
 		return 1;
 	}
@@ -1548,17 +1549,17 @@ void mus_set_fx(MusEngine *mus, MusSong *song)
 }
 
 
-int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entries)
+int mus_load_song_RW(SDL_RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_entries)
 {
 	char id[9];
 	id[8] = '\0';
 
-	fread(id, 8, sizeof(id[0]), f);
+	SDL_RWread(ctx, id, 8, sizeof(id[0]));
 	
 	if (strcmp(id, MUS_SONG_SIG) == 0)
 	{
 		Uint8 version = 0;
-		fread(&version, 1, sizeof(version), f);
+		SDL_RWread(ctx, &version, 1, sizeof(version));
 		
 		debug("Song version = %u", version);
 		
@@ -1569,7 +1570,7 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 		}
 		
 		if (version >= 6) 
-			fread(&song->num_channels, 1, sizeof(song->num_channels), f);
+			SDL_RWread(ctx, &song->num_channels, 1, sizeof(song->num_channels));
 		else 
 		{
 			if (version > 3) 
@@ -1578,30 +1579,30 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 				song->num_channels = 3;
 		}	
 		
-		fread(&song->time_signature, 1, sizeof(song->time_signature), f);
-		fread(&song->num_instruments, 1, sizeof(song->num_instruments), f);
-		fread(&song->num_patterns, 1, sizeof(song->num_patterns), f);
-		fread(song->num_sequences, 1, sizeof(song->num_sequences[0]) * (int)song->num_channels, f);
-		fread(&song->song_length, 1, sizeof(song->song_length), f);
+		SDL_RWread(ctx, &song->time_signature, 1, sizeof(song->time_signature));
+		SDL_RWread(ctx, &song->num_instruments, 1, sizeof(song->num_instruments));
+		SDL_RWread(ctx, &song->num_patterns, 1, sizeof(song->num_patterns));
+		SDL_RWread(ctx, song->num_sequences, 1, sizeof(song->num_sequences[0]) * (int)song->num_channels);
+		SDL_RWread(ctx, &song->song_length, 1, sizeof(song->song_length));
 		
-		fread(&song->loop_point, 1, sizeof(song->loop_point), f);
+		SDL_RWread(ctx, &song->loop_point, 1, sizeof(song->loop_point));
 		
 		if (version >= 12)
-			fread(&song->master_volume, 1, 1, f);
+			SDL_RWread(ctx, &song->master_volume, 1, 1);
 		
-		fread(&song->song_speed, 1, sizeof(song->song_speed), f);
-		fread(&song->song_speed2, 1, sizeof(song->song_speed2), f);
-		fread(&song->song_rate, 1, sizeof(song->song_rate), f);
+		SDL_RWread(ctx, &song->song_speed, 1, sizeof(song->song_speed));
+		SDL_RWread(ctx, &song->song_speed2, 1, sizeof(song->song_speed2));
+		SDL_RWread(ctx, &song->song_rate, 1, sizeof(song->song_rate));
 		
-		if (version > 2) fread(&song->flags, 1, sizeof(song->flags), f);
+		if (version > 2) SDL_RWread(ctx, &song->flags, 1, sizeof(song->flags));
 		else song->flags = 0;
 		
-		if (version >= 9) fread(&song->multiplex_period, 1, sizeof(song->multiplex_period), f);
+		if (version >= 9) SDL_RWread(ctx, &song->multiplex_period, 1, sizeof(song->multiplex_period));
 		else song->multiplex_period = 3;
 		
 		if (version >= 16)
 		{
-			fread(&song->pitch_inaccuracy, 1, sizeof(song->pitch_inaccuracy), f);
+			SDL_RWread(ctx, &song->pitch_inaccuracy, 1, sizeof(song->pitch_inaccuracy));
 		}
 		else
 		{
@@ -1623,20 +1624,20 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 		
 		if (version >= 11)
 		{
-			fread(&title_len, 1, 1, f);
+			SDL_RWread(ctx, &title_len, 1, 1);
 		}
 		
 		if (version >= 5) 
 		{
 			memset(song->title, 0, sizeof(song->title));
-			fread(song->title, 1, my_min(sizeof(song->title), title_len), f);
+			SDL_RWread(ctx, song->title, 1, my_min(sizeof(song->title), title_len));
 			song->title[sizeof(song->title) - 1] = '\0';
 		}
 		
 		Uint8 n_fx = 0;
 		
 		if (version >= 10)
-			fread(&n_fx, 1, sizeof(n_fx), f);
+			SDL_RWread(ctx, &n_fx, 1, sizeof(n_fx));
 		else if (song->flags & MUS_ENABLE_REVERB)
 			n_fx = 1;
 		
@@ -1649,12 +1650,12 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 				if (version < 12)
 				{
 					debug("Reading legacy fx format");
-					fread(&song->fx, sizeof(song->fx[0]) - sizeof(Uint8), n_fx, f);
+					SDL_RWread(ctx, &song->fx, sizeof(song->fx[0]) - sizeof(Uint8), n_fx);
 				}
 				else
 				{
 					debug("Reading fx format 2");
-					fread(&song->fx, sizeof(song->fx[0]), n_fx, f);
+					SDL_RWread(ctx, &song->fx, sizeof(song->fx[0]), n_fx);
 				}
 				
 				for (int fx = 0 ; fx < n_fx ; ++fx)
@@ -1680,8 +1681,8 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 					for (int i = 0 ; i < CYDRVB_TAPS ; ++i)	
 					{
 						Sint32 g, d;
-						fread(&g, 1, sizeof(g), f);
-						fread(&d, 1, sizeof(d), f);
+						SDL_RWread(ctx, &g, 1, sizeof(g));
+						SDL_RWread(ctx, &d, 1, sizeof(d));
 							
 						song->fx[fx].rvb.tap[i].gain = g;
 						song->fx[fx].rvb.tap[i].delay = d;
@@ -1702,8 +1703,8 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 		
 		if (version >= 13)
 		{
-			fread(&song->default_volume[0], sizeof(song->default_volume[0]), song->num_channels, f);
-			fread(&song->default_panning[0], sizeof(song->default_panning[0]), song->num_channels, f);
+			SDL_RWread(ctx, &song->default_volume[0], sizeof(song->default_volume[0]), song->num_channels);
+			SDL_RWread(ctx, &song->default_panning[0], sizeof(song->default_panning[0]), song->num_channels);
 		}
 		
 		if (song->instrument == NULL)
@@ -1713,7 +1714,7 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 		
 		for (int i = 0 ; i < song->num_instruments; ++i)
 		{
-			mus_load_instrument_file(version, f, &song->instrument[i], NULL); 
+			mus_load_instrument_RW(version, ctx, &song->instrument[i], NULL); 
 		}
 		
 		
@@ -1726,15 +1727,15 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 			
 				if (version < 8)
 				{
-					fread(song->sequence[i], song->num_sequences[i], sizeof(song->sequence[i][0]), f);
+					SDL_RWread(ctx, song->sequence[i], song->num_sequences[i], sizeof(song->sequence[i][0]));
 				}
 				else
 				{
 					for (int s = 0 ; s < song->num_sequences[i] ; ++s)
 					{
-						fread(&song->sequence[i][s].position, 1, sizeof(song->sequence[i][s].position), f);
-						fread(&song->sequence[i][s].pattern, 1, sizeof(song->sequence[i][s].pattern), f);
-						fread(&song->sequence[i][s].note_offset, 1, sizeof(song->sequence[i][s].note_offset), f);
+						SDL_RWread(ctx, &song->sequence[i][s].position, 1, sizeof(song->sequence[i][s].position));
+						SDL_RWread(ctx, &song->sequence[i][s].pattern, 1, sizeof(song->sequence[i][s].pattern));
+						SDL_RWread(ctx, &song->sequence[i][s].note_offset, 1, sizeof(song->sequence[i][s].note_offset));
 					}
 				}
 				
@@ -1755,7 +1756,7 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 		for (int i = 0 ; i < song->num_patterns; ++i)
 		{
 			Uint16 steps;
-			fread(&steps, 1, sizeof(song->pattern[i].num_steps), f);
+			SDL_RWread(ctx, &steps, 1, sizeof(song->pattern[i].num_steps));
 			
 			FIX_ENDIAN(steps);
 			
@@ -1776,7 +1777,7 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 					
 				for (int step = 0 ; step < song->pattern[i].num_steps ; ++step)
 				{
-					fread(&song->pattern[i].step[step], 1, s, f);
+					SDL_RWread(ctx, &song->pattern[i].step[step], 1, s);
 					FIX_ENDIAN(song->pattern[i].step[step].command);
 				}
 			}
@@ -1787,25 +1788,25 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 				Uint8 *packed = malloc(sizeof(Uint8) * len);
 				Uint8 *current = packed;
 				
-				fread(packed, sizeof(Uint8), len, f);
+				SDL_RWread(ctx, packed, sizeof(Uint8), len);
 				
 				for (int s = 0 ; s < song->pattern[i].num_steps ; ++s)
 				{
 					Uint8 bits = (s & 1 || s == song->pattern[i].num_steps - 1) ? (*current & 0xf) : (*current >> 4);
 					
 					if (bits & MUS_PAK_BIT_NOTE)
-						fread(&song->pattern[i].step[s].note, 1, sizeof(song->pattern[i].step[s].note), f);
+						SDL_RWread(ctx, &song->pattern[i].step[s].note, 1, sizeof(song->pattern[i].step[s].note));
 					else
 						song->pattern[i].step[s].note = MUS_NOTE_NONE;
 						
 					if (bits & MUS_PAK_BIT_INST)
-						fread(&song->pattern[i].step[s].instrument, 1, sizeof(song->pattern[i].step[s].instrument), f);
+						SDL_RWread(ctx, &song->pattern[i].step[s].instrument, 1, sizeof(song->pattern[i].step[s].instrument));
 					else
 						song->pattern[i].step[s].instrument = MUS_NOTE_NO_INSTRUMENT;
 						
 					if (bits & MUS_PAK_BIT_CTRL)
 					{
-						fread(&song->pattern[i].step[s].ctrl, 1, sizeof(song->pattern[i].step[s].ctrl), f);
+						SDL_RWread(ctx, &song->pattern[i].step[s].ctrl, 1, sizeof(song->pattern[i].step[s].ctrl));
 						
 						if (version >= 14)
 							bits |= song->pattern[i].step[s].ctrl & ~7;
@@ -1816,7 +1817,7 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 						song->pattern[i].step[s].ctrl = 0;
 						
 					if (bits & MUS_PAK_BIT_CMD)
-						fread(&song->pattern[i].step[s].command, 1, sizeof(song->pattern[i].step[s].command), f);
+						SDL_RWread(ctx, &song->pattern[i].step[s].command, 1, sizeof(song->pattern[i].step[s].command));
 					else
 						song->pattern[i].step[s].command = 0;
 						
@@ -1824,7 +1825,7 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 					
 					if (bits & MUS_PAK_BIT_VOLUME)
 					{
-						fread(&song->pattern[i].step[s].volume, 1, sizeof(song->pattern[i].step[s].volume), f);
+						SDL_RWread(ctx, &song->pattern[i].step[s].volume, 1, sizeof(song->pattern[i].step[s].volume));
 					}
 					else
 					{
@@ -1846,11 +1847,11 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 		if (version >= 12)
 		{
 			Uint8 max_wt = 0;
-			fread(&max_wt, 1, sizeof(Uint8), f);
+			SDL_RWread(ctx, &max_wt, 1, sizeof(Uint8));
 					
 			for (int i = 0 ; i < max_wt ; ++i)
 			{
-				load_wavetable_entry(version, &wavetable_entries[i], f);
+				load_wavetable_entry(version, &wavetable_entries[i], ctx);
 			}
 		}
 		
@@ -1863,18 +1864,20 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 
 int mus_load_song(const char *path, MusSong *song, CydWavetableEntry *wavetable_entries)
 {
-	FILE *f = fopen(path, "rb");
+	SDL_RWops *ctx = SDL_RWFromFile(path, "rb");
 	
-	if (f)
+	if (ctx)
 	{	
-		int r = mus_load_song_file(f, song, wavetable_entries);
-		fclose(f);
+		int r = mus_load_song_RW(ctx, song, wavetable_entries);
+		SDL_RWclose(ctx);
+		SDL_FreeRW(ctx);
 		
 		return r;
 	}
 	
 	return 0;
 }
+
 
 void mus_free_song(MusSong *song)
 {
@@ -1902,4 +1905,55 @@ void mus_release(MusEngine *mus, int chan)
 	mus->song_track[chan].delayed.instrument = NULL;
 	
 	cyd_lock(mus->cyd, 0);
+}
+
+
+int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst, CydWavetableEntry *wavetable_entries)
+{
+	SDL_RWops *rw = SDL_RWFromFP(f, 0);
+	
+	if (rw)
+	{
+		int r = mus_load_instrument_RW(version, rw, inst, wavetable_entries);
+		
+		SDL_FreeRW(rw);
+		
+		return r;
+	}
+	
+	return 0;
+}
+
+
+int mus_load_instrument_file2(FILE *f, MusInstrument *inst, CydWavetableEntry *wavetable_entries)
+{
+	SDL_RWops *rw = SDL_RWFromFP(f, 0);
+	
+	if (rw)
+	{
+		int r = mus_load_instrument_RW2(rw, inst, wavetable_entries);
+		
+		SDL_FreeRW(rw);
+		
+		return r;
+	}
+	
+	return 0;
+}
+
+
+int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entries)
+{
+	SDL_RWops *rw = SDL_RWFromFP(f, 0);
+	
+	if (rw)
+	{
+		int r = mus_load_song_RW(rw, song, wavetable_entries);
+		
+		SDL_FreeRW(rw);
+		
+		return r;
+	}
+	
+	return 0;
 }
