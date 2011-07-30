@@ -2,7 +2,7 @@
 #define MUSIC_H
 
 /*
-Copyright (c) 2009-2010 Tero Lindeman (kometbomb)
+Copyright (c) 2009-2011 Tero Lindeman (kometbomb)
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
@@ -29,6 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "cyd.h"
 #include "cydfx.h"
+#include "SDL_rwops.h"
 
 #define MUS_PROG_LEN 32
 #define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
@@ -300,10 +301,13 @@ void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position);
 int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, MusPattern **pattern, MusChannel *channel, int *cyd_env, int *mus_note);
 int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst, CydWavetableEntry *wavetable_entries);
 int mus_load_instrument_file2(FILE *f, MusInstrument *inst, CydWavetableEntry *wavetable_entries);
+int mus_load_instrument_RW(Uint8 version, SDL_RWops *ctx, MusInstrument *inst, CydWavetableEntry *wavetable_entries);
+int mus_load_instrument_RW2(SDL_RWops *ctx, MusInstrument *inst, CydWavetableEntry *wavetable_entries);
 int mus_load_instrument(const char *path, MusInstrument *inst, CydWavetableEntry *wavetable_entries);
 void mus_get_default_instrument(MusInstrument *inst);
 int mus_load_song(const char *path, MusSong *song, CydWavetableEntry *wavetable_entries);
 int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entries);
+int mus_load_song_RW(SDL_RWops *rw, MusSong *song, CydWavetableEntry *wavetable_entries);
 void mus_free_song(MusSong *song);
 void mus_set_fx(MusEngine *mus, MusSong *song);
 Uint32 mus_ext_sync(MusEngine *mus);
