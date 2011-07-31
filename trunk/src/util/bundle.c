@@ -231,7 +231,7 @@ SDL_RWops *SDL_RWFromBundle(Bundle *bundle, const char *filename)
 		free(b);
 		return NULL;
 	}
-	
+		
 	rwops = SDL_AllocRW();
 	
 	if (rwops != NULL) 
@@ -241,6 +241,8 @@ SDL_RWops *SDL_RWFromBundle(Bundle *bundle, const char *filename)
 		rwops->write = NULL;
 		rwops->close = bnd_close;
 		rwops->hidden.unknown.data1 = b;
+		
+		rwops->seek(rwops, 0, SEEK_SET);
 	}
 	else
 	{

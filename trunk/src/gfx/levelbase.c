@@ -25,23 +25,23 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "levelbase.h"
 
-#define ptr_read(dest, ptr) fread(&dest, sizeof(dest), 1, data);
+#define ptr_read(dest, ptr) SDL_RWread(data, &dest, sizeof(dest), 1);
 
-int lev_load(Background *bg, int *n_layers, FILE* data, int (*interpret_event)(void *, const LevEvent *), void* pdata)
+int lev_load(Background *bg, int *n_layers, SDL_RWops* data, int (*interpret_event)(void *, const LevEvent *), void* pdata)
 {
 	int current_layer = -1;
 	BgCell * cell = NULL;
 	
 	while (1)
 	{
-		Uint8 x = fgetc(data);
+		Uint8 x = 0;
+		SDL_RWread(data, &x, 1, 1);
 		
 		if (x == LOP_END) break;
 		
-		ungetc(x, data);
-	
 		LevOpCode opcode;
-		ptr_read(opcode, data);
+		((Uint8*)&opcode)[0] = x;
+		SDL_RWread(data, &((Uint8*)&opcode)[1], 1, sizeof(opcode) - 1);
 		
 		FIX_ENDIAN(opcode.repeat);
 		

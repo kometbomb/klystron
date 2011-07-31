@@ -28,6 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 #include "background.h"
+#include "SDL_rwops.h"
 
 enum
 {
@@ -75,7 +76,7 @@ typedef struct
 	Uint16 type;
 } PACKED LevRepTile;
 
-int lev_load(Background *bg, int *n_layers, FILE* data, int (*interpret_event)(void *, const LevEvent *), void* pdata);
+int lev_load(Background *bg, int *n_layers, SDL_RWops* data, int (*interpret_event)(void *, const LevEvent *), void* pdata);
 void lev_unload(Background *bg, int n_layers);
 
 #endif
