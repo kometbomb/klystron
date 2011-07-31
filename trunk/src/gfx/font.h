@@ -42,6 +42,7 @@ typedef struct
 
 int font_load(Font *font, Bundle *b, char *name);
 int font_load_file(Font *font, char *filename);
+int font_load_RW(Font *font, SDL_RWops *rw);
 void font_create(Font *font, GfxSurface *tiles, const int w, const int h, char *charmap);
 void font_destroy(Font *font);
 void font_write_cursor(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text);

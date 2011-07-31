@@ -29,6 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "SDL.h"
 #include <stdio.h>
+#include <stdbool.h>
 #include "SDL_rwops.h"
 
 #define BND_SIG "bnd!"
@@ -44,18 +45,18 @@ typedef struct
 typedef struct
 {
 	Uint32 flags;
-	FILE *handle;
-	char *path;
+	SDL_RWops *handle;
 	BundleFile *file;
 	Uint32 n_files;
+	bool close_handle;
 } Bundle;
 
 #define BND_FLAG_CRYPTED 1
 
 int bnd_open(Bundle *bundle, const char * filename);
+int bnd_open_RW(Bundle *bundle, SDL_RWops * rw);
 int bnd_open_file(Bundle *bundle, FILE *f, const char * filename);
 void bnd_free(Bundle *bundle);
-FILE *bnd_locate(Bundle *bundle, const char *filename, int static_handle);
 int bnd_exists(const Bundle *bundle, const char *filename);
 SDL_RWops *SDL_RWFromBundle(Bundle *bundle, const char *filename);
 
