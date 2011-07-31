@@ -299,20 +299,20 @@ int font_load(Font *font, Bundle *bundle, char *name)
 {
 	debug("Loading font '%s'", name);
 
-	FILE *f = bnd_locate(bundle, name, 0);
+	SDL_RWops *rw = SDL_RWFromBundle(bundle, name);
 	
-	if (f)
+	if (rw)
 	{
 		int r = 0;
 		
 		Bundle fb;
 		
-		if (bnd_open_file(&fb, f, bundle->path))
+		if (bnd_open_RW(&fb, rw))
 		{
 			r = font_load_inner(font, &fb);
 		}
 		
-		fclose(f);
+		SDL_FreeRW(rw);
 		
 		return r;
 	}
@@ -355,4 +355,19 @@ void font_write_args(const Font *font, SDL_Surface *dest, const SDL_Rect *r, con
 	font_write_va(font, dest, r, &cursor, NULL, text, va);
 	
 	va_end(va);
+}
+
+
+int font_load_RW(Font *font, SDL_RWops *rw)
+{
+	int r = 0;
+		
+	Bundle fb;
+	
+	if (bnd_open_RW(&fb, rw))
+	{
+		r = font_load_inner(font, &fb);
+	}
+	
+	return r;
 }
