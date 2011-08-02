@@ -34,7 +34,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define MUS_PROG_LEN 32
 #define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
 
-#define MUS_VERSION 16
+#define MUS_VERSION 17
 
 #define MUS_SONG_TITLE_LEN 64
 #define MUS_INSTRUMENT_NAME_LEN 32
@@ -121,7 +121,7 @@ typedef struct
 	Uint16 num_sequences[MUS_MAX_CHANNELS];
 	Uint16 song_length, loop_point;
 	Uint8 song_speed, song_speed2, song_rate;
-	Uint16 time_signature;
+	Uint16 time_signature, sequence_step;
 	Uint32 flags;
 	Uint8 num_channels;
 	Uint8 multiplex_period, pitch_inaccuracy;

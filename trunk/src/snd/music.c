@@ -1580,6 +1580,12 @@ int mus_load_song_RW(SDL_RWops *ctx, MusSong *song, CydWavetableEntry *wavetable
 		}	
 		
 		SDL_RWread(ctx, &song->time_signature, 1, sizeof(song->time_signature));
+		
+		if (version >= 17)
+		{
+			SDL_RWread(ctx, &song->sequence_step, 1, sizeof(song->sequence_step));
+		}
+		
 		SDL_RWread(ctx, &song->num_instruments, 1, sizeof(song->num_instruments));
 		SDL_RWread(ctx, &song->num_patterns, 1, sizeof(song->num_patterns));
 		SDL_RWread(ctx, song->num_sequences, 1, sizeof(song->num_sequences[0]) * (int)song->num_channels);
@@ -1614,6 +1620,7 @@ int mus_load_song_RW(SDL_RWops *ctx, MusSong *song, CydWavetableEntry *wavetable
 		FIX_ENDIAN(song->song_length);
 		FIX_ENDIAN(song->loop_point);
 		FIX_ENDIAN(song->time_signature);
+		FIX_ENDIAN(song->sequence_step);
 		FIX_ENDIAN(song->num_patterns);
 		FIX_ENDIAN(song->flags);
 		
