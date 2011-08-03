@@ -90,7 +90,7 @@ config_t cfg;
 
 void load_dialog()
 {
-	FILE *f = open_dialog("rb", "Load level", "lev", domain, gfx->surface, &font, &font);
+	FILE *f = open_dialog("rb", "Load level", "lev", domain, gfx->surface, &font, &font, NULL);
 	if (f)
 	{
 	
@@ -124,7 +124,7 @@ void load_level(const char *path)
 
 void load_defs(const char *fn)
 {
-	FILE *f = fn ? fopen(fn, "r") : open_dialog("r", "Load project defs", "cfg", domain, gfx->surface, &font, &font);
+	FILE *f = fn ? fopen(fn, "r") : open_dialog("r", "Load project defs", "cfg", domain, gfx->surface, &font, &font, NULL);
 	if (f)
 	{
 		int r = config_read(&cfg, f);
@@ -224,7 +224,7 @@ void load_defs(const char *fn)
 
 int save_dialog()
 {
-	FILE *f = open_dialog("wb", "Save level", "lev", domain, gfx->surface, &font, &font);
+	FILE *f = open_dialog("wb", "Save level", "lev", domain, gfx->surface, &font, &font, NULL);
 	if (f)
 	{
 		level.n_layers = MAX_LAYERS;
