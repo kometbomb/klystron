@@ -36,7 +36,7 @@ extern GfxSurface *gfx;
 
 void level_export(Level *level)
 {
-	FILE *f = open_dialog("wb", "Export level", "exp", domain, gfx->surface, &font, &font);
+	FILE *f = open_dialog("wb", "Export level", "exp", domain, gfx->surface, &font, &font, NULL);
 	for (int i = 0 ;  i < level->n_layers ; ++i)
 	{
 		if (level->layer[i].w > 0 && level->layer[i].h > 0)
