@@ -86,6 +86,8 @@ void gfx_line_unclipped(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint3
 void gfx_line(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint32 color);
 void gfx_circle_inverted(SDL_Surface *dest, const int xc, const int yc, const int r, const Uint32 color);
 void gfx_circle(SDL_Surface *dest, const int xc, const int yc, const int r, const Uint32 color);
+void gfx_clear(GfxDomain *domain, Uint32 color);
+void gfx_blit(GfxSurface *src, SDL_Rect *srcrect, GfxDomain *domain, SDL_Rect *dest);
 
 GfxDomain * gfx_create_domain();
 void gfx_domain_update(GfxDomain *domain);
