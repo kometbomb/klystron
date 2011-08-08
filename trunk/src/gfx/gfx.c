@@ -955,3 +955,16 @@ void gfx_free_surface(GfxSurface *surface)
 	if (surface->mask) free(surface->mask);
 	free(surface);
 }
+
+
+void gfx_clear(GfxDomain *domain, Uint32 color)
+{
+	SDL_FillRect(gfx_domain_get_surface(domain), 0, color);
+}
+
+
+void gfx_blit(GfxSurface *src, SDL_Rect *srcrect, GfxDomain *domain, SDL_Rect *dest)
+{
+	SDL_BlitSurface(src->surface, srcrect, gfx_domain_get_surface(domain), dest);
+}
+
