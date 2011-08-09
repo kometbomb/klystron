@@ -963,8 +963,72 @@ void gfx_clear(GfxDomain *domain, Uint32 color)
 }
 
 
-void gfx_blit(GfxSurface *src, SDL_Rect *srcrect, GfxDomain *domain, SDL_Rect *dest)
+void gfx_blit(GfxSurface *_src, SDL_Rect *_src_rect, GfxDomain *domain, SDL_Rect *_dest_rect)
 {
-	SDL_BlitSurface(src->surface, srcrect, gfx_domain_get_surface(domain), dest);
-}
+	SDL_Surface *dest = gfx_domain_get_surface(domain);
+	SDL_Surface *src = _src->surface;
+	SDL_Rect dest_temp = { 0, 0, dest->w, dest->h }, src_temp = { 0, 0, src->w, src->h };
+	SDL_Rect *src_rect = _src_rect ? _src_rect : &src_temp;
+	SDL_Rect *dest_rect = _dest_rect ? _dest_rect : &dest_temp;
 
+	int w = dest_rect->w, h = dest_rect->h;
+	
+	/*if (dest_rect->w == src_rect->w && dest_rect->h == src_rect->h)
+	{
+		SDL_BlitSurface(src, src_rect, dest, dest_rect);
+		return;
+	}*/
+	
+	if (dest_rect->w == 0 || dest_rect->h == 0)
+		return;
+	
+	assert(src->format->BytesPerPixel == 4 && dest->format->BytesPerPixel == 4);
+	
+	if (dest_rect->x < 0)
+	{
+		src_rect->x -= dest_rect->x * (int)src_rect->w / w;
+		dest_rect->w = my_max(0, (int)dest_rect->w + dest_rect->x);
+		dest_rect->x = 0;
+	}
+	
+	if (dest_rect->y < 0)
+	{
+		src_rect->y -= dest_rect->y * (int)src_rect->h / h;
+		dest_rect->h = my_max(0, (int)dest_rect->h + dest_rect->y);
+		dest_rect->y = 0;
+	}
+	
+	if (dest_rect->x + dest_rect->w >= dest->w)
+	{
+		dest_rect->w = my_max(0, (int)dest->w - dest_rect->x);
+	}
+	
+	if (dest_rect->y + dest_rect->h >= dest->h)
+	{
+		dest_rect->h = my_max(0, (int)dest->h - dest_rect->y);
+	}
+	
+	if (dest_rect->w == 0 || dest_rect->h == 0)
+		return;
+	
+	int xspd = 256 * src_rect->w / w;
+	int yspd = 256 * src_rect->h / h;
+	
+	my_lock(dest);
+	my_lock(src);
+	
+	for (int dy = dest_rect->y, sy = 256 * (int)src_rect->y ; dy < dest_rect->h + dest_rect->y ; ++dy, sy += yspd)
+	{
+		Uint32 * dptr = (Uint32*)((Uint8*)dest->pixels + dy * dest->pitch) + dest_rect->x;
+		Uint32 * sptr = (Uint32*)((Uint8*)src->pixels + sy/256 * src->pitch);
+		
+		for (int dx = dest_rect->w, sx = 256 * (int)src_rect->x ; dx > 0 ; --dx, sx += xspd)
+		{
+			if (sptr[sx / 256] != 0xff00ff) *dptr = sptr[sx / 256];
+			++dptr;
+		}
+	}
+	
+	my_unlock(dest);
+	my_unlock(src);	
+}
