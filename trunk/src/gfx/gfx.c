@@ -963,6 +963,22 @@ void gfx_clear(GfxDomain *domain, Uint32 color)
 }
 
 
+
+#define SCALEHELPER(test) do {\
+		for (int dy = dest_rect->y, sy = 256 * (int)src_rect->y ; dy < dest_rect->h + dest_rect->y ; ++dy, sy += yspd)\
+		{\
+			Uint32 * dptr = (Uint32*)((Uint8*)dest->pixels + dy * dest->pitch) + dest_rect->x;\
+			Uint32 * sptr = (Uint32*)((Uint8*)src->pixels + sy/256 * src->pitch);\
+			\
+			for (int dx = dest_rect->w, sx = 256 * (int)src_rect->x ; dx > 0 ; --dx, sx += xspd)\
+			{\
+				if (test) *dptr = sptr[sx / 256];\
+				++dptr;\
+			}\
+		}\
+	} while(0)
+
+
 void gfx_blit(GfxSurface *_src, SDL_Rect *_src_rect, GfxDomain *domain, SDL_Rect *_dest_rect)
 {
 	SDL_Surface *dest = gfx_domain_get_surface(domain);
@@ -1017,17 +1033,10 @@ void gfx_blit(GfxSurface *_src, SDL_Rect *_src_rect, GfxDomain *domain, SDL_Rect
 	my_lock(dest);
 	my_lock(src);
 	
-	for (int dy = dest_rect->y, sy = 256 * (int)src_rect->y ; dy < dest_rect->h + dest_rect->y ; ++dy, sy += yspd)
-	{
-		Uint32 * dptr = (Uint32*)((Uint8*)dest->pixels + dy * dest->pitch) + dest_rect->x;
-		Uint32 * sptr = (Uint32*)((Uint8*)src->pixels + sy/256 * src->pitch);
-		
-		for (int dx = dest_rect->w, sx = 256 * (int)src_rect->x ; dx > 0 ; --dx, sx += xspd)
-		{
-			if (sptr[sx / 256] != 0xff00ff) *dptr = sptr[sx / 256];
-			++dptr;
-		}
-	}
+	if (GFX_KEYED & _src->flags)
+		SCALEHELPER(sptr[sx / 256] != 0xff00ff);
+	else
+		SCALEHELPER(1);
 	
 	my_unlock(dest);
 	my_unlock(src);	
