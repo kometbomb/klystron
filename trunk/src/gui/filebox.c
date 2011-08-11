@@ -38,18 +38,24 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <unistd.h>
 #include <sys/stat.h>
 
+#ifdef WIN32
+
+#include <windows.h>
+
+#endif
+
 #define SCROLLBAR 10
-#define WIDTH 280
-#define HEIGHT 180
-#define TOP_LEFT (320 / 2 - WIDTH / 2)
-#define TOP_RIGHT (240 / 2 - HEIGHT / 2)
+#define TOP_LEFT 0
+#define TOP_RIGHT 0
 #define MARGIN 8
+#define SCREENMARGIN 32
 #define TITLE 14
 #define FIELD 14
 #define CLOSE_BUTTON 12
 #define PATH 10
-#define ELEMWIDTH (WIDTH - MARGIN * 2)
-#define LIST_WIDTH (ELEMWIDTH - SCROLLBAR)
+#define ELEMWIDTH 300
+#define LIST_WIDTH 300
+#define BUTTONS 16
 
 enum { FB_DIRECTORY, FB_FILE };
 
@@ -85,17 +91,139 @@ static void title_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SD
 static void field_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
 static void path_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
 static void window_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
+static void buttons_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
 
 static const View filebox_view[] =
 {
-	{{ TOP_LEFT, TOP_RIGHT, WIDTH, HEIGHT }, window_view, &data, -1},
-	{{ TOP_LEFT + MARGIN, TOP_RIGHT + MARGIN, ELEMWIDTH, TITLE - 2 }, title_view, &data, -1},
-	{{ TOP_LEFT + MARGIN, TOP_RIGHT + MARGIN + TITLE, ELEMWIDTH, PATH - 2 }, path_view, &data, -1},
-	{{ TOP_LEFT + MARGIN, TOP_RIGHT + MARGIN + TITLE + PATH, ELEMWIDTH, FIELD - 2 }, field_view, &data, -1},
-	{{ TOP_LEFT + LIST_WIDTH + SCROLLBAR, TOP_RIGHT + MARGIN + TITLE + FIELD + PATH, SCROLLBAR, HEIGHT - MARGIN * 2 - TITLE - FIELD - PATH }, slider, &data.scrollbar, -1},
-	{{ TOP_LEFT + MARGIN, TOP_RIGHT + MARGIN + TITLE + FIELD + PATH, LIST_WIDTH, HEIGHT - MARGIN * 2 - TITLE - FIELD - PATH }, file_list_view, &data, -1},
+	{{ SCREENMARGIN, SCREENMARGIN, -SCREENMARGIN, -SCREENMARGIN }, window_view, &data, -1},
+	{{ MARGIN+SCREENMARGIN, SCREENMARGIN+MARGIN, -MARGIN-SCREENMARGIN, TITLE - 2 }, title_view, &data, -1},
+	{{ MARGIN+SCREENMARGIN, SCREENMARGIN+MARGIN + TITLE, -MARGIN-SCREENMARGIN, PATH - 2 }, path_view, &data, -1},
+	{{ MARGIN+SCREENMARGIN, SCREENMARGIN+MARGIN + TITLE + PATH, -MARGIN-SCREENMARGIN, FIELD - 2 }, field_view, &data, -1},
+	{{ -SCROLLBAR-MARGIN-SCREENMARGIN, SCREENMARGIN+MARGIN + TITLE + PATH + FIELD, SCROLLBAR, -MARGIN-SCREENMARGIN-BUTTONS }, slider, &data.scrollbar, -1},
+	{{ SCREENMARGIN+MARGIN, SCREENMARGIN+MARGIN + TITLE + PATH + FIELD, -SCROLLBAR-MARGIN-1-SCREENMARGIN, -MARGIN-SCREENMARGIN-BUTTONS }, file_list_view, &data, -1},
+	{{ SCREENMARGIN+MARGIN, -SCREENMARGIN-MARGIN-BUTTONS+2, -MARGIN-SCREENMARGIN, BUTTONS-2 }, buttons_view, &data, -1},
 	{{0, 0, 0, 0}, NULL}
 };
+
+
+static void add_file(int type, const char *name)
+{
+	const int block_size = 256;
+				
+	if ((data.n_files & (block_size - 1)) == 0)
+	{
+		data.files = realloc(data.files, sizeof(*data.files) * (data.n_files + block_size));
+	}
+	data.files[data.n_files].type = type;
+	data.files[data.n_files].name = strdup(name);
+	data.files[data.n_files].display_name = malloc(strlen(name) + 4); // TODO: figure out how much this goes past
+	strcpy(data.files[data.n_files].display_name, name);
+	if (strlen(data.files[data.n_files].display_name) > LIST_WIDTH / data.largefont->w - 4)
+	{
+		strcpy(&data.files[data.n_files].display_name[LIST_WIDTH / data.largefont->w - 4], "...");
+	}
+	
+	++data.n_files;
+}
+
+
+static void free_files()
+{
+	if (data.files) 
+	{
+		for (int i = 0 ; i < data.n_files ; ++i)
+		{
+			free(data.files[i].name);
+			free(data.files[i].display_name);
+		}
+		free(data.files);
+	}
+	
+	data.files = NULL;
+	data.n_files = 0;
+	data.list_position = 0;
+}
+
+
+static int file_sorter(const void *_left, const void *_right)
+{
+	// directories come before files, otherwise case-insensitive name sorting
+
+	const File *left = _left;
+	const File *right = _right;
+	
+	if (left->type == right->type)
+	{
+		return strcasecmp(left->name, right->name);
+	}
+	else
+	{
+		return left->type > right->type ? 1 : -1;
+	}
+}
+
+
+#ifdef WIN32
+
+static void enumerate_drives()
+{
+	char buffer[1024] = {0};
+	
+	if (GetLogicalDriveStrings(sizeof(buffer)-1, buffer))
+	{
+		free_files();
+		
+		char *p = buffer;
+		
+		while (*p) 
+		{
+			add_file(FB_DIRECTORY, p);
+			p = &p[strlen(p) + 1];
+		}
+		
+		debug("Got %d drives", data.n_files);
+		
+		data.selected_file = -1;
+		data.list_position = 0;
+		data.editpos = 0;
+		
+		qsort(data.files, data.n_files, sizeof(*data.files), file_sorter);
+	}
+
+}
+
+
+static void show_drives_action(void *unused0, void *unused1, void *unused2)
+{
+	enumerate_drives();
+}
+
+#endif
+
+
+static void parent_action(void *unused0, void *unused1, void *unused2)
+{
+	static File parent = {FB_DIRECTORY, "..", ".."};
+	data.picked_file = &parent;
+}
+
+
+static void buttons_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
+{
+	SDL_Rect button;
+	
+	copy_rect(&button, area);
+	
+	button.w = 64;
+	
+	button_text_event(dest_surface, event, &button, data.gfx, data.smallfont, BEV_BUTTON, BEV_BUTTON_ACTIVE, "Parent", parent_action, 0, 0, 0);
+	
+	button.x += button.w + 1;
+	
+#ifdef WIN32
+	button_text_event(dest_surface, event, &button, data.gfx, data.smallfont, BEV_BUTTON, BEV_BUTTON_ACTIVE, "Drives", show_drives_action, 0, 0, 0);
+#endif
+}
 
 
 static void pick_file_action(void *file, void *unused1, void *unused2)
@@ -208,42 +336,6 @@ static void path_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL
 }
 
 
-static void free_files()
-{
-	if (data.files) 
-	{
-		for (int i = 0 ; i < data.n_files ; ++i)
-		{
-			free(data.files[i].name);
-			free(data.files[i].display_name);
-		}
-		free(data.files);
-	}
-	
-	data.files = NULL;
-	data.n_files = 0;
-	data.list_position = 0;
-}
-
-
-static int file_sorter(const void *_left, const void *_right)
-{
-	// directories come before files, otherwise case-insensitive name sorting
-
-	const File *left = _left;
-	const File *right = _right;
-	
-	if (left->type == right->type)
-	{
-		return strcasecmp(left->name, right->name);
-	}
-	else
-	{
-		return left->type > right->type ? 1 : -1;
-	}
-}
-
-
 static int checkext(const char * filename, const char *extension)
 {
 	if (extension[0] == '\0') return 1;
@@ -321,22 +413,7 @@ static int populate_files(GfxDomain *domain, SDL_Surface *gfx, const Font *font,
 			{
 				if ((attribute.st_mode & S_IFDIR) || checkext(de->d_name, extension))
 				{
-					const int block_size = 256;
-				
-					if ((data.n_files & (block_size - 1)) == 0)
-					{
-						data.files = realloc(data.files, sizeof(*data.files) * (data.n_files + block_size));
-					}
-					data.files[data.n_files].type = ( attribute.st_mode & S_IFDIR ) ? FB_DIRECTORY : FB_FILE;
-					data.files[data.n_files].name = strdup(de->d_name);
-					data.files[data.n_files].display_name = malloc(strlen(de->d_name) + 4); // TODO: figure out how much this goes past
-					strcpy(data.files[data.n_files].display_name, de->d_name);
-					if (strlen(data.files[data.n_files].display_name) > LIST_WIDTH / data.largefont->w - 4)
-					{
-						strcpy(&data.files[data.n_files].display_name[LIST_WIDTH / data.largefont->w - 4], "...");
-					}
-					
-					++data.n_files;
+					add_file(( attribute.st_mode & S_IFDIR ) ? FB_DIRECTORY : FB_FILE, de->d_name);
 				}
 			}
 		}
@@ -475,7 +552,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 									
 									if (s != -1)
 									{
-										if (mode == FB_SAVE)
+										if (!(attribute.st_mode & S_IFDIR) && mode == FB_SAVE)
 										{
 											if (msgbox(domain, gfx, largefont, "Overwrite?", MB_YES|MB_NO) == MB_YES)
 											{
