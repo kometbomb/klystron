@@ -70,12 +70,18 @@ void draw_view(SDL_Surface *dest, const View* views, const SDL_Event *_event)
 	for (int i = 0 ; views[i].handler ; ++i)
 	{
 		const View *view = &views[i];
+		
+		SDL_Rect area;
+		area.x = view->position.x >= 0 ? view->position.x : dest->w + view->position.x;
+		area.y = view->position.y >= 0 ? view->position.y : dest->h + view->position.y;
+		area.w = *(Sint16*)&view->position.w > 0 ? *(Sint16*)&view->position.w : dest->w + *(Sint16*)&view->position.w - view->position.x;
+		area.h = *(Sint16*)&view->position.h > 0 ? *(Sint16*)&view->position.h : dest->h + *(Sint16*)&view->position.h - view->position.y;
 
 		int iter = 0;
 		do
 		{
 			event_hit = 0;
-			view->handler(dest, &view->position, &event, view->param);
+			view->handler(dest, &area, &event, view->param);
 			if (event_hit) 
 			{
 				event.type = SDL_USEREVENT + 1;
