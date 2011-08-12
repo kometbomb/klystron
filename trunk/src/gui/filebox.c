@@ -333,16 +333,18 @@ static void buttons_view(SDL_Surface *dest_surface, const SDL_Rect *area, const 
 	
 	copy_rect(&button, area);
 	
-	button.w = 64;
+	button.w = strlen("Parent") * data.smallfont->w + 12;
 	
 	button_text_event(dest_surface, event, &button, data.gfx, data.smallfont, BEV_BUTTON, BEV_BUTTON_ACTIVE, "Parent", parent_action, 0, 0, 0);
 	button.x += button.w + 1;
 	
 #ifdef WIN32
+	button.w = strlen("Drives") * data.smallfont->w + 12;
 	button_text_event(dest_surface, event, &button, data.gfx, data.smallfont, BEV_BUTTON, BEV_BUTTON_ACTIVE, "Drives", show_drives_action, 0, 0, 0);
 	button.x += button.w + 1;
 #endif
 
+	button.w = strlen("Favorites") * data.smallfont->w + 12;
 	button_text_event(dest_surface, event, &button, data.gfx, data.smallfont, BEV_BUTTON, BEV_BUTTON_ACTIVE, "Favorites", show_favorites_action, 0, 0, 0);
 	button.x += button.w + 1;
 }
