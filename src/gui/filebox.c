@@ -344,19 +344,6 @@ static void buttons_view(SDL_Surface *dest_surface, const SDL_Rect *area, const 
 
 	button_text_event(dest_surface, event, &button, data.gfx, data.smallfont, BEV_BUTTON, BEV_BUTTON_ACTIVE, "Favorites", show_favorites_action, 0, 0, 0);
 	button.x += button.w + 1;
-	
-	button.w = 16;
-	
-	if (filebox_is_favorite(data.path))
-	{
-		button_event(dest_surface, event, &button, data.gfx, BEV_BUTTON, BEV_BUTTON_ACTIVE, DECAL_UNFAVORITE, remove_favorite_action, data.path, 0, 0);
-	}
-	else
-	{
-		button_event(dest_surface, event, &button, data.gfx, BEV_BUTTON, BEV_BUTTON_ACTIVE, DECAL_FAVORITE, add_favorite_action, data.path, 0, 0);
-	}
-	
-	button.x += button.w + 1;
 }
 
 
@@ -466,7 +453,27 @@ void field_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event
 
 static void path_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
 {
-	font_write(data.smallfont, dest_surface, area, data.path);
+	SDL_Rect button;
+	copy_rect(&button, area);
+	button.w = button.h = 14;
+	button.x = area->x;
+	button.y -= 5;
+	
+	if (filebox_is_favorite(data.path))
+	{
+		button_event(dest_surface, event, &button, data.gfx, BEV_BUTTON_ACTIVE, BEV_BUTTON, DECAL_FAVORITE, remove_favorite_action, data.path, 0, 0);
+	}
+	else
+	{
+		button_event(dest_surface, event, &button, data.gfx, BEV_BUTTON, BEV_BUTTON_ACTIVE, DECAL_UNFAVORITE, add_favorite_action, data.path, 0, 0);
+	}
+	
+	SDL_Rect text;
+	copy_rect(&text, area);
+	text.x += button.w + 2;
+	text.w -= button.w + 2;
+	
+	font_write(data.smallfont, dest_surface, &text, data.path);
 }
 
 
