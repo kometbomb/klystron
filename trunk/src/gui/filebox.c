@@ -53,8 +53,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define FIELD 14
 #define CLOSE_BUTTON 12
 #define PATH 10
-#define ELEMWIDTH 300
-#define LIST_WIDTH 300
+#define ELEMWIDTH data.elemwidth
+#define LIST_WIDTH data.list_width
 #define BUTTONS 16
 
 enum { FB_DIRECTORY, FB_FILE };
@@ -84,6 +84,7 @@ static struct
 	char path[1024];
 	const Font *largefont, *smallfont;
 	SDL_Surface *gfx;
+	int elemwidth, list_width;
 } data;
 
 static char **favorites = NULL;
@@ -589,6 +590,8 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 	data.largefont = largefont;
 	data.smallfont = smallfont;
 	data.gfx = gfx;
+	data.elemwidth = domain->screen_w - SCREENMARGIN * 2 - MARGIN * 2 - 16 - 2;
+	data.list_width = domain->screen_w - SCREENMARGIN * 2 - MARGIN * 2 - SCROLLBAR - 2;
 	strncpy(data.field, buffer, sizeof(data.field));
 	
 	if (!populate_files(domain, gfx, largefont, ".", extension)) return FB_CANCEL;
