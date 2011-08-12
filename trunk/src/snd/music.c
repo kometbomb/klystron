@@ -551,7 +551,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 }
 
 
-static void mus_exec_track_command(MusEngine *mus, int chan)
+static void mus_exec_track_command(MusEngine *mus, int chan, int first_tick)
 {
 	const Uint16 inst = mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].command;
 	const Uint8 vol = mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].volume;
@@ -568,7 +568,7 @@ static void mus_exec_track_command(MusEngine *mus, int chan)
 			
 		default:
 			if (vol <= MAX_VOLUME)
-				do_command(mus, chan, mus->song_counter, MUS_FX_SET_VOLUME | (Uint16)(vol), 0);
+				do_command(mus, chan, first_tick ? 0 : mus->song_counter, MUS_FX_SET_VOLUME | (Uint16)(vol), 0);
 			break;
 	}
 	
@@ -1163,11 +1163,8 @@ int mus_advance_tick(void* udata)
 						}
 					}
 				}
-			}
-			
-			for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
-			{
-				if (mus->song_track[i].pattern) mus_exec_track_command(mus, i);
+				
+				if (mus->song_track[i].pattern) mus_exec_track_command(mus, i, mus->song_counter == delay);
 			}
 			
 			++mus->song_counter;
