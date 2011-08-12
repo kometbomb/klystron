@@ -35,5 +35,7 @@ enum { FB_SAVE, FB_OPEN };
 #include "gfx/font.h"
 
 int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const char *extension, GfxDomain *domain, SDL_Surface *gfx, const Font *smallfont, const Font *largefont);
+void filebox_add_favorite(const char *path);
+void filebox_remove_favorite(const char *path);
 
 #endif
