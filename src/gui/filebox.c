@@ -86,6 +86,9 @@ static struct
 	SDL_Surface *gfx;
 } data;
 
+static char **favorites = NULL;
+static int n_favorites = 0;
+
 static void file_list_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
 static void title_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
 static void field_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
@@ -208,6 +211,121 @@ static void parent_action(void *unused0, void *unused1, void *unused2)
 }
 
 
+static void show_favorites_action(void *unused0, void *unused1, void *unused2)
+{
+	free_files();
+	
+	for (int i = 0 ; i < n_favorites ;++i)
+		add_file(FB_DIRECTORY, favorites[i]);
+}
+
+
+bool filebox_is_favorite(const char *path)
+{
+	for (int i = 0 ; i < n_favorites ;++i)
+		if (strcmp(favorites[i], path) == 0)
+			return true;
+	
+	return false;
+}
+
+
+void filebox_add_favorite(const char *path)
+{
+	if (filebox_is_favorite(path)) return;
+
+	favorites = realloc(favorites, (n_favorites + 1) * sizeof(char*));
+	favorites[n_favorites] = strdup(path);
+	
+	++n_favorites;
+}
+
+
+void filebox_remove_favorite(const char *path)
+{
+	for (int i = 0 ; i < n_favorites ;++i)
+		if (strcmp(favorites[i], path) == 0)
+		{
+			free(favorites[i]);
+			
+			if (n_favorites > 1)
+			{
+				memmove(favorites + i, favorites + i + 1, sizeof(char*) * (n_favorites - i - 1));
+			}
+			
+			--n_favorites;
+			
+			return;
+		}
+}
+
+
+void filebox_init(const char *path)
+{
+	debug("Loading filebox favorites (%s)", path);
+
+	FILE *f = fopen(path, "rt");
+	
+	if (f)
+	{
+		while (!feof(f))
+		{
+			char ln[1024];
+			if (fgets(ln, sizeof(ln), f))
+			{
+				strtok(ln, "\n");
+				filebox_add_favorite(ln);
+				
+			}
+			else break;
+		}
+		
+		fclose(f);
+	}
+}
+
+
+void filebox_quit(const char *path)
+{
+	debug("Saving filebox favorites (%s)", path);
+
+	FILE *f = fopen(path, "wt");
+	
+	if (f)
+	{
+		for (int i = 0 ; i < n_favorites ; ++i)
+		{
+			fprintf(f, "%s\n", favorites[i]);
+			free(favorites[i]);
+		}
+		
+		fclose(f);
+	}
+	else
+	{
+		warning("Could not write favorites (%s)", path);
+	}
+	
+	n_favorites = 0;
+	free(favorites);
+	favorites = NULL;
+}
+
+
+static void add_favorite_action(void *_path, void *unused1, void *unused2)
+{
+	char *path = _path;
+	filebox_add_favorite(path);
+}
+
+
+static void remove_favorite_action(void *_path, void *unused1, void *unused2)
+{
+	char *path = _path;
+	filebox_remove_favorite(path);
+}
+
+
 static void buttons_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
 {
 	SDL_Rect button;
@@ -217,12 +335,28 @@ static void buttons_view(SDL_Surface *dest_surface, const SDL_Rect *area, const 
 	button.w = 64;
 	
 	button_text_event(dest_surface, event, &button, data.gfx, data.smallfont, BEV_BUTTON, BEV_BUTTON_ACTIVE, "Parent", parent_action, 0, 0, 0);
-	
 	button.x += button.w + 1;
 	
 #ifdef WIN32
 	button_text_event(dest_surface, event, &button, data.gfx, data.smallfont, BEV_BUTTON, BEV_BUTTON_ACTIVE, "Drives", show_drives_action, 0, 0, 0);
+	button.x += button.w + 1;
 #endif
+
+	button_text_event(dest_surface, event, &button, data.gfx, data.smallfont, BEV_BUTTON, BEV_BUTTON_ACTIVE, "Favorites", show_favorites_action, 0, 0, 0);
+	button.x += button.w + 1;
+	
+	button.w = 16;
+	
+	if (filebox_is_favorite(data.path))
+	{
+		button_event(dest_surface, event, &button, data.gfx, BEV_BUTTON, BEV_BUTTON_ACTIVE, DECAL_UNFAVORITE, remove_favorite_action, data.path, 0, 0);
+	}
+	else
+	{
+		button_event(dest_surface, event, &button, data.gfx, BEV_BUTTON, BEV_BUTTON_ACTIVE, DECAL_FAVORITE, add_favorite_action, data.path, 0, 0);
+	}
+	
+	button.x += button.w + 1;
 }
 
 
