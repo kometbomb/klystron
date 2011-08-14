@@ -141,8 +141,11 @@ void bnd_free(Bundle *bundle)
 		free(bundle->file[i].name);
 	}
 	
-	if (bundle->close_handle) SDL_RWclose(bundle->handle);
-	SDL_FreeRW(bundle->handle);
+	if (bundle->close_handle) 
+	{
+		SDL_RWclose(bundle->handle);
+		SDL_FreeRW(bundle->handle);
+	}
 	
 	free(bundle->file);
 	memset(bundle, 0, sizeof(*bundle));
@@ -205,7 +208,6 @@ static int bnd_close(struct SDL_RWops *context)
 	debug("bnd_close");
 	RWOpsBundle *b = context->hidden.unknown.data1;
 	free(b);
-	SDL_FreeRW(context);
 	return 0;
 }
 
