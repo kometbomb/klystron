@@ -184,6 +184,7 @@ static int font_load_inner(Font *font, Bundle *fb)
 				memset(temp, 0, sizeof(temp));
 				rw->read(rw, temp, 1, sizeof(temp)-1);
 				SDL_RWclose(rw);
+				SDL_FreeRW(rw);
 				
 				size_t len = my_min(strlen(temp), 256);
 				const char *c = temp;
@@ -254,6 +255,7 @@ static int font_load_inner(Font *font, Bundle *fb)
 			{
 				rw->read(rw, res, 1, sizeof(res)-1);
 				SDL_RWclose(rw);
+				SDL_FreeRW(rw);
 				
 				sscanf(res, "%d %d", &w, &h);
 			}
@@ -312,6 +314,7 @@ int font_load(Font *font, Bundle *bundle, char *name)
 			r = font_load_inner(font, &fb);
 		}
 		
+		SDL_RWclose(rw);
 		SDL_FreeRW(rw);
 		
 		return r;

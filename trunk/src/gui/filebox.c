@@ -275,8 +275,8 @@ void filebox_init(const char *path)
 			if (fgets(ln, sizeof(ln), f))
 			{
 				strtok(ln, "\n");
-				filebox_add_favorite(ln);
-				
+				if (strlen(ln) > 0)
+					filebox_add_favorite(ln);
 			}
 			else break;
 		}
