@@ -1346,7 +1346,6 @@ int mus_load_instrument(const char *path, MusInstrument *inst, CydWavetableEntry
 		int r = mus_load_instrument_RW2(ctx, inst, wavetable_entries);
 	
 		SDL_RWclose(ctx);
-		SDL_FreeRW(ctx);
 		
 		return r;
 	}
@@ -1874,7 +1873,6 @@ int mus_load_song(const char *path, MusSong *song, CydWavetableEntry *wavetable_
 	{	
 		int r = mus_load_song_RW(ctx, song, wavetable_entries);
 		SDL_RWclose(ctx);
-		SDL_FreeRW(ctx);
 		
 		return r;
 	}
@@ -1920,7 +1918,7 @@ int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst, CydWav
 	{
 		int r = mus_load_instrument_RW(version, rw, inst, wavetable_entries);
 		
-		SDL_FreeRW(rw);
+		SDL_RWclose(rw);
 		
 		return r;
 	}
@@ -1937,7 +1935,7 @@ int mus_load_instrument_file2(FILE *f, MusInstrument *inst, CydWavetableEntry *w
 	{
 		int r = mus_load_instrument_RW2(rw, inst, wavetable_entries);
 		
-		SDL_FreeRW(rw);
+		SDL_RWclose(rw);
 		
 		return r;
 	}
@@ -1954,7 +1952,7 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 	{
 		int r = mus_load_song_RW(rw, song, wavetable_entries);
 		
-		SDL_FreeRW(rw);
+		SDL_RWclose(rw);
 		
 		return r;
 	}
