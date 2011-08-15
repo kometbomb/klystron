@@ -355,8 +355,11 @@ static void pick_file_action(void *file, void *unused1, void *unused2)
 	if (data.focus == FOCUS_LIST && data.selected_file == CASTPTR(int,file)) data.picked_file = &data.files[CASTPTR(int,file)];
 	data.selected_file = CASTPTR(int,file);
 	data.focus = FOCUS_LIST;
-	strncpy(data.field, data.files[CASTPTR(int,file)].name, sizeof(data.field));
-	data.editpos = strlen(data.field);
+	if (data.files[data.selected_file].type == FB_FILE)
+	{
+		strncpy(data.field, data.files[CASTPTR(int,file)].name, sizeof(data.field));
+		data.editpos = strlen(data.field);
+	}
 }
 
 
