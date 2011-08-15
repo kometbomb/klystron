@@ -45,7 +45,7 @@ int bnd_open(Bundle *bundle, const char * filename)
 	{
 		if (!bnd_open_RW(bundle, rw))
 		{
-			SDL_FreeRW(rw);
+			SDL_RWclose(rw);
 			return 0;
 		}
 	
@@ -144,7 +144,6 @@ void bnd_free(Bundle *bundle)
 	if (bundle->close_handle) 
 	{
 		SDL_RWclose(bundle->handle);
-		SDL_FreeRW(bundle->handle);
 	}
 	
 	free(bundle->file);
@@ -208,6 +207,7 @@ static int bnd_close(struct SDL_RWops *context)
 	debug("bnd_close");
 	RWOpsBundle *b = context->hidden.unknown.data1;
 	free(b);
+	SDL_FreeRW(context);
 	return 0;
 }
 
