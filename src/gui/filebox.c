@@ -327,6 +327,18 @@ static void remove_favorite_action(void *_path, void *unused1, void *unused2)
 }
 
 
+static void ok_action(void *unused0, void *unused1, void *unused2)
+{
+	// Fake return keypress when field focused :)
+	
+	data.focus = FOCUS_FIELD;
+	SDL_Event e = {0};
+	e.type = SDL_KEYDOWN;
+	e.key.keysym.sym = SDLK_RETURN;
+	SDL_PushEvent(&e);
+}
+
+
 static void buttons_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
 {
 	SDL_Rect button;
@@ -346,6 +358,11 @@ static void buttons_view(SDL_Surface *dest_surface, const SDL_Rect *area, const 
 
 	button.w = strlen("Favorites") * data.smallfont->w + 12;
 	button_text_event(dest_surface, event, &button, data.gfx, data.smallfont, BEV_BUTTON, BEV_BUTTON_ACTIVE, "Favorites", show_favorites_action, 0, 0, 0);
+	button.x += button.w + 1;
+	
+	button.w = strlen("OK") * data.largefont->w + 24;
+	button.x = area->w + area->x - button.w;
+	button_text_event(dest_surface, event, &button, data.gfx, data.largefont, BEV_BUTTON, BEV_BUTTON_ACTIVE, "OK", ok_action, 0, 0, 0);
 	button.x += button.w + 1;
 }
 
