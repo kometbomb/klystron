@@ -675,7 +675,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 							break;
 							
 							case SDLK_RETURN:
-							data.picked_file = &data.files[data.selected_file];
+							if (data.selected_file != -1) data.picked_file = &data.files[data.selected_file];
 							break;
 							
 							case SDLK_DOWN:
