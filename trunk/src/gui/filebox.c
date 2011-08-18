@@ -676,6 +676,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 							
 							case SDLK_RETURN:
 							if (data.selected_file != -1) data.picked_file = &data.files[data.selected_file];
+							else goto enter_pressed;
 							break;
 							
 							case SDLK_DOWN:
@@ -710,6 +711,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 								int r = generic_edit_text(&e, data.field, sizeof(data.field) - 1, &data.editpos);
 								if (r == 1)
 								{
+								enter_pressed:;
 									struct stat attribute;
 				
 									char * exp = expand_tilde(data.field);
