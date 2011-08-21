@@ -780,7 +780,7 @@ void cyd_set_env_shape(CydChannel *chn, Uint8 shape)
 {
 	chn->ym_env_shape = shape;
 	
-	if ((chn->flags & CYD_CHN_ENABLE_KEY_SYNC))
+	if ((chn->flags & CYD_CHN_ENABLE_KEY_SYNC) || (chn->envelope_state == DONE || chn->envelope_state == SUSTAIN))
 	{
 		if (shape & CYD_YM_ENV_ATT)
 		{
