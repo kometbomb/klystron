@@ -674,6 +674,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 							
 							break;
 							
+							case SDLK_KP_ENTER:
 							case SDLK_RETURN:
 							if (data.selected_file != -1) data.picked_file = &data.files[data.selected_file];
 							else goto enter_pressed;

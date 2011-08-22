@@ -125,6 +125,7 @@ int generic_edit_text(SDL_Event *e, char *edit_buffer, size_t edit_buffer_size, 
 				*editpos = strlen(edit_buffer);
 			break;
 			
+			case SDLK_KP_ENTER:
 			case SDLK_RETURN:
 				return 1;
 			break;
