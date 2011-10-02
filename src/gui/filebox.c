@@ -81,7 +81,7 @@ static struct
 	char field[256];
 	int editpos;
 	int quit;
-	char path[1024];
+	char path[1024], fullpath[2048];
 	const Font *largefont, *smallfont;
 	SDL_Surface *gfx;
 	int elemwidth, list_width;
@@ -482,13 +482,13 @@ static void path_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL
 	button.x = area->x;
 	button.y -= 5;
 	
-	if (filebox_is_favorite(data.path))
+	if (filebox_is_favorite(data.fullpath))
 	{
-		button_event(dest_surface, event, &button, data.gfx, BEV_BUTTON_ACTIVE, BEV_BUTTON, DECAL_FAVORITE, remove_favorite_action, data.path, 0, 0);
+		button_event(dest_surface, event, &button, data.gfx, BEV_BUTTON_ACTIVE, BEV_BUTTON, DECAL_FAVORITE, remove_favorite_action, data.fullpath, 0, 0);
 	}
 	else
 	{
-		button_event(dest_surface, event, &button, data.gfx, BEV_BUTTON, BEV_BUTTON_ACTIVE, DECAL_UNFAVORITE, add_favorite_action, data.path, 0, 0);
+		button_event(dest_surface, event, &button, data.gfx, BEV_BUTTON, BEV_BUTTON_ACTIVE, DECAL_UNFAVORITE, add_favorite_action, data.fullpath, 0, 0);
 	}
 	
 	SDL_Rect text;
@@ -544,6 +544,7 @@ static int populate_files(GfxDomain *domain, SDL_Surface *gfx, const Font *font,
 		return 0;
 	}
 	
+	getcwd(data.fullpath, sizeof(data.fullpath) - 1);
 	getcwd(data.path, sizeof(data.path) - 1);
 	
 	size_t l;
