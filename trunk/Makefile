@@ -2,7 +2,7 @@ TARGET=engine
 VPATH=src:src
 ECHO = echo
 CFG = debug
-REV = SubWCRev.exe .
+REV = cp -f
 MACHINE = -march=pentium2 
 
 util_SRC = $(notdir ${wildcard src/util/*.c}) 
@@ -35,7 +35,6 @@ CFLAGS += $(CFGFLAGS)
 ifdef COMSPEC
 	SDLFLAGS = -I /mingw/include/sdl -mthreads 
 else
-	REV = cp -f
 	SDLFLAGS = `sdl-config --cflags` -U_FORTIFY_SOURCE
 endif
 
@@ -67,9 +66,6 @@ LDFLAGS =
 .PHONY: tools all build
 
 build: Makefile
-ifdef COMSPEC
-	$(REV) ./src/version.in ./src/version.h
-else
 	@echo '#ifndef KLYSTRON_VERSION_H' > ./src/version.h
 	@echo '#define KLYSTRON_VERSION_H' >> ./src/version.h
 	@echo -n '#define KLYSTRON_REVISION "' >> ./src/version.h
@@ -77,7 +73,6 @@ else
 	@echo '"' >> ./src/version.h
 	@echo '#define KLYSTRON_VERSION_STRING "klystron " KLYSTRON_REVISION' >> ./src/version.h
 	@echo '#endif' >> ./src/version.h
-endif
 	make all CFG=$(CFG)
 
 all: bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a bin.$(CFG)/lib${TARGET}_gui.a tools
