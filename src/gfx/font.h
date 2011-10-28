@@ -38,17 +38,19 @@ typedef struct
 	TileDescriptor *tiledescriptor;
 	GfxSurface * surface;
 	int w, h;
+	int char_spacing, space_width;
 } Font;
 
 int font_load(Font *font, Bundle *b, char *name);
 int font_load_file(Font *font, char *filename);
 int font_load_RW(Font *font, SDL_RWops *rw);
-void font_create(Font *font, GfxSurface *tiles, const int w, const int h, char *charmap);
+void font_create(Font *font, GfxSurface *tiles, const int w, const int h, const int char_spacing, const int space_width, char *charmap);
 void font_destroy(Font *font);
 void font_write_cursor(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text);
 void font_write_va(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text, va_list va);
 void font_write_cursor_args(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text, ...) __attribute__ ((format (printf, 6, 7)));
 void font_write(const Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text);
 void font_write_args(const Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...) __attribute__ ((format (printf, 4, 5)));
+int font_text_width(const Font *font, const char *text);
 
 #endif

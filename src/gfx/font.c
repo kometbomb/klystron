@@ -28,12 +28,56 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "gfx.h"
 #include <string.h>
 
-void font_create(Font *font, GfxSurface *tiles, const int w, const int h, char *charmap)
+
+static int tile_width(TileDescriptor *desc)
+{
+#if SDL_VERSION_ATLEAST(1,3,0)
+	Uint32 key;
+	SDL_GetColorKey(desc->surface->surface, &key);
+#else	
+	const Uint32 key = desc->surface->surface->format->colorkey;
+#endif
+
+	my_lock(desc->surface->surface);
+	
+	int result = 0;
+	
+	for (int y = 0 ; y < desc->rect.h ; ++y)
+	{
+		Uint8 *p = (Uint8 *)desc->surface->surface->pixels + ((int)desc->rect.y + y) * desc->surface->surface->pitch + (int)desc->rect.x * desc->surface->surface->format->BytesPerPixel;
+		
+		for (int x = 0 ; x < desc->rect.w ; ++x)
+		{
+			//printf("%08x", *(Uint32*)p);
+			if ((*((Uint32*)p)&0xffffff) != key)
+			{
+				result = my_max(result, x);
+			}
+			
+			p+=desc->surface->surface->format->BytesPerPixel;
+		}
+	}
+	
+	my_unlock(desc->surface->surface);
+	
+	return result + 1;
+}
+
+
+void font_create(Font *font, GfxSurface *tiles, const int w, const int h, const int char_spacing, const int space_width, char *charmap)
 {
 	font->tiledescriptor = gfx_build_tiledescriptor(tiles,w,h);
 	font->charmap = strdup(charmap);
 	font->w = w;
 	font->h = h;
+	font->char_spacing = char_spacing;
+	font->space_width = space_width ? space_width : w;
+	
+	if (space_width)
+	{
+		for (int i = 0 ; i < (tiles->surface->w/w)*(tiles->surface->h/h) ; ++i)
+			font->tiledescriptor[i].rect.w = tile_width(&font->tiledescriptor[i]);
+	}
 }
 
 
@@ -112,7 +156,7 @@ static void inner_write(const Font *font, SDL_Surface *dest, const SDL_Rect *r, 
 				}
 			}
 			
-			x += tile->rect.w;
+			x += tile->rect.w + font->char_spacing;
 		}
 		else
 		{
@@ -134,7 +178,7 @@ static void inner_write(const Font *font, SDL_Surface *dest, const SDL_Rect *r, 
 				}
 			}
 			
-			x += font->w;
+			x += font->space_width;
 		}
 		
 		++*cursor;
@@ -244,7 +288,7 @@ static int font_load_inner(Font *font, Bundle *fb)
 			}
 		}
 		
-		int w, h;
+		int w, h, spacing = 0, spacewidth = 0;
 		
 		{
 			SDL_RWops *rw = SDL_RWFromBundle(fb, "res.txt");
@@ -255,7 +299,7 @@ static int font_load_inner(Font *font, Bundle *fb)
 				rw->read(rw, res, 1, sizeof(res)-1);
 				SDL_RWclose(rw);
 				
-				sscanf(res, "%d %d", &w, &h);
+				sscanf(res, "%d %d %d %d", &w, &h, &spacing, &spacewidth);
 			}
 			else
 			{
@@ -264,7 +308,7 @@ static int font_load_inner(Font *font, Bundle *fb)
 			}
 		}
 		
-		font_create(font, s, w, h, map);
+		font_create(font, s, w, h, spacing, spacewidth, map);
 	
 		font->surface = s;
 		
@@ -370,4 +414,20 @@ int font_load_RW(Font *font, SDL_RWops *rw)
 	}
 	
 	return r;
+}
+
+
+int font_text_width(const Font *font, const char *text)
+{
+	const char *c = text;
+	int w = 0;
+	
+	for (;*c && *c != '\n';++c)
+	{
+		const TileDescriptor *tile = findchar(font, *c);
+		w += tile ? tile->rect.w + font->char_spacing : font->space_width;
+	}
+	
+	return w;
+		
 }
