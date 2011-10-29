@@ -122,7 +122,7 @@ void button_text(SDL_Surface *screen, const SDL_Rect *area, SDL_Surface *gfx, in
 {
 	bevel(screen, area, gfx, offset);
 	
-	SDL_Rect dest = { area->x + area->w / 2 - (font->w*strlen(label)) / 2, area->y + area->h / 2 - font->h / 2, 1000, 1000 };
+	SDL_Rect dest = { area->x + area->w / 2 - font_text_width(font, label) / 2, area->y + area->h / 2 - font->h / 2, 1000, 1000 };
 	font_write(font, screen, &dest, label);
 }
 
