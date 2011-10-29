@@ -2,9 +2,9 @@
 
 Klystron fonts are a collection of files insidea a bundle.
 
-| res.txt | Font resolution |
-| font.bmp | Character gfx arranged in a grid |
-| charmap.txt | List of characters in font.bmp |
+|| res.txt || Font resolution ||
+|| font.bmp || Character gfx arranged in a grid ||
+|| charmap.txt || List of characters in font.bmp ||
 
 == res.txt ==
 
