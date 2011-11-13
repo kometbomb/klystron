@@ -59,6 +59,6 @@ int quant(int v, int g);
 void slider(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
 void slider_set_params(SliderParam *param, int first, int last, int first_visible, int last_visible, int *position, int granularity, int orientation, SDL_Surface *gfx);
 void check_mouse_wheel_event(const SDL_Event *event, const SDL_Rect *area, SliderParam *slider);
-void slider_move_position(int *cursor, int *scroll, SliderParam *param, int d, int top);
+void slider_move_position(int *cursor, int *scroll, SliderParam *param, int d);
 
 #endif

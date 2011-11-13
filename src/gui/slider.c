@@ -28,6 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "gui/mouse.h"
 #include "gui/bevel.h"
 #include "dialog.h"
+#include "view.h"
 
 int quant(int v, int g)
 {
@@ -47,7 +48,7 @@ static void modify_position(void *delta, void *_param, void *unused)
 static void drag_motion(int x, int y, void *_param)
 {
 	SliderParam *param = _param;
-	if ((param->visible_first == param->first && param->visible_last == param->last) || param->drag_area_size == 0)
+	if ((param->visible_first <= param->first && param->visible_last >= param->last) || param->drag_area_size == 0)
 		return;
 	int delta = (param->orientation == SLIDER_HORIZONTAL ? x : y) - param->drag_begin_coordinate;
 	*param->position = quant(param->drag_begin_position + delta * (param->last - param->first) / param->drag_area_size, param->granularity);
@@ -64,7 +65,7 @@ static void drag_begin(void *event, void *_param, void *area)
 	param->drag_begin_position = *param->position;
 	if (param->drag_begin_position > param->last - param->margin) param->drag_begin_position = param->last - param->margin;
 	if (param->drag_begin_position < param->first) param->drag_begin_position = param->first;
-	param->drag_area_size = (param->orientation == SLIDER_HORIZONTAL) ? ((SDL_Rect*)area)->w : ((SDL_Rect*)area)->h;
+	param->drag_area_size = ((param->orientation == SLIDER_HORIZONTAL) ? ((SDL_Rect*)area)->w : ((SDL_Rect*)area)->h);
 }
 
 
@@ -78,28 +79,22 @@ void slider(SDL_Surface *dest_surface, const SDL_Rect *_area, const SDL_Event *e
 	int bar_size = area_size;
 	int bar_top = area_start;
 	int sbsize = my_min(_area->w, _area->h);
+	bool shrunk = false;
 	
 	if (param->visible_last > param->visible_first && param->last != param->first)
 	{
-		bar_top = (param->visible_first - param->first) * area_size / (param->last - param->first) + area_start;
-		int bar_bottom;
+		bar_top = (area_size) * param->visible_first / (param->last - param->first) + area_start;
+		int bar_bottom = (area_size ) * param->visible_last / (param->last - param->first) + area_start;
+		bar_size = my_min(area_size, bar_bottom - bar_top);
 		
-		if (param->visible_last < param->last) 
+		if (bar_size < sbsize)
 		{
-			bar_bottom = (param->visible_last - param->first) * area_size / (param->last - param->first) + area_start;
+			bar_top = (area_size - sbsize) * param->visible_first / (param->last - param->first) + area_start;
+			bar_bottom = bar_top + sbsize;
+			bar_size = sbsize;
+			
+			shrunk = true;
 		}
-		else
-		{
-			bar_bottom = area_size + area_start;
-			bar_top = bar_bottom - (param->visible_last - param->visible_first) * area_size / (param->last - param->first);
-		}
-		
-		bar_size = bar_bottom - bar_top;
-		
-		if (bar_size < my_max(_area->w, _area->h) / 6) bar_size = my_max(_area->w, _area->h) / 6;
-		if (bar_size < sbsize) bar_size = sbsize;
-		if (bar_size > area_size) { bar_size = area_size; bar_top = area_start; }
-		if (bar_top + bar_size > area_size + area_start) bar_top = area_size - bar_size + area_start;
 	}
 	
 	SDL_Rect dragarea = { _area->x, _area->y, _area->w, _area->h };
@@ -148,7 +143,19 @@ void slider(SDL_Surface *dest_surface, const SDL_Rect *_area, const SDL_Event *e
 			area.h = bar_size;
 		}
 		
-		int pressed = check_event(event, &area, drag_begin, MAKEPTR(event), param, MAKEPTR(&dragarea));
+		SDL_Rect motion_area;
+		copy_rect(&motion_area, &dragarea);
+		
+		if (param->orientation == SLIDER_HORIZONTAL)
+		{
+			motion_area.w -= bar_size;
+		}
+		else
+		{
+			motion_area.h -= bar_size;
+		}
+		
+		int pressed = check_event(event, &area, drag_begin, MAKEPTR(event), param, MAKEPTR(shrunk ? &motion_area : &dragarea));
 		pressed |= check_drag_event(event, &area, drag_motion, MAKEPTR(param));
 		button(dest_surface, &area, param->gfx, pressed ? BEV_SLIDER_HANDLE_ACTIVE : BEV_SLIDER_HANDLE, (param->orientation == SLIDER_HORIZONTAL) ? DECAL_GRAB_HORIZ : DECAL_GRAB_VERT);
 	}
@@ -233,14 +240,14 @@ void check_mouse_wheel_event(const SDL_Event *event, const SDL_Rect *rect, Slide
 }
 
 
-void slider_move_position(int *cursor, int *scroll, SliderParam *param, int d, int top)
+void slider_move_position(int *cursor, int *scroll, SliderParam *param, int d)
 {
-	if (*cursor + d < top)
+	if (*cursor + d < param->last)
 		*cursor += d;
 	else
-		*cursor = top - 1;
+		*cursor = param->last;
 	
-	if (*cursor < 0) *cursor = 0;
+	if (*cursor < param->first) *cursor = param->first;
 	
 	if (param->visible_first > *cursor)
 		*scroll = *cursor;
