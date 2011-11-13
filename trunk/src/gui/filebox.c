@@ -682,13 +682,13 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 							break;
 							
 							case SDLK_DOWN:
-							slider_move_position(&data.selected_file, &data.list_position, &data.scrollbar, 1, data.n_files);
+							slider_move_position(&data.selected_file, &data.list_position, &data.scrollbar, 1);
 							strncpy(data.field, data.files[data.selected_file].name, sizeof(data.field));
 							data.editpos = strlen(data.field);
 							break;
 							
 							case SDLK_UP:
-							slider_move_position(&data.selected_file, &data.list_position, &data.scrollbar, -1, data.n_files);
+							slider_move_position(&data.selected_file, &data.list_position, &data.scrollbar, -1);
 							strncpy(data.field, data.files[data.selected_file].name, sizeof(data.field));
 							data.editpos = strlen(data.field);
 							break;
