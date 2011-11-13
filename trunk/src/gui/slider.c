@@ -81,7 +81,7 @@ void slider(SDL_Surface *dest_surface, const SDL_Rect *_area, const SDL_Event *e
 	int sbsize = my_min(_area->w, _area->h);
 	bool shrunk = false;
 	
-	if (param->visible_last > param->visible_first && param->last != param->first)
+	if (param->last != param->first)
 	{
 		bar_top = (area_size) * param->visible_first / (param->last - param->first) + area_start;
 		int bar_bottom = (area_size ) * param->visible_last / (param->last - param->first) + area_start;
