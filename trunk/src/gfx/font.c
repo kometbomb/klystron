@@ -213,6 +213,12 @@ void font_write_va(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint1
 static int font_load_inner(Font *font, Bundle *fb)
 {
 	SDL_RWops *rw = SDL_RWFromBundle(fb, "font.bmp");
+	
+#ifdef USESDL_IMAGE
+	if (!rw)
+		rw = SDL_RWFromBundle(fb, "font.png");
+#endif
+	
 	if (rw)
 	{
 		GfxSurface * s= gfx_load_surface_RW(rw, GFX_KEYED);
