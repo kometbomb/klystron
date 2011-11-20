@@ -119,7 +119,6 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	
 	cyd->channel = calloc(sizeof(*cyd->channel), cyd->n_channels);
 	
-	
 #ifndef USENATIVEAPIS
 
 # ifdef USESDLMUTEXES
@@ -182,6 +181,7 @@ void cyd_deinit(CydEngine *cyd)
 
 # ifdef WIN32
 	DeleteCriticalSection(&cyd->mutex);
+	DeleteCriticalSection(&cyd->thread_lock);
 # endif
 
 #endif
@@ -715,7 +715,11 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 			left = right = cyd_output(cyd);
 #endif
 
+#ifdef USENATIVEAPIS
+			Sint32 o1 = left * PRE_GAIN;
+#else
 			Sint32 o1 = (Sint32)*(Sint16*)stream + left * PRE_GAIN;
+#endif
 			
 			if (o1 < -32768) 
 			{
@@ -729,8 +733,12 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 			}
 			
 			*(Sint16*)stream = o1;
-			
+
+#ifdef USENATIVEAPIS			
+			Sint32 o2 = right * PRE_GAIN;
+#else
 			Sint32 o2 = (Sint32)*((Sint16*)stream + 1) + right * PRE_GAIN;
+#endif
 			
 			if (o2 < -32768) 
 			{
@@ -867,6 +875,70 @@ void cyd_pause(CydEngine *cyd, Uint8 enable)
 }
 
 
+#ifdef USENATIVEAPIS
+# ifdef WIN32
+
+static void fill_buffer(CydEngine *cyd)
+{
+	waveOutUnprepareHeader(cyd->hWaveOut, &cyd->waveout_hdr[cyd->waveout_hdr_idx],sizeof(WAVEHDR));
+
+	cyd_output_buffer_stereo(0, cyd->waveout_hdr[cyd->waveout_hdr_idx].lpData, cyd->waveout_hdr[cyd->waveout_hdr_idx].dwBufferLength, cyd);
+
+	waveOutPrepareHeader(cyd->hWaveOut, &cyd->waveout_hdr[cyd->waveout_hdr_idx],sizeof(WAVEHDR));
+	
+	if (waveOutWrite(cyd->hWaveOut, &cyd->waveout_hdr[cyd->waveout_hdr_idx], sizeof(cyd->waveout_hdr[cyd->waveout_hdr_idx])) != MMSYSERR_NOERROR)
+		warning("waveOutWrite returned error");
+		
+	if (++cyd->waveout_hdr_idx >= CYD_NUM_WO_BUFFERS)
+		cyd->waveout_hdr_idx = 0;
+}
+
+
+static DWORD WINAPI ThreadProc(void *param)
+{
+	CydEngine *cyd = param;
+	
+	for(;;)
+	{
+		EnterCriticalSection(&cyd->thread_lock);
+		
+		if (!cyd->thread_running)
+		{
+			LeaveCriticalSection(&cyd->thread_lock);
+			break;
+		}
+			
+		while (cyd->buffers_available > 0)
+		{
+			--cyd->buffers_available;
+			fill_buffer(cyd);
+		}
+		
+		LeaveCriticalSection(&cyd->thread_lock);
+	}
+	
+	return 0;
+}
+
+
+static void CALLBACK waveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2)
+{
+	if (uMsg != WOM_DONE)
+		return;
+
+	CydEngine *cyd = (void*)dwInstance;
+	
+	EnterCriticalSection(&cyd->thread_lock);
+	
+	++cyd->buffers_available;
+	
+	LeaveCriticalSection(&cyd->thread_lock);
+}
+
+# endif
+#endif
+
+
 int cyd_register(CydEngine * cyd)
 {
 #ifndef USENATIVEAPIS
@@ -895,6 +967,50 @@ int cyd_register(CydEngine * cyd)
 	}
 	else return 0;
 #else
+
+# ifdef WIN32
+	WAVEFORMATEX waveformat;
+	waveformat.cbSize = 0;
+	waveformat.wFormatTag = WAVE_FORMAT_PCM;
+    waveformat.wBitsPerSample = 16;
+	waveformat.nChannels = 2;
+    waveformat.nSamplesPerSec = cyd->sample_rate;
+	waveformat.nBlockAlign = waveformat.nChannels * waveformat.wBitsPerSample / 8;
+    waveformat.nAvgBytesPerSec = waveformat.nSamplesPerSec * waveformat.nBlockAlign;
+	
+	MMRESULT result = waveOutOpen(&cyd->hWaveOut, 0, &waveformat, (DWORD)waveOutProc, (DWORD)cyd, CALLBACK_FUNCTION);
+	
+	if (result != MMSYSERR_NOERROR)
+	{
+		warning("waveOutOpen failed (%x)", result);
+		return 0;
+	}
+	
+	for (int i = 0 ; i < CYD_NUM_WO_BUFFERS ; ++i)
+	{
+		WAVEHDR * h = &cyd->waveout_hdr[i];
+		
+		ZeroMemory(h, sizeof(*h));
+		
+		h->dwBufferLength = 1024 * 2 * sizeof(Sint16);
+		h->lpData = calloc(h->dwBufferLength, 1);
+		
+		waveOutPrepareHeader(cyd->hWaveOut, &cyd->waveout_hdr[i],sizeof(WAVEHDR));
+	}
+	
+	cyd->buffers_available = CYD_NUM_WO_BUFFERS;
+	cyd->thread_running = 1;
+	InitializeCriticalSection(&cyd->thread_lock);
+	DWORD handle;
+	CreateThread(NULL, 0, ThreadProc, cyd, 0, &handle);
+	
+	return 1;
+# else
+
+# error Platform not supported for native apis
+
+# endif
+
 	return 0;
 #endif
 }
@@ -921,7 +1037,21 @@ int cyd_unregister(CydEngine * cyd)
 	}
 	else return 0;
 #else
-	return 0;
+
+	cyd->thread_running = 0;
+
+	waveOutReset(cyd->hWaveOut);
+
+	for (int i = 0 ; i < CYD_NUM_WO_BUFFERS ; ++i)
+	{
+		if (cyd->waveout_hdr[i].dwFlags & WHDR_PREPARED)
+			waveOutUnprepareHeader(cyd->hWaveOut, &cyd->waveout_hdr[i], sizeof(cyd->waveout_hdr[i]));
+		free(cyd->waveout_hdr[i].lpData);
+	}
+
+	waveOutClose(cyd->hWaveOut);
+		
+	return 1;
 #endif
 }
 
