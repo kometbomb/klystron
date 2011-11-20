@@ -114,6 +114,8 @@ enum
 #define LUT_SIZE 1024
 #define YM_LUT_SIZE 16
 
+#define CYD_NUM_WO_BUFFERS 3
+
 typedef struct
 {
 	CydChannel *channel;
@@ -137,6 +139,16 @@ typedef struct
 #endif
 	size_t samples_output; // bytes in last cyd_output_buffer
 	CydWavetableEntry *wavetable_entries;
+#ifdef USENATIVEAPIS
+# ifdef WIN32
+	BOOL thread_running;
+	CRITICAL_SECTION thread_lock;
+	int buffers_available;
+	int waveout_hdr_idx;
+	HWAVEOUT hWaveOut;
+	WAVEHDR waveout_hdr[CYD_NUM_WO_BUFFERS]; // three buffers (one playing, one being filled, one ready and waiting)
+# endif
+#endif
 } CydEngine;
 
 enum
