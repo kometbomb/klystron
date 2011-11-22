@@ -146,6 +146,26 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 }
 
 
+void cyd_reserve_channels(CydEngine *cyd, int channels)
+{
+	cyd_lock(cyd, 1);
+
+	cyd->n_channels = channels;
+	
+	if (cyd->n_channels > CYD_MAX_CHANNELS)
+		cyd->n_channels = CYD_MAX_CHANNELS;
+	
+	if (cyd->channel)
+		free(cyd->channel);
+	
+	cyd->channel = calloc(sizeof(*cyd->channel), cyd->n_channels);
+	
+	cyd_reset(cyd);
+	
+	cyd_lock(cyd, 0);
+}
+
+
 void cyd_deinit(CydEngine *cyd)
 {
 	if (cyd->lookup_table)
@@ -907,7 +927,7 @@ static DWORD WINAPI ThreadProc(void *param)
 			LeaveCriticalSection(&cyd->thread_lock);
 			break;
 		}
-			
+		
 		while (cyd->buffers_available > 0)
 		{
 			--cyd->buffers_available;
@@ -915,7 +935,10 @@ static DWORD WINAPI ThreadProc(void *param)
 		}
 		
 		LeaveCriticalSection(&cyd->thread_lock);
+		Sleep(2);
 	}
+	
+	debug("Thread exit");
 	
 	return 0;
 }
@@ -992,7 +1015,7 @@ int cyd_register(CydEngine * cyd)
 		
 		ZeroMemory(h, sizeof(*h));
 		
-		h->dwBufferLength = 1024 * 2 * sizeof(Sint16);
+		h->dwBufferLength = CYD_NUM_WO_BUFFER_SIZE * 2 * sizeof(Sint16);
 		h->lpData = calloc(h->dwBufferLength, 1);
 		
 		waveOutPrepareHeader(cyd->hWaveOut, &cyd->waveout_hdr[i],sizeof(WAVEHDR));
@@ -1001,8 +1024,7 @@ int cyd_register(CydEngine * cyd)
 	cyd->buffers_available = CYD_NUM_WO_BUFFERS;
 	cyd->thread_running = 1;
 	InitializeCriticalSection(&cyd->thread_lock);
-	DWORD handle;
-	CreateThread(NULL, 0, ThreadProc, cyd, 0, &handle);
+	CreateThread(NULL, 0, ThreadProc, cyd, 0, &cyd->thread_handle);
 	
 	return 1;
 # else
@@ -1038,8 +1060,12 @@ int cyd_unregister(CydEngine * cyd)
 	else return 0;
 #else
 
+	debug("Waiting for thread");
+	EnterCriticalSection(&cyd->thread_lock);
 	cyd->thread_running = 0;
-
+	LeaveCriticalSection(&cyd->thread_lock);
+	WaitForSingleObject((HANDLE)cyd->thread_handle, 2000);
+	
 	waveOutReset(cyd->hWaveOut);
 
 	for (int i = 0 ; i < CYD_NUM_WO_BUFFERS ; ++i)
