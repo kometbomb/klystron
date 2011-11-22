@@ -114,7 +114,8 @@ enum
 #define LUT_SIZE 1024
 #define YM_LUT_SIZE 16
 
-#define CYD_NUM_WO_BUFFERS 3
+#define CYD_NUM_WO_BUFFER_SIZE 1000
+#define CYD_NUM_WO_BUFFERS 4
 
 typedef struct
 {
@@ -142,6 +143,7 @@ typedef struct
 #ifdef USENATIVEAPIS
 # ifdef WIN32
 	BOOL thread_running;
+	DWORD thread_handle;
 	CRITICAL_SECTION thread_lock;
 	int buffers_available;
 	int waveout_hdr_idx;
@@ -164,7 +166,8 @@ enum { CYD_YM_ENV_ATT = 1, CYD_YM_ENV_ALT = 2};
 
 /////////////////777
 
-void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels);
+void cyd_init(CydEngine *cyd, Uint16 sample_rate, int initial_channels);
+void cyd_reserve_channels(CydEngine *cyd, int channels);
 void cyd_deinit(CydEngine *cyd);
 void cyd_reset(CydEngine *cyd);
 void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency);

@@ -56,9 +56,9 @@ int RWwrite(struct RWops *context, const void *ptr, int size, int num)
 
 int RWclose(struct RWops *context)
 {
-	FILE *f = context->fp;
-	if (context->close_fp) free(context);
-	return fclose(f);
+	if (context->close_fp) fclose(context->fp);
+	free(context);
+	return 1;
 }
 
 
@@ -103,16 +103,7 @@ static RWops * RWFromFile(const char *name, const char *mode)
 	
 	if (!f) return NULL;
 	
-	RWops *rw = calloc(sizeof(*rw), 1);
-	
-	rw->fp = f;
-	rw->close_fp = 1;
-	rw->seek = RWseek;
-	rw->write = RWwrite;
-	rw->read = RWread;
-	rw->close = RWclose;
-	
-	return rw;
+	return RWFromFP(f, 1);
 #endif
 }
 
@@ -1354,7 +1345,8 @@ void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position)
 		{
 			mus->channel[i].volume = song->default_volume[i];
 #ifdef STEREOOUTPUT
-			cyd_set_panning(mus->cyd, &mus->cyd->channel[i], song->default_panning[i] + CYD_PAN_CENTER);
+			if (i < mus->cyd->n_channels)
+				cyd_set_panning(mus->cyd, &mus->cyd->channel[i], song->default_panning[i] + CYD_PAN_CENTER);
 #endif
 		}
 		else
