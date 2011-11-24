@@ -129,6 +129,7 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 
 # ifdef WIN32
 	InitializeCriticalSection(&cyd->mutex);
+	InitializeCriticalSection(&cyd->thread_lock);
 # endif
 
 #endif
@@ -900,15 +901,17 @@ void cyd_pause(CydEngine *cyd, Uint8 enable)
 
 static void fill_buffer(CydEngine *cyd)
 {
-	waveOutUnprepareHeader(cyd->hWaveOut, &cyd->waveout_hdr[cyd->waveout_hdr_idx],sizeof(WAVEHDR));
+	//waveOutUnprepareHeader(cyd->hWaveOut, &cyd->waveout_hdr[cyd->waveout_hdr_idx],sizeof(WAVEHDR));
 
 	cyd_output_buffer_stereo(0, cyd->waveout_hdr[cyd->waveout_hdr_idx].lpData, cyd->waveout_hdr[cyd->waveout_hdr_idx].dwBufferLength, cyd);
-
-	waveOutPrepareHeader(cyd->hWaveOut, &cyd->waveout_hdr[cyd->waveout_hdr_idx],sizeof(WAVEHDR));
+	
+	//waveOutPrepareHeader(cyd->hWaveOut, &cyd->waveout_hdr[cyd->waveout_hdr_idx],sizeof(WAVEHDR));
+	
+	cyd->waveout_hdr[cyd->waveout_hdr_idx].dwFlags = WHDR_PREPARED;
 	
 	if (waveOutWrite(cyd->hWaveOut, &cyd->waveout_hdr[cyd->waveout_hdr_idx], sizeof(cyd->waveout_hdr[cyd->waveout_hdr_idx])) != MMSYSERR_NOERROR)
 		warning("waveOutWrite returned error");
-		
+	
 	if (++cyd->waveout_hdr_idx >= CYD_NUM_WO_BUFFERS)
 		cyd->waveout_hdr_idx = 0;
 }
@@ -930,12 +933,16 @@ static DWORD WINAPI ThreadProc(void *param)
 		
 		while (cyd->buffers_available > 0)
 		{
-			--cyd->buffers_available;
+			LeaveCriticalSection(&cyd->thread_lock);
 			fill_buffer(cyd);
+			EnterCriticalSection(&cyd->thread_lock);
+			--cyd->buffers_available;
+			
 		}
 		
 		LeaveCriticalSection(&cyd->thread_lock);
-		Sleep(2);
+		
+		Sleep(1);
 	}
 	
 	debug("Thread exit");
@@ -944,18 +951,29 @@ static DWORD WINAPI ThreadProc(void *param)
 }
 
 
-static void CALLBACK waveOutProc(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2)
+static DWORD WINAPI waveOutProc(void *param)
 {
-	if (uMsg != WOM_DONE)
-		return;
-
-	CydEngine *cyd = (void*)dwInstance;
+	CydEngine *cyd = (void*)param;
+	MSG msg;
 	
-	EnterCriticalSection(&cyd->thread_lock);
+	while (GetMessage(&msg, 0, 0, 0) == 1)
+	{
+		if (msg.message == MM_WOM_DONE)
+		{
+			EnterCriticalSection(&cyd->thread_lock);
+			
+			++cyd->buffers_available;
+			
+			LeaveCriticalSection(&cyd->thread_lock);
+		}
+		
+		if (msg.message == MM_WOM_CLOSE)
+		{
+			break;
+		}
+	}
 	
-	++cyd->buffers_available;
-	
-	LeaveCriticalSection(&cyd->thread_lock);
+	return 0;
 }
 
 # endif
@@ -1001,7 +1019,9 @@ int cyd_register(CydEngine * cyd)
 	waveformat.nBlockAlign = waveformat.nChannels * waveformat.wBitsPerSample / 8;
     waveformat.nAvgBytesPerSec = waveformat.nSamplesPerSec * waveformat.nBlockAlign;
 	
-	MMRESULT result = waveOutOpen(&cyd->hWaveOut, 0, &waveformat, (DWORD)waveOutProc, (DWORD)cyd, CALLBACK_FUNCTION);
+	CreateThread(NULL, 0, waveOutProc, cyd, 0, &cyd->cb_handle);
+	
+	MMRESULT result = waveOutOpen(&cyd->hWaveOut, 0, &waveformat, cyd->cb_handle, (DWORD)cyd, CALLBACK_THREAD);
 	
 	if (result != MMSYSERR_NOERROR)
 	{
@@ -1023,8 +1043,9 @@ int cyd_register(CydEngine * cyd)
 	
 	cyd->buffers_available = CYD_NUM_WO_BUFFERS;
 	cyd->thread_running = 1;
-	InitializeCriticalSection(&cyd->thread_lock);
+	
 	CreateThread(NULL, 0, ThreadProc, cyd, 0, &cyd->thread_handle);
+	SetThreadPriority((HANDLE)cyd->thread_handle, THREAD_PRIORITY_HIGHEST);
 	
 	return 1;
 # else
@@ -1061,9 +1082,9 @@ int cyd_unregister(CydEngine * cyd)
 #else
 
 	debug("Waiting for thread");
-	EnterCriticalSection(&cyd->thread_lock);
+	cyd_lock(cyd, 1);
 	cyd->thread_running = 0;
-	LeaveCriticalSection(&cyd->thread_lock);
+	cyd_lock(cyd, 0);
 	WaitForSingleObject((HANDLE)cyd->thread_handle, 2000);
 	
 	waveOutReset(cyd->hWaveOut);
@@ -1076,6 +1097,8 @@ int cyd_unregister(CydEngine * cyd)
 	}
 
 	waveOutClose(cyd->hWaveOut);
+	
+	WaitForSingleObject((HANDLE)cyd->cb_handle, 2000);
 		
 	return 1;
 #endif

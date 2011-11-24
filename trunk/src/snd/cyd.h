@@ -33,6 +33,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cydentry.h"
 #include "cyddefs.h"
 
+#ifdef LOWRESWAVETABLE
+typedef Uint32 CydWaveAcc;
+#else
+typedef Uint64 CydWaveAcc;
+#endif
+
 typedef struct
 {
 	Uint8 a, d, s , r; // 0-15
@@ -63,7 +69,7 @@ typedef struct
 	int fx_bus;
 	const CydWavetableEntry *wave_entry;
 	int wave_direction; // 0 = forward, 1 = backwards
-	Uint64 wave_acc; // probably overkill
+	CydWaveAcc wave_acc; // probably overkill
 	Uint32 wave_frequency;
 } CydChannel;
 
@@ -114,7 +120,7 @@ enum
 #define LUT_SIZE 1024
 #define YM_LUT_SIZE 16
 
-#define CYD_NUM_WO_BUFFER_SIZE 1000
+#define CYD_NUM_WO_BUFFER_SIZE 2000
 #define CYD_NUM_WO_BUFFERS 4
 
 typedef struct
@@ -143,7 +149,7 @@ typedef struct
 #ifdef USENATIVEAPIS
 # ifdef WIN32
 	BOOL thread_running;
-	DWORD thread_handle;
+	DWORD thread_handle, cb_handle;
 	CRITICAL_SECTION thread_lock;
 	int buffers_available;
 	int waveout_hdr_idx;

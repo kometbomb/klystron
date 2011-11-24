@@ -299,11 +299,16 @@ typedef SDL_RWops RWops;
 
 typedef struct RWops
 {
-	int (*seek)(struct RWops *context, int offset, int whence);
-    int (*read)(struct RWops *context, void *ptr, int size, int maxnum);
-    int (*write)(struct RWops *context, const void *ptr, int size, int num);
+	int (*read)(struct RWops *context, void *ptr, int size, int maxnum);
 	int (*close)(struct RWops *context);
-	FILE *fp;
+	union {
+		FILE *fp;
+		struct
+		{
+			Uint32 ptr, length;
+			void *base;
+		} mem;
+	};
 	int close_fp;
 } RWops;
 

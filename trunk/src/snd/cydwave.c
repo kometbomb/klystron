@@ -27,7 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cyddefs.h"
 #include "macros.h"
 
-static Sint32 cyd_wave_get_sample_no_interpolation(const CydWavetableEntry *entry, Uint64 wave_acc, int direction)
+static Sint32 cyd_wave_get_sample_no_interpolation(const CydWavetableEntry *entry, CydWaveAcc wave_acc, int direction)
 {
 	if (entry->data)
 	{	
@@ -38,7 +38,7 @@ static Sint32 cyd_wave_get_sample_no_interpolation(const CydWavetableEntry *entr
 }
 
 
-static Sint32 cyd_wave_get_sample_linear(const CydWavetableEntry *entry, Uint64 wave_acc, int direction)
+static Sint32 cyd_wave_get_sample_linear(const CydWavetableEntry *entry, CydWaveAcc wave_acc, int direction)
 {
 	if (entry->data)
 	{	
@@ -84,7 +84,7 @@ static Sint32 cyd_wave_get_sample_linear(const CydWavetableEntry *entry, Uint64 
 }
 
 
-Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, Uint64 wave_acc, int direction)
+Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, CydWaveAcc wave_acc, int direction)
 {
 	if (entry->flags & CYD_WAVE_NO_INTERPOLATION)
 	{
