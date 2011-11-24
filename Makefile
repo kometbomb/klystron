@@ -30,7 +30,7 @@ endif
 
 # What include flags to pass to the compiler
 ifdef COMSPEC
-	SDLFLAGS = -I /mingw/include/sdl -mthreads 
+	SDLFLAGS = -I /mingw/include/sdl 
 else
 	SDLFLAGS = `sdl-config --cflags` -U_FORTIFY_SOURCE
 endif
@@ -47,12 +47,16 @@ else
 		ifeq ($(CFG),release)
 			CFLAGS += -O3 -Wall ${INCLUDEFLAGS} -s
 		else
-			@$(ECHO) "Invalid configuration "$(CFG)" specified."
-			@$(ECHO) "You must specify a configuration when "
-			@$(ECHO) "running make, e.g. make CFG=debug"
-			@$(ECHO) "Possible choices for configuration are "
-			@$(ECHO) "'release', 'profile' and 'debug'"
-			@exit 1
+			ifeq ($(CFG),size)
+				CFLAGS += -Os -Wall ${INCLUDEFLAGS} -s -ffast-math -fomit-frame-pointer -DREDUCESIZE
+			else
+				@$(ECHO) "Invalid configuration "$(CFG)" specified."
+				@$(ECHO) "You must specify a configuration when "
+				@$(ECHO) "running make, e.g. make CFG=debug"
+				@$(ECHO) "Possible choices for configuration are "
+				@$(ECHO) "'release', 'profile', 'size' and 'debug'"
+				@exit 1
+			endif
 		endif
 	endif
 endif
@@ -157,7 +161,7 @@ deps/gui_$(CFG)_%.d: gui/%.c
 	rm -f $@.$$$$
 	
 clean:
-	@rm -rf deps objs.release objs.debug objs.profile bin.release bin.debug bin.profile
+	@rm -rf deps objs.release objs.debug objs.profile objs.size bin.release bin.debug bin.profile bin.size
 
 # Unless "make clean" is called, include the dependency files
 # which are auto-generated. Don't fail if they are missing

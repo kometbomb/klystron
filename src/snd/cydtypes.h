@@ -1,7 +1,7 @@
-/* SDL-equivalent types */
-
 #ifndef CYDTYPES_H
 #define CYDTYPES_H
+
+/* SDL-equivalent types */
 
 # include "SDL.h"
 
@@ -31,5 +31,7 @@ typedef CRITICAL_SECTION CydMutex;
 # endif
 
 #endif
+
+
 
 #endif

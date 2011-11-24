@@ -31,7 +31,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define PRE_GAIN 4
 #define OUTPUT_BITS 12
 #define ACC_BITS 24
+
+#ifdef LOWRESWAVETABLE
+#define WAVETABLE_RESOLUTION 2048
+#else
 #define WAVETABLE_RESOLUTION 65536
+#endif
+
 #define ACC_LENGTH (1 << (ACC_BITS - 1)) // Osc counter length
 #define YM_LENGTH (ACC_LENGTH) // YM envelope counter length
 #define MAX_VOLUME 128

@@ -53,8 +53,14 @@ OTHER DEALINGS IN THE SOFTWARE.
 # define debug(...) do {} while(0)
 #endif
 
+// Only define warning messages if not optimizing for size (CFG=size)
+#ifndef REDUCESIZE
 #define warning(...) do { fputs("[WARNING] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
 #define fatal(...) do { fputs("[FATAL] ", stderr); fprintf(stderr, __VA_ARGS__); fputs("\n", stderr); } while(0)
+#else
+#define warning(...) do {} while(0)
+#define fatal(...) do {} while(0)
+#endif
 
 #else
 

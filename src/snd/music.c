@@ -37,24 +37,13 @@ static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrume
 
 #ifdef USENATIVEAPIS
 
-int RWseek(struct RWops *context, int offset, int whence)
-{
-	return fseek(context->fp, offset, whence);
-}
-
-int RWread(struct RWops *context, void *ptr, int size, int maxnum)
+static int RWread(struct RWops *context, void *ptr, int size, int maxnum)
 {
 	return fread(ptr, size, maxnum, context->fp);
 }
 
 
-int RWwrite(struct RWops *context, const void *ptr, int size, int num)
-{
-	return fwrite(ptr, size, num, context->fp);
-}
-
-
-int RWclose(struct RWops *context)
+static int RWclose(struct RWops *context)
 {
 	if (context->close_fp) fclose(context->fp);
 	free(context);
@@ -84,8 +73,6 @@ static RWops * RWFromFP(FILE *f, int close)
 	
 	rw->fp = f;
 	rw->close_fp = close;
-	rw->seek = RWseek;
-	rw->write = RWwrite;
 	rw->read = RWread;
 	rw->close = RWclose;
 	
