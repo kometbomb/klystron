@@ -28,7 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "macros.h"
 
 #ifndef LOWRESWAVETABLE
-typedef WaveAccSigned WaveAccSigned;
+typedef WaveAccSigned Sint64;
 #else
 typedef WaveAccSigned Sint32;
 #endif
