@@ -117,10 +117,11 @@ bin.$(CFG)/libksnd.a: ${lib_OBJ} ${snd_OBJ} | inform
 	@mkdir -p bin.$(CFG)
 	@ar rcs $@ $^
 	
-bin.$(CFG)/ksnd.dll: ${lib_OBJ} ${snd_OBJ} | inform
+bin.$(CFG)/ksnd.dll: objs.$(CFG)/lib_ksnd.o ${snd_OBJ} src/lib/ksnd.def | inform
 	@$(ECHO) "Linking "$(TARGET)"..."
 	@mkdir -p bin.$(CFG)
-	$(CC) -shared -o $@ $^ $(CFLAGS) $(INCLUDEFLAGS) 
+	@dlltool -d src/lib/ksnd.def -e objs.$(CFG)/exports.o -l bin.$(CFG)/ksnd.lib -D ksnd.dll
+	@$(CC) -shared -o $@ objs.$(CFG)/exports.o objs.$(CFG)/lib_ksnd.o ${snd_OBJ} $(CFLAGS) $(INCLUDEFLAGS)
 	
 objs.$(CFG)/snd_%.o: snd/%.c 
 	@$(ECHO) "Compiling "$(notdir $<)"..."
