@@ -57,8 +57,10 @@ static int RWclose(struct RWops *context)
 
 #else
 
+#include "SDL_rwops.h"
+
 #define my_RWread SDL_RWread
-#define my_RWclose(ctx) SDL_RWclose
+#define my_RWclose SDL_RWclose
 
 
 #endif

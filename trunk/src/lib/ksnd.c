@@ -38,7 +38,7 @@ KSong* KSND_LoadSong(KPlayer* player, const char *path)
 	}
 }
 
-
+#ifdef USENATIVEAPIS
 static int RWread(struct RWops *context, void *ptr, int size, int maxnum)
 {
 	const int len = my_min(size * maxnum, context->mem.length - context->mem.ptr);
@@ -53,13 +53,19 @@ static int RWclose(struct RWops *context)
 	free(context);
 	return 1;
 }
+#endif
 
 
 KSong* KSND_LoadSongFromMemory(KPlayer* player, void *data, int data_size)
 {
+#ifdef USENATIVEAPIS
 	RWops *ops = calloc(sizeof(*ops), 1);
 	ops->read = RWread;
 	ops->close = RWclose;
+	ops->mem.base = data;
+#else
+	RWops *ops = SDL_RWFromMem(data, data_size);
+#endif
 	
 	KSong *song = calloc(sizeof(*song), 1);
 	
@@ -76,7 +82,11 @@ KSong* KSND_LoadSongFromMemory(KPlayer* player, void *data, int data_size)
 	else
 	{
 		free(song);
+#ifdef USENATIVEAPIS
 		RWclose(ops);
+#else
+		SDL_RWclose(ops);
+#endif
 		return NULL;
 	}
 }

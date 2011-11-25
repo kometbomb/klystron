@@ -28,9 +28,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "macros.h"
 
 #ifndef LOWRESWAVETABLE
-typedef WaveAccSigned Sint64;
+typedef Sint64 WaveAccSigned;
 #else
-typedef WaveAccSigned Sint32;
+typedef Sint32 WaveAccSigned;
 #endif
 
 static Sint32 cyd_wave_get_sample_no_interpolation(const CydWavetableEntry *entry, CydWaveAcc wave_acc, int direction)
