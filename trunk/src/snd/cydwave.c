@@ -27,6 +27,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cyddefs.h"
 #include "macros.h"
 
+#ifndef LOWRESWAVETABLE
+typedef WaveAccSigned WaveAccSigned;
+#else
+typedef WaveAccSigned Sint32;
+#endif
+
 static Sint32 cyd_wave_get_sample_no_interpolation(const CydWavetableEntry *entry, CydWaveAcc wave_acc, int direction)
 {
 	if (entry->data)
@@ -135,11 +141,11 @@ void cyd_wave_cycle(CydEngine *cyd, CydChannel *chn)
 			
 			if ((chn->wave_entry->flags & CYD_WAVE_LOOP) && chn->wave_entry->loop_end != chn->wave_entry->loop_begin)
 			{
-				if ((Sint64)chn->wave_acc < (Sint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION)
+				if ((WaveAccSigned)chn->wave_acc < (WaveAccSigned)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION)
 				{
 					if (chn->wave_entry->flags & CYD_WAVE_PINGPONG) 
 					{
-						chn->wave_acc = (Sint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION - ((Sint64)chn->wave_acc - (Sint64)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION);
+						chn->wave_acc = (WaveAccSigned)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION - ((WaveAccSigned)chn->wave_acc - (WaveAccSigned)chn->wave_entry->loop_begin * WAVETABLE_RESOLUTION);
 						chn->wave_direction = 0;
 					}
 					else
@@ -150,7 +156,7 @@ void cyd_wave_cycle(CydEngine *cyd, CydChannel *chn)
 			}
 			else
 			{
-				if ((Sint64)chn->wave_acc < 0)
+				if ((WaveAccSigned)chn->wave_acc < 0)
 				{
 					// stop playback
 					chn->wave_entry = NULL;
