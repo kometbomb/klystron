@@ -1,0 +1,8 @@
+EXPORTS
+KSND_LoadSong
+KSND_LoadSongFromMemory
+KSND_FreeSong
+KSND_CreatePlayer
+KSND_FreePlayer
+KSND_PlaySong
+KSND_Stop
