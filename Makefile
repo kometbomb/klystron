@@ -20,6 +20,10 @@ gfx_OBJ = $(patsubst %.c, objs.$(CFG)/gfx_%.o, ${gfx_SRC})
 gui_SRC = $(notdir ${wildcard src/gui/*.c}) 
 gui_DEP = $(patsubst %.c, deps/gui_$(CFG)_%.d, ${gui_SRC})
 gui_OBJ = $(patsubst %.c, objs.$(CFG)/gui_%.o, ${gui_SRC}) $(util_OBJ) $(gfx_OBJ)
+
+lib_SRC = $(notdir ${wildcard src/lib/*.c}) 
+lib_DEP = $(patsubst %.c, deps/lib_$(CFG)_%.d, ${lib_SRC})
+lib_OBJ = $(patsubst %.c, objs.$(CFG)/lib_%.o, ${lib_SRC}) 
 	
 CC = gcc -shared -std=gnu99 --no-strict-aliasing
 CDEP = gcc -E -std=gnu99
@@ -30,7 +34,7 @@ endif
 
 # What include flags to pass to the compiler
 ifdef COMSPEC
-	SDLFLAGS = -I /mingw/include/sdl 
+	SDLFLAGS = -I /mingw/include/sdl -lSDL_mixer -lSDL -lwinmm
 else
 	SDLFLAGS = `sdl-config --cflags` -U_FORTIFY_SOURCE
 endif
@@ -76,7 +80,7 @@ build: Makefile
 	@echo '#endif' >> ./src/version.h
 	make all CFG=$(CFG)
 
-all: bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a bin.$(CFG)/lib${TARGET}_gui.a tools
+all: bin.$(CFG)/libksnd.a bin.$(CFG)/ksnd.dll bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a bin.$(CFG)/lib${TARGET}_gui.a tools
 
 ifdef COMSPEC
 tools: tools/bin/makebundle.exe tools/bin/editor.exe
@@ -107,6 +111,16 @@ bin.$(CFG)/lib${TARGET}_gui.a: ${gui_OBJ} | inform
 	@$(ECHO) "Linking "$(TARGET)"..."
 	@mkdir -p bin.$(CFG)
 	@ar rcs $@ $^
+
+bin.$(CFG)/libksnd.a: ${lib_OBJ} ${snd_OBJ} | inform
+	@$(ECHO) "Linking "$(TARGET)"..."
+	@mkdir -p bin.$(CFG)
+	@ar rcs $@ $^
+	
+bin.$(CFG)/ksnd.dll: ${lib_OBJ} ${snd_OBJ} | inform
+	@$(ECHO) "Linking "$(TARGET)"..."
+	@mkdir -p bin.$(CFG)
+	$(CC) -shared -o $@ $^ $(CFLAGS) $(INCLUDEFLAGS) 
 	
 objs.$(CFG)/snd_%.o: snd/%.c 
 	@$(ECHO) "Compiling "$(notdir $<)"..."
@@ -124,6 +138,11 @@ objs.$(CFG)/util_%.o: util/%.c
 	@$(CC) -c $(CFLAGS) -o $@ $<
 
 objs.$(CFG)/gui_%.o: gui/%.c
+	@$(ECHO) "Compiling "$(notdir $<)"..."
+	@mkdir -p objs.$(CFG)
+	@$(CC) -c $(CFLAGS) -o $@ $<
+	
+objs.$(CFG)/lib_%.o: lib/%.c
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
 	@$(CC) -c $(CFLAGS) -o $@ $<
@@ -160,6 +179,14 @@ deps/gui_$(CFG)_%.d: gui/%.c
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
 	
+deps/lib_$(CFG)_%.d: lib/%.c
+	@mkdir -p deps
+	@$(ECHO) "Generating dependencies for $<"
+	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/gui_\1.o $@ : ,g' \
+		< $@.$$$$ > $@; \
+	rm -f $@.$$$$
+	
 clean:
 	@rm -rf deps objs.release objs.debug objs.profile objs.size bin.release bin.debug bin.profile bin.size
 
@@ -172,6 +199,7 @@ ifneq ($(MAKECMDGOALS),clean)
 -include ${gfx_DEP}
 -include ${util_DEP}
 -include ${gui_DEP}
+-include ${lib_DEP}
 endif
 
 tools/bin/makebundle.exe: tools/makebundle/*.c
