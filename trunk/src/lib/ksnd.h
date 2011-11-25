@@ -1,4 +1,5 @@
 #ifndef KSND_DLL_H
+#define KSND_DLL_H
 
 /*
 
