@@ -80,7 +80,7 @@ build: Makefile
 	@echo '#endif' >> ./src/version.h
 	make all CFG=$(CFG)
 
-all: bin.$(CFG)/libksnd.a bin.$(CFG)/ksnd.dll bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a bin.$(CFG)/lib${TARGET}_gui.a tools
+all: bin.$(CFG)/libksndstatic.a bin.$(CFG)/ksnd.dll bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a bin.$(CFG)/lib${TARGET}_gui.a tools
 
 ifdef COMSPEC
 tools: tools/bin/makebundle.exe tools/bin/editor.exe
@@ -112,7 +112,7 @@ bin.$(CFG)/lib${TARGET}_gui.a: ${gui_OBJ} | inform
 	@mkdir -p bin.$(CFG)
 	@ar rcs $@ $^
 
-bin.$(CFG)/libksnd.a: ${lib_OBJ} ${snd_OBJ} | inform
+bin.$(CFG)/libksndstatic.a: ${lib_OBJ} ${snd_OBJ} | inform
 	@$(ECHO) "Linking "$(TARGET)"..."
 	@mkdir -p bin.$(CFG)
 	@ar rcs $@ $^
