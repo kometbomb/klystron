@@ -17,7 +17,7 @@ struct KPlayer_t
 };
 
 
-KSong* KSND_LoadSong(KPlayer* player, const char *path)
+KLYSAPI KSong* KSND_LoadSong(KPlayer* player, const char *path)
 {
 	KSong *song = calloc(sizeof(*song), 1);
 	
@@ -56,7 +56,7 @@ static int RWclose(struct RWops *context)
 #endif
 
 
-KSong* KSND_LoadSongFromMemory(KPlayer* player, void *data, int data_size)
+KLYSAPI KSong* KSND_LoadSongFromMemory(KPlayer* player, void *data, int data_size)
 {
 #ifdef USENATIVEAPIS
 	RWops *ops = calloc(sizeof(*ops), 1);
@@ -92,7 +92,7 @@ KSong* KSND_LoadSongFromMemory(KPlayer* player, void *data, int data_size)
 }
 
 
-void KSND_FreeSong(KSong *song)
+KLYSAPI void KSND_FreeSong(KSong *song)
 {
 	int i = 0;
 	for (i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
@@ -105,7 +105,7 @@ void KSND_FreeSong(KSong *song)
 }
 
 
-KPlayer* KSND_CreatePlayer(int sample_rate)
+KLYSAPI KPlayer* KSND_CreatePlayer(int sample_rate)
 {
 	KPlayer *player = malloc(sizeof(*player));
 	
@@ -122,7 +122,7 @@ KPlayer* KSND_CreatePlayer(int sample_rate)
 }
 
 
-void KSND_FreePlayer(KPlayer *player)
+KLYSAPI void KSND_FreePlayer(KPlayer *player)
 {
 	cyd_unregister(&player->cyd);
 	cyd_deinit(&player->cyd);
@@ -130,7 +130,7 @@ void KSND_FreePlayer(KPlayer *player)
 }
 
 
-void KSND_PlaySong(KPlayer *player, KSong *song)
+KLYSAPI void KSND_PlaySong(KPlayer *player, KSong *song)
 {
 	player->cyd.wavetable_entries = song->wavetable_entries;
 	cyd_set_callback(&player->cyd, mus_advance_tick, &player->mus, song->song.song_rate);
@@ -143,7 +143,7 @@ void KSND_PlaySong(KPlayer *player, KSong *song)
 }
 
 
-void KSND_Stop(KPlayer *player)
+KLYSAPI void KSND_Stop(KPlayer *player)
 {
 	mus_set_song(&player->mus, NULL, 0);
 	cyd_set_callback(&player->cyd, NULL, NULL, 1);
