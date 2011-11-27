@@ -14,13 +14,19 @@ extern "C" {
 typedef struct KSong_t KSong;
 typedef struct KPlayer_t KPlayer;
 
-KSong* KSND_LoadSong(KPlayer* player, const char *path);
-KSong* KSND_LoadSongFromMemory(KPlayer* player, void *data, int data_size);
-void KSND_FreeSong(KSong *song);
-KPlayer* KSND_CreatePlayer(int sample_rate);
-void KSND_FreePlayer(KPlayer *player);
-void KSND_PlaySong(KPlayer *player, KSong *song);
-void KSND_Stop(KPlayer* player);
+#ifdef WIN32 && DLLEXPORT
+#define KLYSAPI __declspec(dllexport)
+#else
+#define KLYSAPI 
+#endif
+
+KLYSAPI extern KSong* KSND_LoadSong(KPlayer* player, const char *path);
+KLYSAPI extern KSong* KSND_LoadSongFromMemory(KPlayer* player, void *data, int data_size);
+KLYSAPI extern void KSND_FreeSong(KSong *song);
+KLYSAPI extern KPlayer* KSND_CreatePlayer(int sample_rate);
+KLYSAPI extern void KSND_FreePlayer(KPlayer *player);
+KLYSAPI extern void KSND_PlaySong(KPlayer *player, KSong *song);
+KLYSAPI extern void KSND_Stop(KPlayer* player);
 
 #ifdef __cplusplus
 }
