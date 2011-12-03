@@ -44,6 +44,8 @@ static int RWread(struct RWops *context, void *ptr, int size, int maxnum)
 	const int len = my_min(size * maxnum, context->mem.length - context->mem.ptr);
 	memcpy(ptr, context->mem.base + context->mem.ptr, len);
 	
+	context->mem.ptr += len;
+	
 	return len;
 }
 
@@ -63,6 +65,7 @@ KLYSAPI KSong* KSND_LoadSongFromMemory(KPlayer* player, void *data, int data_siz
 	ops->read = RWread;
 	ops->close = RWclose;
 	ops->mem.base = data;
+	ops->mem.length = data_size;
 #else
 	RWops *ops = SDL_RWFromMem(data, data_size);
 #endif
