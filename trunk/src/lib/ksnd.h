@@ -14,8 +14,12 @@ extern "C" {
 typedef struct KSong_t KSong;
 typedef struct KPlayer_t KPlayer;
 
-#ifdef WIN32 && DLLEXPORT
-#define KLYSAPI __declspec(dllexport)
+#ifdef WIN32 
+#ifdef DLLEXPORT
+#define KLYSAPI _cdecl __declspec(dllexport)
+#else
+#define KLYSAPI _cdecl __declspec(dllimport)
+#endif
 #else
 #define KLYSAPI 
 #endif

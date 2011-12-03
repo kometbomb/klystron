@@ -154,7 +154,7 @@ typedef struct
 	int buffers_available;
 	int waveout_hdr_idx;
 	HWAVEOUT hWaveOut;
-	WAVEHDR waveout_hdr[CYD_NUM_WO_BUFFERS]; // three buffers (one playing, one being filled, one ready and waiting)
+	WAVEHDR waveout_hdr[CYD_NUM_WO_BUFFERS]; 
 # endif
 #endif
 } CydEngine;
