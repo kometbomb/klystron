@@ -140,7 +140,7 @@ KLYSAPI void KSND_FreePlayer(KPlayer *player)
 }
 
 
-KLYSAPI void KSND_PlaySong(KPlayer *player, KSong *song)
+KLYSAPI void KSND_PlaySong(KPlayer *player, KSong *song, int start_position)
 {
 	player->cyd.wavetable_entries = song->wavetable_entries;
 	cyd_set_callback(&player->cyd, mus_advance_tick, &player->mus, song->song.song_rate);
@@ -149,7 +149,7 @@ KLYSAPI void KSND_PlaySong(KPlayer *player, KSong *song)
 	if (song->song.num_channels > player->cyd.n_channels)
 		cyd_reserve_channels(&player->cyd, song->song.num_channels);
 	
-	mus_set_song(&player->mus, &song->song, 0);
+	mus_set_song(&player->mus, &song->song, start_position);
 }
 
 

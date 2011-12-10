@@ -35,7 +35,7 @@ KLYSAPI extern int KSND_GetSongLength(const KSong *song);
 
 KLYSAPI extern KPlayer* KSND_CreatePlayer(int sample_rate);
 KLYSAPI extern void KSND_FreePlayer(KPlayer *player);
-KLYSAPI extern void KSND_PlaySong(KPlayer *player, KSong *song);
+KLYSAPI extern void KSND_PlaySong(KPlayer *player, KSong *song, int start_position);
 KLYSAPI extern void KSND_Stop(KPlayer* player);
 KLYSAPI extern void KSND_Pause(KPlayer *player, int state);
 KLYSAPI extern int KSND_GetPlayPosition(KPlayer* player);
