@@ -883,19 +883,6 @@ void cyd_set_callback_rate(CydEngine *cyd, Uint16 period)
 }
 
 
-void cyd_pause(CydEngine *cyd, Uint8 enable)
-{
-	cyd_lock(cyd, 1);
-	
-	if (enable)
-		cyd->flags |= CYD_PAUSED;
-	else
-		cyd->flags &= ~CYD_PAUSED;
-	
-	cyd_lock(cyd, 0);
-}
-
-
 #ifdef USENATIVEAPIS
 # ifdef WIN32
 
@@ -1081,6 +1068,8 @@ int cyd_unregister(CydEngine * cyd)
 	else return 0;
 #else
 
+	cyd_pause(cyd, 0);
+
 	debug("Waiting for thread");
 	cyd_lock(cyd, 1);
 	cyd->thread_running = 0;
@@ -1219,4 +1208,28 @@ void cyd_set_wavetable_offset(CydChannel *chn, Uint16 offset /* 0..0x1000 = 0-10
 	{
 		chn->wave_acc = (Uint64)offset * WAVETABLE_RESOLUTION * chn->wave_entry->samples / 0x1000;
 	}
+}
+
+
+void cyd_pause(CydEngine *cyd, Uint8 enable)
+{
+#ifdef USENATIVEAPIS
+#ifdef WIN32
+
+
+	if (enable)
+		waveOutPause(cyd->hWaveOut);
+	else
+		waveOutRestart(cyd->hWaveOut);
+#endif
+#else
+	cyd_lock(cyd, 1);
+	
+	if (enable)
+		cyd->flags |= CYD_PAUSED;
+	else
+		cyd->flags &= ~CYD_PAUSED;
+	
+	cyd_lock(cyd, 0);
+#endif
 }
