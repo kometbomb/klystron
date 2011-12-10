@@ -7,4 +7,5 @@ KSND_CreatePlayer
 KSND_FreePlayer
 KSND_PlaySong
 KSND_Stop
+KSND_Pause
 KSND_GetPlayPosition
