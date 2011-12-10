@@ -4,6 +4,7 @@
 * Link with libksnd.a for DLL use (needs ksnd.dll)
 * Link with libksndstatic.a for static use (no external dlls needed) - note: you need to link with winmm since it uses Windows waveout stuff
 * You can also include the song as data and use {{{KSND_LoadSongFromMemory()}}} to load the song
+* For VS users: use the .def file to create a .lib from the DLL in case you need it. 
 
 Song loading and playing should be straightforward. See example below:
 
