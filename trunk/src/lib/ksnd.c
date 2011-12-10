@@ -108,6 +108,12 @@ KLYSAPI void KSND_FreeSong(KSong *song)
 }
 
 
+KLYSAPI int KSND_GetSongLength(const KSong *song)
+{
+	return song->song.song_length;
+}
+
+
 KLYSAPI KPlayer* KSND_CreatePlayer(int sample_rate)
 {
 	KPlayer *player = malloc(sizeof(*player));
@@ -127,6 +133,7 @@ KLYSAPI KPlayer* KSND_CreatePlayer(int sample_rate)
 
 KLYSAPI void KSND_FreePlayer(KPlayer *player)
 {
+	KSND_Stop(player);
 	cyd_unregister(&player->cyd);
 	cyd_deinit(&player->cyd);
 	free(player);
@@ -153,3 +160,18 @@ KLYSAPI void KSND_Stop(KPlayer *player)
 	player->cyd.wavetable_entries = NULL;
 }
 
+
+KLYSAPI void KSND_Pause(KPlayer *player, int state)
+{
+	cyd_pause(&player->cyd, state);
+}
+
+
+KLYSAPI int KSND_GetPlayPosition(KPlayer *player)
+{
+	int song_position = 0;
+	
+	mus_poll_status(&player->mus, &song_position, NULL, NULL, NULL, NULL, NULL);
+	
+	return song_position;
+}
