@@ -1,6 +1,6 @@
 #summary How to use the libksnd music player library
 
- * See [http://code.google.com/p/klystron/source/browse/trunk/src/lib/ksnd.h {{{ksnd.h}}}] for the API.
+ * See [http://code.google.com/p/klystron/source/browse/trunk/src/lib/ksnd.h ksnd.h] for the API.
  * Link with libksnd.a for DLL use (needs ksnd.dll)
  * Link with libksndstatic.a for static use (no external dlls needed) - note: you need to link with winmm since it uses Windows waveout stuff
  * You can also include the song as data and use {{{KSND_LoadSongFromMemory()}}} to load the song
