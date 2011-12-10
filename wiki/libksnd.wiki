@@ -3,6 +3,7 @@
 * See {{{ksnd.h}}} for the API.
 * Link with libksnd.a for DLL use (needs ksnd.dll)
 * Link with libksndstatic.a for static use (no external dlls needed) - note: you need to link with winmm since it uses Windows waveout stuff
+* You can also include the song as data and use {{{KSND_LoadSongFromMemory()}}} to load the song
 
 Song loading and playing should be straightforward. See example below:
 
@@ -39,4 +40,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 		
 	return 0;
 }
+}}}
+
+Static linking:
+
+{{{
+gcc player.c -o player -lksndstatic -lwinmm
+}}}
+
+Dynamic linking:
+
+{{{
+gcc player.c -o player -lksnd 
 }}}
