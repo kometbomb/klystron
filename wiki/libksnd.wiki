@@ -1,0 +1,42 @@
+#summary How to use the libksnd music player library
+
+* See {{{ksnd.h}}} for the API.
+* Link with libksnd.a for DLL use (needs ksnd.dll)
+* Link with libksndstatic.a for static use (no external dlls needed) - note: you need to link with winmm since it uses Windows waveout stuff
+
+Song loading and playing should be straightforward. See example below:
+
+{{{
+#include "ksnd.h"
+#include <windows.h>
+
+// Plays Test.kt from the beginning for 10 seconds, pauses for 1 second
+// and after unpausing frees allocated stuff and exits.
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, int nCmdShow)
+{
+	KPlayer *player;
+	KSong * song;
+	
+	player = KSND_CreatePlayer(44100);
+	
+	song = KSND_LoadSong(player, "Test.kt");
+	
+	KSND_PlaySong(player, song, 0);
+	
+	Sleep(10000);
+	
+	KSND_Pause(player, 1);
+	
+	Sleep(1000);
+	
+	KSND_Pause(player, 0);
+	
+	Sleep(10000);
+		
+	KSND_FreePlayer(player);
+	KSND_FreeSong(song);
+		
+	return 0;
+}
+}}}
