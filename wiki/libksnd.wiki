@@ -1,7 +1,7 @@
 #summary How to use the libksnd music player library
 #labels Phase-Deploy,Featured
 
-libksnd is a (Win32) library using native system API (no SDL needed) and optimized for size. The library code is around 34 kilobytes uncompressed so it is suitable for small intros and whatnot. Both static and dynamic linking is supported.
+*libksnd* is a (Win32) library using native system API (no SDL needed) and optimized for size. The library code is around 34 kilobytes uncompressed so it is suitable for small intros and whatnot. Both static and dynamic linking is supported.
 
 See the [http://code.google.com/p/klystron/downloads/list Downloads] section for binaries.
 
