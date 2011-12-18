@@ -847,6 +847,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	}
 	
 	MusChannel *chn = &mus->channel[chan];
+	MusTrackStatus *track = &mus->song_track[chan];
 	
 	chn->flags = MUS_CHN_PLAYING | (chn->flags & MUS_CHN_DISABLED);
 	if (ins->prog_period > 0) chn->flags |= MUS_CHN_PROGRAM_RUNNING;
@@ -881,10 +882,10 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	chn->last_note = chn->target_note = (Uint16)note << 8;
 	chn->current_tick = 0;
 	
-	mus->song_track[chan].vibrato_position = 0;
-	mus->song_track[chan].vib_delay = ins->vib_delay;
+	track->vibrato_position = 0;
+	track->vib_delay = ins->vib_delay;
 	
-	mus->song_track[chan].slide_speed = 0;
+	track->slide_speed = 0;
 	
 	update_volumes(mus, &mus->song_track[chan], chn, &mus->cyd->channel[chan], (ins->flags & MUS_INST_RELATIVE_VOLUME) ? MAX_VOLUME : ins->volume);
 	
@@ -892,7 +893,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	mus->cyd->channel[chan].ring_mod = ins->ring_mod == 0xff? chan : ins->ring_mod;
 	
 	mus->cyd->channel[chan].flttype = ins->flttype;
-	
+	mus->cyd->channel[chan].lfsr_type = ins->lfsr_type;
 	
 	if (ins->cydflags & CYD_CHN_ENABLE_KEY_SYNC)
 	{
@@ -901,13 +902,13 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	
 	if (ins->flags & MUS_INST_SET_CUTOFF)
 	{
-		mus->song_track[chan].filter_cutoff = ins->cutoff;
+		track->filter_cutoff = ins->cutoff;
 		cyd_set_filter_coeffs(mus->cyd, &mus->cyd->channel[chan], ins->cutoff, ins->resonance);
 	}
 	
 	if (ins->flags & MUS_INST_SET_PW)
 	{
-		mus->song_track[chan].pw = ins->pw;
+		track->pw = ins->pw;
 		do_pwm(mus,chan);
 	}
 	
@@ -1512,6 +1513,8 @@ int mus_load_instrument_RW(Uint8 version, RWops *ctx, MusInstrument *inst, CydWa
 	VER_READ(version, 11, 0xff, &inst->vib_shape, 0);
 	VER_READ(version, 11, 0xff, &inst->vib_delay, 0);
 	VER_READ(version, 11, 0xff, &inst->pwm_shape, 0);
+	VER_READ(version, 18, 0xff, &inst->lfsr_type, 0);
+	
 	VER_READ(version, 12, 0xff, &inst->wavetable_entry, 0);
 	
 	if (wavetable_entries && inst->wavetable_entry == 0xff)

@@ -62,7 +62,8 @@ typedef struct
 	Uint32 sync_bit;
 	volatile Uint32 frequency;
 	Uint32 accumulator;
-	Uint32 random;
+	Uint32 random; // random lfsr
+	Uint32 lfsr, lfsr_ctr, lfsr_type, lfsr_period; // lfsr state
 	volatile Uint32 envelope, env_speed;
 	volatile Uint8 envelope_state;
 	CydFilter flt;
@@ -96,7 +97,8 @@ enum
 	CYD_CHN_ENABLE_FX = 1024,
 	CYD_CHN_ENABLE_YM_ENV = 2048,
 	CYD_CHN_ENABLE_WAVE = 4096,
-	CYD_CHN_WAVE_OVERRIDE_ENV = 8192
+	CYD_CHN_WAVE_OVERRIDE_ENV = 8192,
+	CYD_CHN_ENABLE_LFSR = 16384
 };
 
 enum {
@@ -115,7 +117,7 @@ enum
 	
 };
 
-#define WAVEFORMS (CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_WAVE)
+#define WAVEFORMS (CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_WAVE|CYD_CHN_ENABLE_LFSR)
 
 #define LUT_SIZE 1024
 #define YM_LUT_SIZE 16
@@ -157,6 +159,8 @@ typedef struct
 	WAVEHDR waveout_hdr[CYD_NUM_WO_BUFFERS]; 
 # endif
 #endif
+	Uint32 lfsr_ctr, lfsr_ctr2; // "pokey" lfsr update counter
+	Uint32 reg4, reg5, reg9, reg17; // "pokey" lfsr registers
 } CydEngine;
 
 enum
