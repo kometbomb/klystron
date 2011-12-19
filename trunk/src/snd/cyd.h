@@ -63,7 +63,7 @@ typedef struct
 	volatile Uint32 frequency;
 	Uint32 accumulator;
 	Uint32 random; // random lfsr
-	Uint32 lfsr, lfsr_ctr, lfsr_type, lfsr_period; // lfsr state
+	Uint32 lfsr, lfsr_type; // lfsr state
 	volatile Uint32 envelope, env_speed;
 	volatile Uint8 envelope_state;
 	CydFilter flt;
@@ -72,6 +72,7 @@ typedef struct
 	int wave_direction; // 0 = forward, 1 = backwards
 	CydWaveAcc wave_acc; // probably overkill
 	Uint32 wave_frequency;
+	Uint32 reg4, reg5, reg9; // "pokey" lfsr registers
 } CydChannel;
 
 enum
@@ -125,6 +126,8 @@ enum
 #define CYD_NUM_WO_BUFFER_SIZE 2000
 #define CYD_NUM_WO_BUFFERS 4
 
+#define CYD_NUM_LFSR 4
+
 typedef struct
 {
 	CydChannel *channel;
@@ -159,8 +162,6 @@ typedef struct
 	WAVEHDR waveout_hdr[CYD_NUM_WO_BUFFERS]; 
 # endif
 #endif
-	Uint32 lfsr_ctr, lfsr_ctr2; // "pokey" lfsr update counter
-	Uint32 reg4, reg5, reg9, reg17; // "pokey" lfsr registers
 } CydEngine;
 
 enum

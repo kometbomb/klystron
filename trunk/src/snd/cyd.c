@@ -54,16 +54,16 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // used lfsr-generator <http://lfsr-generator.sourceforge.net/> for this: 
 
-#define shift_lfsr(v, tap_0, tap_1)\
-{\
-  typedef unsigned int T;\
-  const T zero = (T)(0);\
-  const T lsb = zero + (T)(1);\
-  const T feedback = (\
-    (lsb << (tap_0)) ^\
-    (lsb << (tap_1))\
-  );\
-  v = (v >> 1) ^ ((zero - (v & lsb)) & feedback);\
+inline static void shift_lfsr(Uint32 *v, int tap_0, int tap_1)
+{
+  typedef unsigned int T;
+  const T zero = (T)(0);
+  const T lsb = zero + (T)(1);
+  const T feedback = (
+    (lsb << (tap_0)) ^
+    (lsb << (tap_1))
+  );
+  *v = (*v >> 1) ^ ((zero - (*v & lsb)) & feedback);
 }
 
 static Sint32 inline fastrnd(Uint32 fastrnd_rndi)
@@ -88,6 +88,7 @@ static void cyd_init_channel(CydEngine *cyd, CydChannel *chn)
 #ifdef STEREOOUTPUT
 	cyd_set_panning(cyd, chn, CYD_PAN_CENTER);
 #endif
+	chn->reg4 = chn->reg5 = chn->reg9 = 0x1;
 }
 
 
@@ -243,8 +244,6 @@ void cyd_reset(CydEngine *cyd)
 		cyd_init_channel(cyd, &cyd->channel[i]);
 		cyd->channel[i].sync_source = i;
 	}
-	
-	cyd->reg4 = cyd->reg5 = cyd->reg9 = cyd->reg17 = 0x42;
 }
 
 
@@ -358,6 +357,13 @@ static inline void cyd_cycle_adsr(CydEngine *eng, CydChannel *chn)
 }
 
 
+static void run_lfsrs(CydChannel *chn)
+{
+	shift_lfsr(&chn->reg4, 4, 3);
+	shift_lfsr(&chn->reg5, 5, 3);
+	shift_lfsr(&chn->reg9, 9, 5);
+}
+
 
 static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
 {
@@ -374,41 +380,38 @@ static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
 	
 	if ((prev_acc & (ACC_LENGTH/32)) != (chn->accumulator & (ACC_LENGTH/32)))
 	{
-		Uint32 bit0 = ((chn->random >> 22) ^ (chn->random >> 17)) & 0x1;
-		chn->random <<= 1;
-		chn->random &= 0x7fffff;
-		chn->random |= bit0;
-	}
-	
-	// cycle programmable lfsr (period is twice the frequency because every other switch is on/off)
-	
-	//if ((prev_acc & (ACC_LENGTH/2)) != (chn->accumulator & (ACC_LENGTH/2)))
-	
-	if (!chn->lfsr_ctr)
-	{
-		chn->lfsr_ctr = chn->lfsr_period;
-		
+		if (chn->flags & CYD_CHN_ENABLE_METAL)
+		{
+			shift_lfsr(&chn->random, 0xe, 8);
+			chn->random &= (1 << (0xe + 1)) - 1;
+		}
+		else
+		{
+			shift_lfsr(&chn->random, 22, 17);
+			chn->random &= (1 << (22 + 1)) - 1;
+		}
+
 		switch (chn->lfsr_type & 3)
 		{
 			case 0: 
-				chn->lfsr ^= !!(cyd->reg5 & 1);
+				chn->lfsr ^= !!(chn->reg5 & 1);
 				break;
 				
 			case 1: 
-				chn->lfsr ^= !!(cyd->reg4 & 1);
+				chn->lfsr ^= !!(chn->reg4 & 1);
 				break;
 				
 			case 2: 
-				chn->lfsr ^= !!(cyd->reg9 & 1);
+				chn->lfsr ^= !!(chn->reg9 & 1);
 				break;
 				
 			case 3: 
-				chn->lfsr ^= !!((cyd->reg9 & cyd->reg5) & 1);
+				chn->lfsr ^= !!((chn->reg9 & chn->reg5) & 1);
 				break;
 		}
+		
+		run_lfsrs(chn);
 	}
-	else
-		--chn->lfsr_ctr;
 }
 
 
@@ -444,7 +447,7 @@ static inline Uint32 cyd_triangle(Uint32 acc)
 
 static inline Uint32 cyd_noise(Uint32 acc) 
 {
-	return fastrnd(acc);
+	return acc & 0xfff;
 }
 
 
@@ -699,13 +702,6 @@ static Sint32 cyd_output(CydEngine *cyd)
 #endif
 	}
 	
-	// update pokey regs at 15 KHz
-	
-	shift_lfsr(cyd->reg4, 4, 3);
-	shift_lfsr(cyd->reg5, 5, 3);
-	shift_lfsr(cyd->reg9, 9, 5);
-	shift_lfsr(cyd->reg17, 17, 14);
-	
 #ifndef STEREOOUTPUT
 	return v;
 #endif
@@ -913,7 +909,6 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 {
 	chn->frequency = (Uint64)ACC_LENGTH/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
-	chn->lfsr_period = (Uint64)cyd->sample_rate * 8 / frequency;
 }
 
 
