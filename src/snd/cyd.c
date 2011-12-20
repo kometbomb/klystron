@@ -935,7 +935,6 @@ void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 {
 	chn->frequency = (Uint64)ACC_LENGTH/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
 	chn->lfsr_period = (Uint64)CYD_LFSR_RATE * 16 / frequency;
-	debug("%d", chn->lfsr_period);
 }
 
 
