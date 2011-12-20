@@ -63,7 +63,7 @@ typedef struct
 	volatile Uint32 frequency;
 	Uint32 accumulator;
 	Uint32 random; // random lfsr
-	Uint32 lfsr, lfsr_type, lfsr_period, lfsr_ctr; // lfsr state
+	Uint32 lfsr, lfsr_type, lfsr_period, lfsr_ctr, lfsr_acc; // lfsr state
 	volatile Uint32 envelope, env_speed;
 	volatile Uint8 envelope_state;
 	CydFilter flt;
@@ -126,7 +126,7 @@ enum
 #define CYD_NUM_WO_BUFFER_SIZE 2000
 #define CYD_NUM_WO_BUFFERS 4
 
-#define CYD_NUM_LFSR 4
+#define CYD_NUM_LFSR 5
 
 typedef struct
 {
