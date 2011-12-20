@@ -63,7 +63,7 @@ typedef struct
 	volatile Uint32 frequency;
 	Uint32 accumulator;
 	Uint32 random; // random lfsr
-	Uint32 lfsr, lfsr_type; // lfsr state
+	Uint32 lfsr, lfsr_type, lfsr_period, lfsr_ctr; // lfsr state
 	volatile Uint32 envelope, env_speed;
 	volatile Uint8 envelope_state;
 	CydFilter flt;

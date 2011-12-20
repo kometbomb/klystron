@@ -390,25 +390,35 @@ static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
 			shift_lfsr(&chn->random, 22, 17);
 			chn->random &= (1 << (22 + 1)) - 1;
 		}
-
-		switch (chn->lfsr_type & 3)
+	}
+	
+	if (chn->flags & CYD_CHN_ENABLE_LFSR)
+	{
+		if (chn->lfsr_ctr == 0)
 		{
-			case 0: 
-				chn->lfsr ^= !!(chn->reg5 & 1);
-				break;
-				
-			case 1: 
-				chn->lfsr ^= !!(chn->reg4 & 1);
-				break;
-				
-			case 2: 
-				chn->lfsr ^= !!(chn->reg9 & 1);
-				break;
-				
-			case 3: 
-				chn->lfsr ^= !!((chn->reg9 & chn->reg5) & 1);
-				break;
+			chn->lfsr_ctr = chn->lfsr_period;
+		
+			switch (chn->lfsr_type & 3)
+			{
+				case 0: 
+					chn->lfsr ^= !!(chn->reg5 & 1);
+					break;
+					
+				case 1: 
+					chn->lfsr ^= !!(chn->reg4 & 1);
+					break;
+					
+				case 2: 
+					chn->lfsr ^= !!(chn->reg9 & 1);
+					break;
+					
+				case 3: 
+					chn->lfsr ^= !!((chn->reg9 & chn->reg5) & 1);
+					break;
+			}
 		}
+		
+		--chn->lfsr_ctr;
 		
 		run_lfsrs(chn);
 	}
@@ -423,6 +433,8 @@ static void cyd_sync_channel(CydEngine *cyd, CydChannel *chn)
 		chn->wave_acc = 0;
 		chn->wave_direction = 0;
 		chn->random = RANDOM_SEED;
+		chn->reg4 = chn->reg5 = chn->reg9 = 0x1;
+		chn->lfsr_ctr = 0;
 	}
 }
 
@@ -909,6 +921,7 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 {
 	chn->frequency = (Uint64)ACC_LENGTH/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
+	chn->lfsr_period = (Uint64)cyd->sample_rate * 8 / frequency;
 }
 
 
@@ -960,6 +973,8 @@ void cyd_enable_gate(CydEngine *cyd, CydChannel *chn, Uint8 enable)
 		if (chn->flags & CYD_CHN_ENABLE_KEY_SYNC)
 		{
 			chn->accumulator = 0;
+			chn->reg4 = chn->reg5 = chn->reg9 = 0x1;
+			chn->lfsr_ctr = 0;
 		}
 		
 		chn->flags |= CYD_CHN_ENABLE_GATE;
