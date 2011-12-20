@@ -394,33 +394,46 @@ static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
 	
 	if (chn->flags & CYD_CHN_ENABLE_LFSR)
 	{
-		if (chn->lfsr_ctr == 0)
+		chn->lfsr_acc = 0;
+	
+		for (int i = 0 ; i < CYD_LFSR_RATE / cyd->sample_rate ; ++i)
 		{
-			chn->lfsr_ctr = chn->lfsr_period;
+			if (chn->lfsr & 1) ++chn->lfsr_acc;
 		
-			switch (chn->lfsr_type & 3)
+			if (chn->lfsr_ctr >= chn->lfsr_period)
 			{
-				case 0: 
-					chn->lfsr ^= !!(chn->reg5 & 1);
-					break;
-					
-				case 1: 
-					chn->lfsr ^= !!(chn->reg4 & 1);
-					break;
-					
-				case 2: 
-					chn->lfsr ^= !!(chn->reg9 & 1);
-					break;
-					
-				case 3: 
-					chn->lfsr ^= !!((chn->reg9 & chn->reg5) & 1);
-					break;
+				chn->lfsr_ctr = 0;
+			
+				switch (chn->lfsr_type & 3)
+				{
+					case 0: 
+						chn->lfsr ^= !!(chn->reg5 & 1);
+						break;
+						
+					case 1: 
+						chn->lfsr ^= !!(chn->reg4 & 1);
+						break;
+						
+					case 2: 
+						chn->lfsr ^= !!(chn->reg9 & 1);
+						break;
+						
+					case 3: 
+						chn->lfsr ^= !!((chn->reg9 & chn->reg5) & 1);
+						break;
+						
+					case 4: 
+						chn->lfsr ^= 1;
+						break;
+				}
 			}
+			
+			++chn->lfsr_ctr;
+			
+			run_lfsrs(chn);
 		}
 		
-		--chn->lfsr_ctr;
-		
-		run_lfsrs(chn);
+		chn->lfsr_acc = 0xfff * chn->lfsr_acc / (CYD_LFSR_RATE / cyd->sample_rate);
 	}
 }
 
@@ -465,7 +478,7 @@ static inline Uint32 cyd_noise(Uint32 acc)
 
 static inline Uint32 cyd_lfsr(Uint32 bits) 
 {
-	return (bits & 1) ? 0xfff : 0;
+	return bits;
 }
 
 
@@ -491,7 +504,7 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 		break;
 		
 		case CYD_CHN_ENABLE_LFSR:
-		v = cyd_lfsr(chn->lfsr);
+		v = cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_PULSE:
@@ -539,63 +552,63 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 		break;
 		
 		case CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_LFSR:
-		v = cyd_pulse(chn->accumulator, chn->pw) & cyd_lfsr(chn->lfsr);
+		v = cyd_pulse(chn->accumulator, chn->pw) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_LFSR:
-		v = cyd_saw(chn->accumulator) & cyd_lfsr(chn->lfsr);
+		v = cyd_saw(chn->accumulator) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_LFSR:
-		v = cyd_triangle(chn->accumulator) & cyd_lfsr(chn->lfsr);
+		v = cyd_triangle(chn->accumulator) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_LFSR:
-		v = cyd_noise(chn->random) & cyd_lfsr(chn->lfsr);
+		v = cyd_noise(chn->random) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_LFSR:
-		v = cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_lfsr(chn->lfsr);
+		v = cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_LFSR:
-		v = cyd_saw(chn->accumulator) & cyd_pulse(chn->accumulator, chn->pw) & cyd_lfsr(chn->lfsr);
+		v = cyd_saw(chn->accumulator) & cyd_pulse(chn->accumulator, chn->pw) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_LFSR:
-		v = cyd_noise(chn->random) & cyd_pulse(chn->accumulator, chn->pw) & cyd_lfsr(chn->lfsr);
+		v = cyd_noise(chn->random) & cyd_pulse(chn->accumulator, chn->pw) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_LFSR:
-		v = cyd_triangle(chn->accumulator) & cyd_saw(chn->accumulator) & cyd_lfsr(chn->lfsr);
+		v = cyd_triangle(chn->accumulator) & cyd_saw(chn->accumulator) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_LFSR:
-		v = cyd_noise(chn->random) & cyd_saw(chn->accumulator) & cyd_lfsr(chn->lfsr);
+		v = cyd_noise(chn->random) & cyd_saw(chn->accumulator) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_LFSR:
-		v = cyd_noise(chn->random) & cyd_triangle(chn->accumulator) & cyd_lfsr(chn->lfsr);
+		v = cyd_noise(chn->random) & cyd_triangle(chn->accumulator) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_LFSR:
-		v = cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_saw(chn->accumulator) & cyd_lfsr(chn->lfsr);
+		v = cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_saw(chn->accumulator) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_LFSR:
-		v = cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_noise(chn->random) & cyd_lfsr(chn->lfsr);
+		v = cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_noise(chn->random) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_LFSR:
-		v = cyd_saw(chn->accumulator) & cyd_triangle(chn->accumulator) & cyd_noise(chn->random) & cyd_lfsr(chn->lfsr);
+		v = cyd_saw(chn->accumulator) & cyd_triangle(chn->accumulator) & cyd_noise(chn->random) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_LFSR:
-		v = cyd_pulse(chn->accumulator, chn->pw) & cyd_saw(chn->accumulator) & cyd_noise(chn->random) & cyd_lfsr(chn->lfsr);
+		v = cyd_pulse(chn->accumulator, chn->pw) & cyd_saw(chn->accumulator) & cyd_noise(chn->random) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_LFSR:
-		v = cyd_saw(chn->accumulator) & cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_noise(chn->random) & cyd_lfsr(chn->lfsr);
+		v = cyd_saw(chn->accumulator) & cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_noise(chn->random) & cyd_lfsr(chn->lfsr_acc);
 		break;
 		
 		default:
@@ -921,7 +934,8 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 {
 	chn->frequency = (Uint64)ACC_LENGTH/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
-	chn->lfsr_period = (Uint64)cyd->sample_rate * 8 / frequency;
+	chn->lfsr_period = (Uint64)CYD_LFSR_RATE * 16 / frequency;
+	debug("%d", chn->lfsr_period);
 }
 
 
