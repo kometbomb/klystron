@@ -361,7 +361,11 @@ static void run_lfsrs(CydChannel *chn)
 {
 	shift_lfsr(&chn->reg4, 4, 3);
 	shift_lfsr(&chn->reg5, 5, 3);
-	shift_lfsr(&chn->reg9, 9, 5);
+	
+	if (chn->lfsr_type & 2)
+		shift_lfsr(&chn->reg9, 9, 5);
+	else
+		shift_lfsr(&chn->reg9, 17, 14);
 }
 
 
@@ -407,23 +411,29 @@ static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
 				switch (chn->lfsr_type & 3)
 				{
 					case 0: 
+						chn->lfsr ^= !!(chn->reg5 & chn->reg9 & 1);
+						break;
+					
+					case 1:
+					case 3: 
 						chn->lfsr ^= !!(chn->reg5 & 1);
 						break;
-						
-					case 1: 
-						chn->lfsr ^= !!(chn->reg4 & 1);
-						break;
-						
-					case 2: 
-						chn->lfsr ^= !!(chn->reg9 & 1);
-						break;
-						
-					case 3: 
-						chn->lfsr ^= !!((chn->reg9 & chn->reg5) & 1);
+					
+					case 2:
+						chn->lfsr ^= !!(chn->reg5 & chn->reg4 & 1);
 						break;
 						
 					case 4: 
+						chn->lfsr ^= !!(chn->reg9 & 1);
+						break;
+						
+					case 5: 
+					case 7:
 						chn->lfsr ^= 1;
+						break;
+						
+					case 6: 
+						chn->lfsr ^= !!(chn->reg4 & 1);
 						break;
 				}
 			}

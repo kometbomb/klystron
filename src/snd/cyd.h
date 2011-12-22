@@ -126,7 +126,7 @@ enum
 #define CYD_NUM_WO_BUFFER_SIZE 2000
 #define CYD_NUM_WO_BUFFERS 4
 
-#define CYD_NUM_LFSR 5
+#define CYD_NUM_LFSR 8
 
 typedef struct
 {
