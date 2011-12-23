@@ -362,7 +362,7 @@ static void run_lfsrs(CydChannel *chn)
 	shift_lfsr(&chn->reg4, 4, 3);
 	shift_lfsr(&chn->reg5, 5, 3);
 	
-	if (chn->lfsr_type & 2)
+	if (chn->lfsr_type & 8)
 		shift_lfsr(&chn->reg9, 9, 5);
 	else
 		shift_lfsr(&chn->reg9, 17, 14);
@@ -399,8 +399,9 @@ static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
 	if (chn->flags & CYD_CHN_ENABLE_LFSR)
 	{
 		chn->lfsr_acc = 0;
+		const int lfsr_oversample = CYD_LFSR_RATE / cyd->sample_rate;
 	
-		for (int i = 0 ; i < CYD_LFSR_RATE / cyd->sample_rate ; ++i)
+		for (int i = 0 ; i < lfsr_oversample ; ++i)
 		{
 			if (chn->lfsr & 1) ++chn->lfsr_acc;
 		
@@ -443,7 +444,7 @@ static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
 			run_lfsrs(chn);
 		}
 		
-		chn->lfsr_acc = 0xfff * chn->lfsr_acc / (CYD_LFSR_RATE / cyd->sample_rate);
+		chn->lfsr_acc = 0xfff * chn->lfsr_acc / lfsr_oversample;
 	}
 }
 
