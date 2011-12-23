@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include "cydcrush.h"
+#include "macros.h"
 
 
 #ifdef STEREOOUTPUT
@@ -32,8 +33,20 @@ void cydcrush_output(CydCrush *crush, Sint32 in_l, Sint32 in_r, Sint32 *out_l, S
 	if (crush->counter++ >= crush->downsample)
 	{
 		crush->counter = 0;
-		crush->hold_l = in_l & crush->bit_drop;
-		crush->hold_r = in_r & crush->bit_drop;
+		
+		if (!crush->dither)
+		{
+			crush->hold_l = ((in_l + 32768) & crush->bit_drop) - 32768;
+			crush->hold_r = ((in_r + 32768) & crush->bit_drop) - 32768;
+		}
+		else
+		{
+			crush->hold_l = (my_max(0, my_min(65535, in_l + 32768 + crush->error_l)) & crush->bit_drop) - 32768;
+			crush->hold_r = (my_max(0, my_min(65535, in_r + 32768 + crush->error_r)) & crush->bit_drop) - 32768;
+			
+			crush->error_l += in_l - crush->hold_l;
+			crush->error_r += in_r - crush->hold_r;
+		}
 	}
 
 	*out_l = crush->hold_l;
@@ -53,11 +66,12 @@ Sint32 cydcrush_output(CydCrush *crush, Sint32 input)
 #endif
 
 
-void cydcrush_set(CydCrush *crush, int downsample, int bit_drop)
+void cydcrush_set(CydCrush *crush, int downsample, int bit_drop, int dither)
 {
 	crush->downsample = downsample * crush->sample_rate / 44100;
 	crush->counter = 0;
-	crush->bit_drop = 0xffffffff << bit_drop;
+	crush->bit_drop = 0xffffffff << (bit_drop + 1);
+	crush->dither = dither;
 }
 
 

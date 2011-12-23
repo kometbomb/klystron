@@ -108,5 +108,5 @@ void cydfx_set(CydFx *fx, const CydFxSerialized *ser)
 	}
 	
 	cydchr_set(&fx->chr, ser->chr.rate, ser->chr.min_delay, ser->chr.max_delay, ser->chr.sep);
-	cydcrush_set(&fx->crush, ser->crushex.downsample, ser->crush.bit_drop);
+	cydcrush_set(&fx->crush, ser->crushex.downsample, ser->crush.bit_drop, ser->crushex.dither);
 }
