@@ -57,7 +57,7 @@ typedef struct
 	} rvb;
 	struct // so we won't fuck up old versions of this struct when freading
 	{
-		Uint8 downsample;
+		Uint8 downsample, dither;
 	} crushex;
 } __attribute__((__packed__)) CydFxSerialized;
 

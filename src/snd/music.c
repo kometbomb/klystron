@@ -1719,7 +1719,12 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 				if (version < 12)
 				{
 					debug("Reading legacy fx format");
-					my_RWread(ctx, &song->fx, sizeof(song->fx[0]) - sizeof(Uint8), n_fx);
+					my_RWread(ctx, &song->fx, sizeof(song->fx[0]) - sizeof(Uint8) * 2, n_fx);
+				}
+				else if (version < 18)
+				{
+					debug("Reading legacy fx format 2");
+					my_RWread(ctx, &song->fx, sizeof(song->fx[0]) - sizeof(Uint8) * 1, n_fx);
 				}
 				else
 				{
