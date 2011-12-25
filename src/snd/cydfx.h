@@ -57,7 +57,7 @@ typedef struct
 	} rvb;
 	struct // so we won't fuck up old versions of this struct when freading
 	{
-		Uint8 downsample, dither;
+		Uint8 downsample;
 	} crushex;
 } __attribute__((__packed__)) CydFxSerialized;
 
@@ -74,7 +74,8 @@ enum
 {
 	CYDFX_ENABLE_REVERB = 1,
 	CYDFX_ENABLE_CRUSH = 2,
-	CYDFX_ENABLE_CHORUS = 4
+	CYDFX_ENABLE_CHORUS = 4,
+	CYDFX_ENABLE_CRUSH_DITHER = 8,
 };
 
 #endif

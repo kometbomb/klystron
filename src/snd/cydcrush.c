@@ -70,7 +70,7 @@ void cydcrush_set(CydCrush *crush, int downsample, int bit_drop, int dither)
 {
 	crush->downsample = downsample * crush->sample_rate / 44100;
 	crush->counter = 0;
-	crush->bit_drop = 0xffffffff << (bit_drop + 1);
+	crush->bit_drop = 0xffffffff << (bit_drop);
 	crush->dither = dither;
 }
 
