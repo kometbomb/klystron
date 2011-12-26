@@ -79,6 +79,15 @@ void cydcrush_init(CydCrush *crush, int sample_rate)
 {
 	crush->sample_rate = sample_rate;
 	crush->counter = 0;
+#ifdef STEREOOUTPUT
+	crush->error_l = 0;
+	crush->error_r = 0;
+	crush->hold_l = 0;
+	crush->hold_r = 0;
+#else
+	crush->error = 0;
+	crush->hold = 0;
+#endif
 }
 
 
