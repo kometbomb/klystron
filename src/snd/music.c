@@ -53,6 +53,7 @@ static int RWclose(struct RWops *context)
 
 #define my_RWread(ctx, ptr, size, maxnum) ctx->read(ctx, ptr, size, maxnum)
 #define my_RWclose(ctx) ctx->close(ctx)
+#define my_RWtell(ctx) 0
 
 
 #else
@@ -61,6 +62,7 @@ static int RWclose(struct RWops *context)
 
 #define my_RWread SDL_RWread
 #define my_RWclose SDL_RWclose
+#define my_RWtell SDL_RWtell
 
 
 #endif
@@ -1476,6 +1478,8 @@ static void load_wavetable_entry(Uint8 version, CydWavetableEntry * e, RWops *ct
 int mus_load_instrument_RW(Uint8 version, RWops *ctx, MusInstrument *inst, CydWavetableEntry *wavetable_entries)
 {
 	mus_get_default_instrument(inst);
+	
+	debug("Loading instrument at offset %x", my_RWtell(ctx));
 
 	_VER_READ(&inst->flags, 0);
 	_VER_READ(&inst->cydflags, 0);
@@ -1716,6 +1720,9 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 			if (version >= 10)
 			{
 				memset(&song->fx, 0, sizeof(song->fx[0]) * n_fx);
+				
+				debug("Loading fx at offset %x (%d/%d)", my_RWtell(ctx), sizeof(song->fx[0]) * n_fx, sizeof(song->fx[0]));
+				
 				if (version < 12)
 				{
 					debug("Reading legacy fx format");
@@ -1772,7 +1779,9 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 		
 		if (version >= 13)
 		{
+			debug("Loading default volumes at offset %x", my_RWtell(ctx));
 			my_RWread(ctx, &song->default_volume[0], sizeof(song->default_volume[0]), song->num_channels);
+			debug("Loading default panning at offset %x", my_RWtell(ctx));
 			my_RWread(ctx, &song->default_panning[0], sizeof(song->default_panning[0]), song->num_channels);
 		}
 		
