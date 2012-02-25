@@ -96,7 +96,7 @@ void bg_draw(SDL_Surface *surface, const SDL_Rect * dest, const Background *bg, 
 	if (dest == NULL)
 		dest = &def;
 		
-	for (int y = (yofs) / CELLSIZE - 1; sy <= dest->h + CELLSIZE; ++y, sy += CELLSIZE)
+	for (int y = (yofs) / CELLSIZE - 1; sy <= dest->h + 2 * CELLSIZE ; ++y, sy += CELLSIZE)
 	{
 		sx = 0;
 				
@@ -106,7 +106,7 @@ void bg_draw(SDL_Surface *surface, const SDL_Rect * dest, const Background *bg, 
 			else if (y < 0) continue;
 			else if (y >= bg->h) break;
 				
-		for (int x = (xofs) / CELLSIZE - 1 ; sx <= dest->w + CELLSIZE ; ++x, sx += CELLSIZE)
+		for (int x = (xofs) / CELLSIZE - 1 ; sx <= dest->w + 2 * CELLSIZE ; ++x, sx += CELLSIZE)
 		{
 			int _x = x;
 			
