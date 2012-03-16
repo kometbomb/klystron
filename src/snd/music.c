@@ -593,7 +593,27 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 				
 				case MUS_FX_SET_WAVEFORM:
 				{
-					cyd_set_waveform(&mus->cyd->channel[chan], inst & 0xff);
+					int final = 0;
+					
+					if (inst & MUS_FX_WAVE_NOISE)
+						final |= CYD_CHN_ENABLE_NOISE;
+						
+					if (inst & MUS_FX_WAVE_PULSE)
+						final |= CYD_CHN_ENABLE_PULSE;
+						
+					if (inst & MUS_FX_WAVE_TRIANGLE)
+						final |= CYD_CHN_ENABLE_TRIANGLE;
+						
+					if (inst & MUS_FX_WAVE_SAW)
+						final |= CYD_CHN_ENABLE_SAW;
+						
+					if (inst & MUS_FX_WAVE_WAVE)
+						final |= CYD_CHN_ENABLE_WAVE;
+						
+					if (inst & MUS_FX_WAVE_LFSR)
+						final |= CYD_CHN_ENABLE_LFSR;
+				
+					cyd_set_waveform(&mus->cyd->channel[chan], final);
 				}
 				break;
 				

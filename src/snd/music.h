@@ -77,6 +77,16 @@ enum
 	MUS_INST_NO_PROG_RESTART = 1024
 };
 
+enum
+{
+	MUS_FX_WAVE_NOISE = 1,
+	MUS_FX_WAVE_PULSE = 2,
+	MUS_FX_WAVE_TRIANGLE = 4,
+	MUS_FX_WAVE_SAW = 8,
+	MUS_FX_WAVE_LFSR = 16,
+	MUS_FX_WAVE_WAVE = 32,
+};
+
 typedef struct
 {
 	MusInstrument *instrument;
