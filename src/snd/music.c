@@ -188,6 +188,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 {
 	MusChannel *chn = &mus->channel[chan];
 	CydChannel *cydchn = &mus->cyd->channel[chan];
+	CydEngine *cyd = mus->cyd;
 	
 	switch (inst & 0x7f00)
 	{
@@ -588,6 +589,18 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					mus->song_track[chan].volume = my_min(MAX_VOLUME, inst & 0xff);
 					
 					update_volumes(mus, &mus->song_track[chan], chn, cydchn, mus->song_track[chan].volume);
+				}
+				break;
+				
+				case MUS_FX_SET_FXBUS:
+				{
+					cydchn->fx_bus = (inst & 0xff) % CYD_MAX_FX_CHANNELS;
+				}
+				break;
+				
+				case MUS_FX_SET_DOWNSAMPLE:
+				{
+					cydcrush_set(&cyd->fx[cydchn->fx_bus].crush, inst & 0xff, -1, -1);
 				}
 				break;
 				
