@@ -423,6 +423,72 @@ static inline Uint32 cyd_lfsr(Uint32 bits)
 }
 
 
+static void cyd_advance_oscillators(CydEngine *cyd, CydChannel *chn)
+{
+	Uint32 prev_acc = chn->accumulator;
+	chn->accumulator = (chn->accumulator + (Uint32)chn->frequency);
+	chn->sync_bit |= chn->accumulator & ACC_LENGTH;
+	chn->accumulator &= ACC_LENGTH - 1;
+	
+	if ((prev_acc & (ACC_LENGTH/32)) != (chn->accumulator & (ACC_LENGTH/32)))
+	{
+		if (chn->flags & CYD_CHN_ENABLE_METAL)
+		{
+			shift_lfsr(&chn->random, 0xe, 8);
+			chn->random &= (1 << (0xe + 1)) - 1;
+		}
+		else
+		{
+			shift_lfsr(&chn->random, 22, 17);
+			chn->random &= (1 << (22 + 1)) - 1;
+		}
+	}
+	
+	if (chn->flags & CYD_CHN_ENABLE_LFSR)
+	{
+		chn->lfsr_acc = (chn->lfsr & 1) ? 0xfff : 0;
+		
+		if (chn->lfsr_ctr >= chn->lfsr_period)
+		{
+			chn->lfsr_ctr = 0;
+		
+			switch (chn->lfsr_type & 3)
+			{
+				case 0: 
+					chn->lfsr ^= !!(chn->reg5 & chn->reg9 & 1);
+					break;
+				
+				case 1:
+				case 3: 
+					chn->lfsr ^= !!(chn->reg5 & 1);
+					break;
+				
+				case 2:
+					chn->lfsr ^= !!(chn->reg5 & chn->reg4 & 1);
+					break;
+					
+				case 4: 
+					chn->lfsr ^= !!(chn->reg9 & 1);
+					break;
+					
+				case 5: 
+				case 7:
+					chn->lfsr ^= 1;
+					break;
+					
+				case 6: 
+					chn->lfsr ^= !!(chn->reg4 & 1);
+					break;
+			}
+		}
+		
+		++chn->lfsr_ctr;
+		
+		run_lfsrs(chn);
+	}
+}
+
+
 static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 {
 	Sint32 v = 0;
@@ -565,67 +631,7 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 		
 		ovr += v;
 		
-		Uint32 prev_acc = chn->accumulator;
-		chn->accumulator = (chn->accumulator + (Uint32)chn->frequency);
-		chn->sync_bit |= chn->accumulator & ACC_LENGTH;
-		chn->accumulator &= ACC_LENGTH - 1;
-		
-		if ((prev_acc & (ACC_LENGTH/32)) != (chn->accumulator & (ACC_LENGTH/32)))
-		{
-			if (chn->flags & CYD_CHN_ENABLE_METAL)
-			{
-				shift_lfsr(&chn->random, 0xe, 8);
-				chn->random &= (1 << (0xe + 1)) - 1;
-			}
-			else
-			{
-				shift_lfsr(&chn->random, 22, 17);
-				chn->random &= (1 << (22 + 1)) - 1;
-			}
-		}
-		
-		if (chn->flags & CYD_CHN_ENABLE_LFSR)
-		{
-			chn->lfsr_acc = (chn->lfsr & 1) ? 0xfff : 0;
-			
-			if (chn->lfsr_ctr >= chn->lfsr_period)
-			{
-				chn->lfsr_ctr = 0;
-			
-				switch (chn->lfsr_type & 3)
-				{
-					case 0: 
-						chn->lfsr ^= !!(chn->reg5 & chn->reg9 & 1);
-						break;
-					
-					case 1:
-					case 3: 
-						chn->lfsr ^= !!(chn->reg5 & 1);
-						break;
-					
-					case 2:
-						chn->lfsr ^= !!(chn->reg5 & chn->reg4 & 1);
-						break;
-						
-					case 4: 
-						chn->lfsr ^= !!(chn->reg9 & 1);
-						break;
-						
-					case 5: 
-					case 7:
-						chn->lfsr ^= 1;
-						break;
-						
-					case 6: 
-						chn->lfsr ^= !!(chn->reg4 & 1);
-						break;
-				}
-			}
-			
-			++chn->lfsr_ctr;
-			
-			run_lfsrs(chn);
-		}
+		cyd_advance_oscillators(cyd, chn); // Need to move the oscillators per every oversample subcycle
 	}
 	
 	return (ovr >> OVERSAMPLE) - 0x800;
