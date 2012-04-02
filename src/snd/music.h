@@ -306,7 +306,7 @@ enum
 #define MUS_SONG_SIG "cyd!song"
 
 #ifndef USENATIVEAPIS
-#include "SDL_RWops.h"
+#include "SDL_rwops.h"
 typedef SDL_RWops RWops;
 #else
 
