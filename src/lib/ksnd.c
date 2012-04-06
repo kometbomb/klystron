@@ -175,3 +175,12 @@ KLYSAPI int KSND_GetPlayPosition(KPlayer *player)
 	
 	return song_position;
 }
+
+
+KLYSAPI void KSND_SetVolume(KPlayer *player, int volume)
+{
+	cyd_lock(&player->cyd, 1);
+	player->mus.volume = volume;
+	cyd_lock(&player->cyd, 0);
+}
+

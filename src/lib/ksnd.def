@@ -9,3 +9,4 @@ KSND_PlaySong
 KSND_Stop
 KSND_Pause
 KSND_GetPlayPosition
+KSND_SetVolume
