@@ -39,6 +39,7 @@ KLYSAPI extern void KSND_PlaySong(KPlayer *player, KSong *song, int start_positi
 KLYSAPI extern void KSND_Stop(KPlayer* player);
 KLYSAPI extern void KSND_Pause(KPlayer *player, int state);
 KLYSAPI extern int KSND_GetPlayPosition(KPlayer* player);
+KLYSAPI extern void KSND_SetVolume(KPlayer *player, int volume);
 
 #ifdef __cplusplus
 }
