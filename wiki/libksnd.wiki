@@ -19,7 +19,7 @@ Song loading and playing should be straightforward. See example below:
 #include "ksnd.h"
 #include <windows.h>
 
-// Plays Test.kt from the beginning for 10 seconds, pauses for 1 second
+// Plays Test.kt from the beginning for 5 seconds at full volume, 5 seconds at half volume, pauses for 1 second
 // and after unpausing frees allocated stuff and exits.
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, int nCmdShow)
@@ -33,7 +33,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
 	
 	KSND_PlaySong(player, song, 0);
 	
-	Sleep(10000);
+	Sleep(5000);
+
+	KSND_SetVolume(player, 64); // Half volume, range is 0..128
+
+	Sleep(5000);
 	
 	KSND_Pause(player, 1);
 	
