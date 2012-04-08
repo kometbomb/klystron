@@ -37,6 +37,8 @@ Sint32 cydfx_output(CydFx *fx, Sint32 fx_input)
 	Sint32 v = fx_input;
 #endif
 
+#ifndef CYD_DISABLE_FX
+
 	if (fx->flags & CYDFX_ENABLE_CHORUS)
 	{
 #ifdef STEREOOUTPUT
@@ -68,6 +70,8 @@ Sint32 cydfx_output(CydFx *fx, Sint32 fx_input)
 #endif
 	}
 	
+#endif // CYD_DISABLE_FX
+	
 #ifndef STEREOOUTPUT
 	return v;
 #endif
@@ -76,26 +80,35 @@ Sint32 cydfx_output(CydFx *fx, Sint32 fx_input)
 
 void cydfx_init(CydFx *fx, int rate)
 {
+#ifndef CYD_DISABLE_FX
+
 	cydrvb_init(&fx->rvb, rate);
 #ifdef STEREOOUTPUT
 	cydchr_init(&fx->chr, rate);
 #endif
 	cydcrush_init(&fx->crush, rate);
+	
+#endif // CYD_DISABLE_FX
 }
 
 
 void cydfx_deinit(CydFx *fx)
 {
+#ifndef CYD_DISABLE_FX
+
 	cydrvb_deinit(&fx->rvb);
 #ifdef STEREOOUTPUT
 	cydchr_deinit(&fx->chr);
 #endif
 	cydcrush_deinit(&fx->crush);
+	
+#endif // CYD_DISABLE_FX
 }
 
 
 void cydfx_set(CydFx *fx, const CydFxSerialized *ser)
 {
+#ifndef CYD_DISABLE_FX
 	fx->flags = ser->flags;
 
 #ifdef STEREOOUTPUT
@@ -109,4 +122,6 @@ void cydfx_set(CydFx *fx, const CydFxSerialized *ser)
 	
 	cydchr_set(&fx->chr, ser->chr.rate, ser->chr.min_delay, ser->chr.max_delay, ser->chr.sep);
 	cydcrush_set(&fx->crush, ser->crushex.downsample, ser->crush.bit_drop, fx->flags & CYDFX_ENABLE_CRUSH_DITHER);
+	
+#endif // CYD_DISABLE_FX
 }
