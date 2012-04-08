@@ -35,17 +35,22 @@ typedef Sint32 WaveAccSigned;
 
 static Sint32 cyd_wave_get_sample_no_interpolation(const CydWavetableEntry *entry, CydWaveAcc wave_acc, int direction)
 {
+#ifndef CYD_DISABLE_WAVETABLE
 	if (entry->data)
 	{	
 		return entry->data[wave_acc / WAVETABLE_RESOLUTION];
 	}
 	else
 		return 0;
+#else
+	return 0;
+#endif // CYD_DISABLE_WAVETABLE
 }
 
 
 static Sint32 cyd_wave_get_sample_linear(const CydWavetableEntry *entry, CydWaveAcc wave_acc, int direction)
 {
+#ifndef CYD_DISABLE_WAVETABLE
 	if (entry->data)
 	{	
 		if (direction == 0) 
@@ -87,11 +92,17 @@ static Sint32 cyd_wave_get_sample_linear(const CydWavetableEntry *entry, CydWave
 	}
 	else
 		return 0;
+		
+#else 	
+	return 0;
+#endif // CYD_DISABLE_WAVETABLE
 }
 
 
 Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, CydWaveAcc wave_acc, int direction)
 {
+#ifndef CYD_DISABLE_WAVETABLE
+
 	if (entry->flags & CYD_WAVE_NO_INTERPOLATION)
 	{
 		return cyd_wave_get_sample_no_interpolation(entry, wave_acc, direction);
@@ -100,11 +111,17 @@ Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, CydWaveAcc wave_acc, 
 	{
 		return cyd_wave_get_sample_linear(entry, wave_acc, direction);
 	}
+	
+#else
+	return 0;
+#endif // CYD_DISABLE_WAVETABLE
 }
 
 
 void cyd_wave_cycle(CydEngine *cyd, CydChannel *chn)
 {
+#ifndef CYD_DISABLE_WAVETABLE
+
 	if (chn->wave_entry && (chn->flags & CYD_CHN_ENABLE_WAVE))
 	{
 		if (chn->wave_direction == 0)
@@ -164,4 +181,6 @@ void cyd_wave_cycle(CydEngine *cyd, CydChannel *chn)
 			}
 		}
 	}
+	
+#endif // CYD_DISABLE_WAVETABLE
 }

@@ -111,12 +111,14 @@ static void cyd_init_log_tables(CydEngine *cyd)
 
 void cyd_reset_wavetable(CydEngine *cyd)
 {
+#ifndef CYD_DISABLE_WAVETABLE
 	memset(cyd->wavetable_entries, 0, sizeof(cyd->wavetable_entries[0]) * CYD_WAVE_MAX_ENTRIES);
 
 	for (int i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
 	{
 		cyd_wave_entry_init(&cyd->wavetable_entries[i], NULL, 0, 0, 0, 0, 0);
 	}
+#endif
 }
 
 
@@ -152,10 +154,11 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	
 	for (int i = 0 ; i < CYD_MAX_FX_CHANNELS ; ++i)
 		cydfx_init(&cyd->fx[i], sample_rate);
-	
+#ifndef CYD_DISABLE_WAVETABLE
 	cyd->wavetable_entries = calloc(sizeof(cyd->wavetable_entries[0]), CYD_WAVE_MAX_ENTRIES);
 	
 	cyd_reset_wavetable(cyd);
+#endif
 	
 	cyd_reset(cyd);
 }
@@ -226,6 +229,7 @@ void cyd_deinit(CydEngine *cyd)
 	cyd->dump = NULL;
 #endif
 
+#ifndef CYD_DISABLE_WAVETABLE
 	if (cyd->wavetable_entries)
 	{
 		for (int i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
@@ -234,6 +238,7 @@ void cyd_deinit(CydEngine *cyd)
 		free(cyd->wavetable_entries);
 		cyd->wavetable_entries = NULL;
 	}
+#endif
 }
 
 
@@ -958,8 +963,10 @@ void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 
 void cyd_set_wavetable_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 {	
+#ifndef CYD_DISABLE_WAVETABLE
 	if (chn->wave_entry)
 		chn->wave_frequency = (Uint64)WAVETABLE_RESOLUTION * (Uint64)chn->wave_entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)frequency / (Uint64)get_freq(chn->wave_entry->base_note);
+#endif
 }
 
 
@@ -1370,10 +1377,12 @@ void cyd_set_wave_entry(CydChannel *chn, const CydWavetableEntry * entry)
 
 void cyd_set_wavetable_offset(CydChannel *chn, Uint16 offset /* 0..0x1000 = 0-100% */)
 {
+#ifndef CYD_DISABLE_WAVETABLE
 	if (chn->wave_entry)
 	{
 		chn->wave_acc = (Uint64)offset * WAVETABLE_RESOLUTION * chn->wave_entry->samples / 0x1000;
 	}
+#endif
 }
 
 

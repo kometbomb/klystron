@@ -1490,7 +1490,11 @@ static void load_wavetable_entry(Uint8 version, CydWavetableEntry * e, RWops *ct
 			
 			my_RWread(ctx, compressed, sizeof(Uint8), (data_size + 7) / 8); // data_size is in bits
 			
-			Sint16 *data = bitunpack(compressed, data_size, e->samples, (e->flags >> 3) & 3);
+			Sint16 *data = NULL;
+
+#ifndef CYD_DISABLE_WAVETABLE
+			data = bitunpack(compressed, data_size, e->samples, (e->flags >> 3) & 3);
+#endif
 			
 			if (data)
 			{
@@ -1553,7 +1557,8 @@ int mus_load_instrument_RW(Uint8 version, RWops *ctx, MusInstrument *inst, CydWa
 	VER_READ(version, 18, 0xff, &inst->lfsr_type, 0);
 	
 	VER_READ(version, 12, 0xff, &inst->wavetable_entry, 0);
-	
+
+#ifndef CYD_DISABLE_WAVETABLE	
 	if (wavetable_entries && inst->wavetable_entry == 0xff)
 	{
 		for (inst->wavetable_entry = 0 ; inst->wavetable_entry < CYD_WAVE_MAX_ENTRIES ; ++inst->wavetable_entry)
@@ -1567,6 +1572,7 @@ int mus_load_instrument_RW(Uint8 version, RWops *ctx, MusInstrument *inst, CydWa
 			}
 		}
 	}
+#endif
 	
 	/* The file format is little-endian, the following only does something on big-endian machines */
 	
