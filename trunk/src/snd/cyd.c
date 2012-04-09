@@ -93,9 +93,9 @@ static void cyd_init_log_tables(CydEngine *cyd)
 		static const int ymVolumeTable[16] = { 62,161,265,377,580,774,1155,1575,2260,3088,4570,6233,9330,13187,21220,32767}; // from leonard's code
 		cyd->lookup_table_ym[i] = ymVolumeTable[i]; //(Uint32)32767 * (Uint32)(i+1) * (Uint32)(i+1) * (Uint32)(i+1) / (Uint32)(YM_LUT_SIZE * YM_LUT_SIZE * YM_LUT_SIZE);
 	}
-#endif
 	
 	cyd->lookup_table_ym[0] = 0;
+#endif
 }
 
 
@@ -708,7 +708,8 @@ static Sint32 cyd_output(CydEngine *cyd)
 				o += cyd_wave_get_sample(cyd->channel[i].wave_entry, cyd->channel[i].wave_acc, cyd->channel[i].wave_direction) * (Sint32)(chn->volume) / MAX_VOLUME;
 			}
 #endif
-			
+
+#ifndef CYD_DISABLE_FILTER
 			if (chn->flags & CYD_CHN_ENABLE_FILTER) 
 			{
 				cydflt_cycle(&chn->flt, o);
@@ -719,6 +720,7 @@ static Sint32 cyd_output(CydEngine *cyd)
 					case FLT_HP: o = cydflt_output_hp(&chn->flt); break;
 				}
 			}
+#endif
 			
 #ifdef STEREOOUTPUT
 			Sint32 ol = o * chn->gain_left / CYD_STEREO_GAIN, or = o * chn->gain_right / CYD_STEREO_GAIN;
@@ -1282,8 +1284,10 @@ int cyd_unregister(CydEngine * cyd)
 
 void cyd_set_filter_coeffs(CydEngine * cyd, CydChannel *chn, Uint16 cutoff, Uint8 resonance)
 {
+#ifndef CYD_DISABLE_FILTER
 	static const Uint16 resonance_table[] = {10, 512, 1300, 1950};
 	cydflt_set_coeff(&chn->flt, cutoff, resonance_table[resonance & 3]);
+#endif
 }
 
 
