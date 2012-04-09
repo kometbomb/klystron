@@ -71,7 +71,8 @@ gcc player.c -o player -lksnd
 You can compile libksnd using various compilation options that disable player features you do not need. This helps to shave a few kilobytes off the library size.
 
 || {{{CYD_DISABLE_BUZZ}}} || Disable buzzer ||
-|| {{{CYD_DISABLE_WAVETABLE}}} || Disable FX bus ||
+|| {{{CYD_DISABLE_FILTER}}} || Disable filter ||
+|| {{{CYD_DISABLE_FX}}} || Disable FX bus ||
 || {{{CYD_DISABLE_LFSR}}} || Disable LFSR (Pokey) ||
 || {{{CYD_DISABLE_MULTIPLEX}}} || Disable channel multiplexing ||
 || {{{CYD_DISABLE_WAVETABLE}}} || Disable wavetable ||
