@@ -627,9 +627,10 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 						
 					if (inst & MUS_FX_WAVE_WAVE)
 						final |= CYD_CHN_ENABLE_WAVE;
-						
+#ifndef CYD_DISABLE_LFSR						
 					if (inst & MUS_FX_WAVE_LFSR)
 						final |= CYD_CHN_ENABLE_LFSR;
+#endif
 				
 					cyd_set_waveform(&mus->cyd->channel[chan], final);
 				}
