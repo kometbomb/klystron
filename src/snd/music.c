@@ -135,6 +135,7 @@ static void mus_set_buzz_frequency(MusEngine *mus, int chan, Uint16 note)
 
 static void mus_set_wavetable_frequency(MusEngine *mus, int chan, Uint16 note)
 {
+#ifndef CYD_DISABLE_WAVETABLE
 	MusChannel *chn = &mus->channel[chan];
 	CydChannel *cydchn = &mus->cyd->channel[chan];
 	
@@ -143,6 +144,7 @@ static void mus_set_wavetable_frequency(MusEngine *mus, int chan, Uint16 note)
 		Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : note) & mus->pitch_mask;
 		cyd_set_wavetable_frequency(mus->cyd, cydchn, wave_frequency);
 	}
+#endif
 }
 
 
@@ -409,12 +411,13 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
 				}
 				break;
-				
+#ifndef CYD_DISABLE_WAVETABLE				
 				case MUS_FX_WAVETABLE_OFFSET:
 				{
 					cyd_set_wavetable_offset(cydchn, inst & 0xfff);
 				}
 				break;
+#endif
 			}
 			
 			switch (inst & 0x7f00)
@@ -592,6 +595,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 				}
 				break;
 				
+#ifndef CYD_DISABLE_FX
 				case MUS_FX_SET_FXBUS:
 				{
 					cydchn->fx_bus = (inst & 0xff) % CYD_MAX_FX_CHANNELS;
@@ -603,6 +607,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					cydcrush_set(&cyd->fx[cydchn->fx_bus].crush, inst & 0xff, -1, -1);
 				}
 				break;
+#endif
 				
 				case MUS_FX_SET_WAVEFORM:
 				{
@@ -959,6 +964,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 		memcpy(&mus->cyd->channel[chan].adsr, &ins->adsr, sizeof(ins->adsr));
 	}
 	
+#ifndef CYD_DISABLE_WAVETABLE
 	if (ins->cydflags & CYD_CHN_ENABLE_WAVE)
 	{
 		cyd_set_wave_entry(&mus->cyd->channel[chan], &mus->cyd->wavetable_entries[ins->wavetable_entry]);
@@ -967,6 +973,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	{
 		cyd_set_wave_entry(&mus->cyd->channel[chan], NULL);
 	}
+#endif
 	
 	//cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], chn->frequency);
 	cyd_enable_gate(mus->cyd, &mus->cyd->channel[chan], 1);
