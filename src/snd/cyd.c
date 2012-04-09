@@ -99,11 +99,13 @@ static void cyd_init_log_tables(CydEngine *cyd)
 		cyd->lookup_table[i] = i * (i/2) / ((LUT_SIZE*LUT_SIZE / 65536)/2);
 	}
 	
+#ifndef CYD_DISABLE_BUZZ
 	for (int i = 0 ; i < YM_LUT_SIZE ; ++i)
 	{
 		static const int ymVolumeTable[16] = { 62,161,265,377,580,774,1155,1575,2260,3088,4570,6233,9330,13187,21220,32767}; // from leonard's code
 		cyd->lookup_table_ym[i] = ymVolumeTable[i]; //(Uint32)32767 * (Uint32)(i+1) * (Uint32)(i+1) * (Uint32)(i+1) / (Uint32)(YM_LUT_SIZE * YM_LUT_SIZE * YM_LUT_SIZE);
 	}
+#endif
 	
 	cyd->lookup_table_ym[0] = 0;
 }
@@ -127,7 +129,9 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	memset(cyd, 0, sizeof(*cyd));
 	cyd->sample_rate = sample_rate;
 	cyd->lookup_table = malloc(sizeof(*cyd->lookup_table) * LUT_SIZE);
+#ifndef CYD_DISABLE_BUZZ
 	cyd->lookup_table_ym = malloc(sizeof(*cyd->lookup_table) * YM_LUT_SIZE);
+#endif
 	cyd->n_channels = channels;
 	
 	if (cyd->n_channels > CYD_MAX_CHANNELS)
@@ -192,11 +196,13 @@ void cyd_deinit(CydEngine *cyd)
 		cyd->lookup_table = NULL;
 	}
 	
+#ifndef CYD_DISABLE_BUZZ
 	if (cyd->lookup_table_ym)	
 	{
 		free(cyd->lookup_table_ym);
 		cyd->lookup_table_ym = NULL;
 	}
+#endif
 
 	if (cyd->channel)
 	{
@@ -305,6 +311,7 @@ static inline void cyd_cycle_adsr(CydEngine *eng, CydChannel *chn)
 	}
 	else
 	{
+#ifndef CYD_DISABLE_BUZZ	
 		// YM2149 style envelope HOLD is not processed
 	
 		switch (chn->envelope_state)
@@ -358,6 +365,7 @@ static inline void cyd_cycle_adsr(CydEngine *eng, CydChannel *chn)
 			
 			default: break;
 		}
+#endif
 	}
 }
 
@@ -653,8 +661,10 @@ Sint32 cyd_env_output(CydEngine *cyd, CydChannel *chn, Sint32 input)
 {
 	if (chn->flags & CYD_CHN_ENABLE_YM_ENV)
 	{
+#ifndef CYD_DISABLE_BUZZ	
 		int idx = chn->envelope * (Uint32)YM_LUT_SIZE / YM_LENGTH;
 		return input * cyd->lookup_table_ym[idx] / 32768 * (Sint32)(chn->volume) / MAX_VOLUME;
+#endif
 	}
 	else
 	{
@@ -983,12 +993,15 @@ void cyd_set_wavetable_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequen
 
 void cyd_set_env_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 {
+#ifndef CYD_DISABLE_BUZZ
 	chn->env_speed = (Uint64)YM_LENGTH/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
+#endif
 }
 
 
 void cyd_set_env_shape(CydChannel *chn, Uint8 shape)
 {
+#ifndef CYD_DISABLE_BUZZ
 	chn->ym_env_shape = shape;
 	
 	if ((chn->flags & CYD_CHN_ENABLE_KEY_SYNC) || (chn->envelope_state == DONE || chn->envelope_state == SUSTAIN))
@@ -1004,6 +1017,7 @@ void cyd_set_env_shape(CydChannel *chn, Uint8 shape)
 			chn->envelope_state = DECAY;
 		}
 	}
+#endif
 }
 
 
