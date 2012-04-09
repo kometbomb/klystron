@@ -1350,8 +1350,8 @@ int mus_advance_tick(void* udata)
 			if (++mus->multiplex_ctr >= mus->song->num_channels * mus->song->multiplex_period)
 				mus->multiplex_ctr = 0;
 		}
-	}
 #endif
+	}
 	
 	return 1;
 }
