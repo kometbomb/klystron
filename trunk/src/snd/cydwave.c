@@ -33,24 +33,20 @@ typedef Sint64 WaveAccSigned;
 typedef Sint32 WaveAccSigned;
 #endif
 
+#ifndef CYD_DISABLE_WAVETABLE
 static Sint32 cyd_wave_get_sample_no_interpolation(const CydWavetableEntry *entry, CydWaveAcc wave_acc, int direction)
 {
-#ifndef CYD_DISABLE_WAVETABLE
 	if (entry->data)
 	{	
 		return entry->data[wave_acc / WAVETABLE_RESOLUTION];
 	}
 	else
 		return 0;
-#else
-	return 0;
-#endif // CYD_DISABLE_WAVETABLE
 }
 
 
 static Sint32 cyd_wave_get_sample_linear(const CydWavetableEntry *entry, CydWaveAcc wave_acc, int direction)
 {
-#ifndef CYD_DISABLE_WAVETABLE
 	if (entry->data)
 	{	
 		if (direction == 0) 
@@ -92,11 +88,8 @@ static Sint32 cyd_wave_get_sample_linear(const CydWavetableEntry *entry, CydWave
 	}
 	else
 		return 0;
-		
-#else 	
-	return 0;
-#endif // CYD_DISABLE_WAVETABLE
 }
+#endif // CYD_DISABLE_WAVETABLE
 
 
 Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, CydWaveAcc wave_acc, int direction)

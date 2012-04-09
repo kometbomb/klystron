@@ -677,9 +677,10 @@ static Sint32 cyd_output(CydEngine *cyd)
 	for (int i = 0 ; i < cyd->n_channels ; ++i)
 	{
 		s[i] = (Sint32)cyd_output_channel(cyd, &cyd->channel[i]);
-		
+#ifndef CYD_DISABLE_WAVETABLE
 		if ((cyd->channel[i].flags & CYD_CHN_ENABLE_WAVE) && cyd->channel[i].wave_entry && !(cyd->channel[i].flags & CYD_CHN_WAVE_OVERRIDE_ENV))
 			s[i] += cyd_wave_get_sample(cyd->channel[i].wave_entry, cyd->channel[i].wave_acc, cyd->channel[i].wave_direction);
+#endif
 	}
 	
 	for (int i = 0 ; i < cyd->n_channels ; ++i)
@@ -696,11 +697,13 @@ static Sint32 cyd_output(CydEngine *cyd)
 			{
 				o = cyd_env_output(cyd, chn, s[i]);
 			}
-			
+
+#ifndef CYD_DISABLE_WAVETABLE			
 			if ((cyd->channel[i].flags & CYD_CHN_ENABLE_WAVE) && cyd->channel[i].wave_entry && (cyd->channel[i].flags & CYD_CHN_WAVE_OVERRIDE_ENV))
 			{
 				o += cyd_wave_get_sample(cyd->channel[i].wave_entry, cyd->channel[i].wave_acc, cyd->channel[i].wave_direction) * (Sint32)(chn->volume) / MAX_VOLUME;
 			}
+#endif
 			
 			if (chn->flags & CYD_CHN_ENABLE_FILTER) 
 			{
