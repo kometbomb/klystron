@@ -362,6 +362,7 @@ static inline void cyd_cycle_adsr(CydEngine *eng, CydChannel *chn)
 }
 
 
+#ifndef CYD_DISABLE_LFSR
 static void run_lfsrs(CydChannel *chn)
 {
 	shift_lfsr(&chn->reg4, 4, 3);
@@ -372,6 +373,7 @@ static void run_lfsrs(CydChannel *chn)
 	else
 		shift_lfsr(&chn->reg9, 17, 14);
 }
+#endif
 
 
 static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
@@ -421,11 +423,12 @@ static inline Uint32 cyd_noise(Uint32 acc)
 	return acc & 0xfff;
 }
 
-
+#ifndef CYD_DISABLE_LFSR
 static inline Uint32 cyd_lfsr(Uint32 bits) 
 {
 	return bits;
 }
+#endif
 
 
 static void cyd_advance_oscillators(CydEngine *cyd, CydChannel *chn)
@@ -449,6 +452,7 @@ static void cyd_advance_oscillators(CydEngine *cyd, CydChannel *chn)
 		}
 	}
 	
+#ifndef CYD_DISABLE_LFSR		
 	if (chn->flags & CYD_CHN_ENABLE_LFSR)
 	{
 		chn->lfsr_acc = (chn->lfsr & 1) ? 0xfff : 0;
@@ -491,6 +495,7 @@ static void cyd_advance_oscillators(CydEngine *cyd, CydChannel *chn)
 		
 		run_lfsrs(chn);
 	}
+#endif
 }
 
 
@@ -519,10 +524,6 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 			
 			case CYD_CHN_ENABLE_NOISE:
 			v = cyd_noise(chn->random);
-			break;
-			
-			case CYD_CHN_ENABLE_LFSR:
-			v = cyd_lfsr(chn->lfsr_acc);
 			break;
 			
 			case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_PULSE:
@@ -567,6 +568,11 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 			
 			case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_TRIANGLE:
 			v = cyd_saw(chn->accumulator) & cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_noise(chn->random);
+			break;
+			
+#ifndef CYD_DISABLE_LFSR			
+			case CYD_CHN_ENABLE_LFSR:
+			v = cyd_lfsr(chn->lfsr_acc);
 			break;
 			
 			case CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_LFSR:
@@ -628,7 +634,7 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 			case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_LFSR:
 			v = cyd_saw(chn->accumulator) & cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_noise(chn->random) & cyd_lfsr(chn->lfsr_acc);
 			break;
-			
+#endif
 			default:
 			return 0;
 			break;
@@ -960,7 +966,9 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 {
 	chn->frequency = (Uint64)(ACC_LENGTH >> OVERSAMPLE)/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
+#ifndef CYD_DISABLE_LFSR	
 	chn->lfsr_period = (Uint64)cyd->sample_rate * 16 / frequency;
+#endif
 }
 
 
