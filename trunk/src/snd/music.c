@@ -124,12 +124,14 @@ static void update_all_volumes(MusEngine *mus)
 
 static void mus_set_buzz_frequency(MusEngine *mus, int chan, Uint16 note)
 {
+#ifndef CYD_DISABLE_BUZZ
 	MusChannel *chn = &mus->channel[chan];
 	if (chn->instrument && chn->instrument->flags & MUS_INST_YM_BUZZ)
 	{
 		Uint16 buzz_frequency = get_freq(note + chn->buzz_offset) & mus->pitch_mask;
 		cyd_set_env_frequency(mus->cyd, &mus->cyd->channel[chan], buzz_frequency);
 	}
+#endif
 }
 
 
@@ -244,7 +246,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 			cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, 0);
 		}
 		break;
-		
+#ifndef CYD_DISABLE_BUZZ		
 		case MUS_FX_BUZZ_DN:
 		{
 			if (chn->buzz_offset >= -32768 + (inst & 0xff))
@@ -262,7 +264,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 			mus_set_buzz_frequency(mus, chan, chn->note);
 		}
 		break;
-		
+#endif
 		case MUS_FX_TRIGGER_RELEASE:
 		{
 			if (tick == (inst & 0xff)) 
@@ -456,7 +458,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					mus->song_track[chan].pw = (inst & 0xff) << 4;
 				}
 				break;
-				
+#ifndef CYD_DISABLE_BUZZ				
 				case MUS_FX_BUZZ_SHAPE:
 				{
 					cyd_set_env_shape(cydchn, inst & 3);
@@ -478,6 +480,8 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					mus_set_buzz_frequency(mus, chan, chn->note);
 				}
 				break;
+#endif
+				
 #ifdef STEREOOUTPUT
 				case MUS_FX_SET_PANNING:
 				{
@@ -955,9 +959,11 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	
 	if (ins->flags & MUS_INST_YM_BUZZ)
 	{
+#ifndef CYD_DISABLE_BUZZ	
 		mus->cyd->channel[chan].flags |= CYD_CHN_ENABLE_YM_ENV;
 		cyd_set_env_shape(&mus->cyd->channel[chan], ins->ym_env_shape);
 		mus->channel[chan].buzz_offset = ins->buzz_offset;
+#endif
 	}
 	else
 	{
@@ -1323,7 +1329,8 @@ int mus_advance_tick(void* udata)
 				mus_advance_channel(mus, i);
 			}
 		}
-		
+
+#ifndef CYD_DISABLE_MULTIPLEX		
 		if (mus->song && (mus->song->flags & MUS_ENABLE_MULTIPLEX) && mus->song->multiplex_period > 0)
 		{
 			for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
@@ -1344,6 +1351,7 @@ int mus_advance_tick(void* udata)
 				mus->multiplex_ctr = 0;
 		}
 	}
+#endif
 	
 	return 1;
 }
