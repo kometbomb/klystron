@@ -66,18 +66,6 @@ inline static void shift_lfsr(Uint32 *v, int tap_0, int tap_1)
   *v = (*v >> 1) ^ ((zero - (*v & lsb)) & feedback);
 }
 
-static Sint32 inline fastrnd(Uint32 fastrnd_rndi)
-{
-	return ((fastrnd_rndi & 0x400000) >> 11) |
-		((fastrnd_rndi & 0x100000) >> 10) |
-		((fastrnd_rndi & 0x010000) >> 7) |
-		((fastrnd_rndi & 0x002000) >> 5) |
-		((fastrnd_rndi & 0x000800) >> 4) |
-		((fastrnd_rndi & 0x000080) >> 1) |
-		((fastrnd_rndi & 0x000010) << 1) |
-		((fastrnd_rndi & 0x000004) << 2);
-}
-
 
 static void cyd_init_channel(CydEngine *cyd, CydChannel *chn)
 {
