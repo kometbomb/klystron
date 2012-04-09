@@ -231,6 +231,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 		}
 		break;
 		
+#ifndef CYD_DISABLE_FILTER
 		case MUS_FX_CUTOFF_DN:
 		{
 			mus->song_track[chan].filter_cutoff -= inst & 0xff;
@@ -246,6 +247,8 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 			cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, 0);
 		}
 		break;
+#endif
+				
 #ifndef CYD_DISABLE_BUZZ		
 		case MUS_FX_BUZZ_DN:
 		{
@@ -406,6 +409,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 			
 			switch (inst & 0xf000)
 			{
+#ifndef CYD_DISABLE_FILTER			
 				case MUS_FX_CUTOFF_FINE_SET:
 				{
 					mus->song_track[chan].filter_cutoff = (inst & 0xfff);
@@ -413,6 +417,8 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
 				}
 				break;
+#endif
+				
 #ifndef CYD_DISABLE_WAVETABLE				
 				case MUS_FX_WAVETABLE_OFFSET:
 				{
@@ -489,6 +495,8 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 				}
 				break;
 #endif
+
+#ifndef CYD_DISABLE_FILTER
 				case MUS_FX_FILTER_TYPE:
 				{
 					cydchn->flttype = (inst & 0xf) % FLT_TYPES;
@@ -525,6 +533,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, inst & 3);
 				}
 				break;
+#endif
 				
 				case MUS_FX_SET_SPEED:
 				{
@@ -945,11 +954,13 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 		mus->song_track[chan].pwm_position = 0;
 	}	
 	
+#ifndef CYD_DISABLE_FILTER
 	if (ins->flags & MUS_INST_SET_CUTOFF)
 	{
 		track->filter_cutoff = ins->cutoff;
 		cyd_set_filter_coeffs(mus->cyd, &mus->cyd->channel[chan], ins->cutoff, ins->resonance);
 	}
+#endif
 	
 	if (ins->flags & MUS_INST_SET_PW)
 	{
