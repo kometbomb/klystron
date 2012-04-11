@@ -652,6 +652,8 @@ Sint32 cyd_env_output(CydEngine *cyd, CydChannel *chn, Sint32 input)
 #ifndef CYD_DISABLE_BUZZ	
 		int idx = chn->envelope * (Uint32)YM_LUT_SIZE / YM_LENGTH;
 		return input * cyd->lookup_table_ym[idx] / 32768 * (Sint32)(chn->volume) / MAX_VOLUME;
+#else
+		return input;
 #endif
 	}
 	else
