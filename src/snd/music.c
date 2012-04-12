@@ -807,6 +807,8 @@ static void mus_exec_prog_tick(MusEngine *mus, int chan, int advance)
 	}
 }
 
+#ifndef CYD_DISABLE_PWM
+#ifndef CYD_DISABLE_VIBRATO
 
 static Sint8 mus_shape(Uint16 position, Uint8 shape)
 {
@@ -874,6 +876,11 @@ static Sint8 mus_shape(Uint16 position, Uint8 shape)
 	}
 }
 
+#endif
+#endif
+
+
+#ifndef CYD_DISABLE_PWM
 
 static void do_pwm(MusEngine* mus, int chan)
 {
@@ -883,6 +890,8 @@ static void do_pwm(MusEngine* mus, int chan)
 	mus->song_track[chan].pwm_position += ins->pwm_speed;
 	mus->cyd->channel[chan].pw = mus->song_track[chan].pw + mus_shape(mus->song_track[chan].pwm_position >> 1, ins->pwm_shape) * ins->pwm_depth / 32;
 }
+
+#endif
 
 
 //***** USE THIS INSIDE MUS_ADVANCE_TICK TO AVOID MUTEX DEADLOCK
@@ -1093,6 +1102,8 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 		}*/
 	}
 	
+#ifndef CYD_DISABLE_VIBRATO
+	
 	Uint8 ctrl = 0;
 	int vibdep = my_max(0, (int)ins->vibrato_depth - (int)mus->song_track[chan].vib_delay);
 	int vibspd = ins->vibrato_speed;
@@ -1125,17 +1136,22 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 		mus->song_track[chan].last_ctrl = mus->song_track[chan].pattern->step[mus->song_track[chan].pattern_step].ctrl;*/
 	}
 	
+#endif
+	
 	Sint16 vib = 0;
 	
+#ifndef CYD_DISABLE_VIBRATO
 	if (((ctrl & MUS_CTRL_VIB) && !(ins->flags & MUS_INST_INVERT_VIBRATO_BIT)) || (!(ctrl & MUS_CTRL_VIB) && (ins->flags & MUS_INST_INVERT_VIBRATO_BIT)))
 	{
 		mus->song_track[chan].vibrato_position += vibspd;
 		vib = mus_shape(mus->song_track[chan].vibrato_position >> 1, ins->vib_shape) * vibdep / 64;
 		if (mus->song_track[chan].vib_delay) --mus->song_track[chan].vib_delay;
 	}
-	
-	
+#endif
+
+#ifndef CYD_DISABLE_PWM	
 	do_pwm(mus, chan);
+#endif
 	
 	Sint32 note = (mus->channel[chan].fixed_note != 0xffff ? mus->channel[chan].fixed_note : mus->channel[chan].note) + vib + ((Uint16)mus->channel[chan].arpeggio_note << 8);
 	
