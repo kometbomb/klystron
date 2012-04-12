@@ -974,7 +974,9 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	if (ins->flags & MUS_INST_SET_PW)
 	{
 		track->pw = ins->pw;
+#ifndef CYD_DISABLE_PWM
 		do_pwm(mus,chan);
+#endif
 	}
 	
 	if (ins->flags & MUS_INST_YM_BUZZ)
