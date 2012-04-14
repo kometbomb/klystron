@@ -75,4 +75,6 @@ You can compile libksnd using various compilation options that disable player fe
 || {{{CYD_DISABLE_FX}}} || Disable FX bus ||
 || {{{CYD_DISABLE_LFSR}}} || Disable LFSR (Pokey) ||
 || {{{CYD_DISABLE_MULTIPLEX}}} || Disable channel multiplexing ||
+|| {{{CYD_DISABLE_PWM}}} || Disable PWM automation ||
 || {{{CYD_DISABLE_WAVETABLE}}} || Disable wavetable ||
+|| {{{CYD_DISABLE_VIBRATO}}} || Disable vibrato automation ||
