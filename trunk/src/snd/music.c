@@ -128,7 +128,11 @@ static void mus_set_buzz_frequency(MusEngine *mus, int chan, Uint16 note)
 	MusChannel *chn = &mus->channel[chan];
 	if (chn->instrument && chn->instrument->flags & MUS_INST_YM_BUZZ)
 	{
+#ifndef CYD_DISABLE_INACCURACY
 		Uint16 buzz_frequency = get_freq(note + chn->buzz_offset) & mus->pitch_mask;
+#else
+		Uint16 buzz_frequency = get_freq(note + chn->buzz_offset);
+#endif
 		cyd_set_env_frequency(mus->cyd, &mus->cyd->channel[chan], buzz_frequency);
 	}
 #endif
@@ -143,7 +147,11 @@ static void mus_set_wavetable_frequency(MusEngine *mus, int chan, Uint16 note)
 	
 	if (chn->instrument && (chn->instrument->cydflags & CYD_CHN_ENABLE_WAVE) && (cydchn->wave_entry))
 	{
+#ifndef CYD_DISABLE_INACCURACY
 		Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : note) & mus->pitch_mask;
+#else
+		Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : note);
+#endif
 		cyd_set_wavetable_frequency(mus->cyd, cydchn, wave_frequency);
 	}
 #endif
@@ -156,7 +164,11 @@ static void mus_set_note(MusEngine *mus, int chan, Uint16 note, int update_note,
 	
 	if (update_note) chn->note = note;
 	
+#ifndef CYD_DISABLE_INACCURACY
 	Uint16 frequency = get_freq(note) & mus->pitch_mask;
+#else
+	Uint16 frequency = get_freq(note);
+#endif
 		
 	cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], frequency / divider);
 	
@@ -184,7 +196,9 @@ void mus_init_engine(MusEngine *mus, CydEngine *cyd)
 	for (int i = 0 ; i < MUS_MAX_CHANNELS ; ++i)
 		mus->channel[i].volume = MAX_VOLUME;
 		
+#ifndef CYD_DISABLE_INACCURACY
 	mus->pitch_mask = ~0;
+#endif
 }
 
 
@@ -1396,7 +1410,9 @@ void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position)
 	{
 		mus->song_counter = 0;
 		mus->multiplex_ctr = 0;
+#ifndef CYD_DISABLE_INACCURACY
 		mus->pitch_mask = (~0) << song->pitch_inaccuracy;
+#endif
 	}
 	
 	mus->song_position = position;
@@ -1692,8 +1708,10 @@ void mus_set_fx(MusEngine *mus, MusSong *song)
 	{
 		cydfx_set(&mus->cyd->fx[f], &song->fx[f]);
 	}
-	
+
+#ifndef CYD_DISABLE_INACCURACY	
 	mus->pitch_mask = (~0) << song->pitch_inaccuracy;
+#endif
 	
 	cyd_lock(mus->cyd, 0);
 }
