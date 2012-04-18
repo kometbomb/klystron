@@ -250,8 +250,9 @@ static inline void cyd_cycle_adsr(CydEngine *eng, CydChannel *chn)
 {
 	if (!(chn->flags & CYD_CHN_ENABLE_YM_ENV))
 	{
+#ifndef CYD_DISABLE_ENVELOPE
 		// SID style ADSR envelope
-	
+
 		switch (chn->envelope_state)
 		{
 			case SUSTAIN:
@@ -296,6 +297,7 @@ static inline void cyd_cycle_adsr(CydEngine *eng, CydChannel *chn)
 			}
 			break;
 		}
+#endif
 	}
 	else
 	{
@@ -653,15 +655,19 @@ Sint32 cyd_env_output(CydEngine *cyd, CydChannel *chn, Sint32 input)
 		int idx = chn->envelope * (Uint32)YM_LUT_SIZE / YM_LENGTH;
 		return input * cyd->lookup_table_ym[idx] / 32768 * (Sint32)(chn->volume) / MAX_VOLUME;
 #else
-		return input;
+		return input * (Sint32)(chn->volume) / MAX_VOLUME;
 #endif
 	}
 	else
 	{
+#ifndef CYD_DISABLE_ENVELOPE	
 		if (chn->envelope_state == ATTACK)
 			return (input * ((Sint32)chn->envelope / 0x10000) / 256) * (Sint32)(chn->volume) / MAX_VOLUME;
 		else
 			return (input * (cyd->lookup_table[(chn->envelope / (65536*256 / LUT_SIZE) ) & (LUT_SIZE - 1)]) / 65536) * (Sint32)(chn->volume) / MAX_VOLUME;
+#else
+		return input * (Sint32)(chn->volume) / MAX_VOLUME;
+#endif
 	}
 }
 
@@ -1019,10 +1025,12 @@ void cyd_enable_gate(CydEngine *cyd, CydChannel *chn, Uint8 enable)
 	{
 		if (!(chn->flags & CYD_CHN_ENABLE_YM_ENV))
 		{
+#ifndef CYD_DISABLE_ENVELOPE
 			chn->envelope_state = ATTACK;
 			chn->envelope = 0x0;
 			chn->env_speed = envspd(cyd, chn->adsr.a);
 			cyd_cycle_adsr(cyd, chn);
+#endif
 		}
 		
 		if (chn->flags & CYD_CHN_ENABLE_KEY_SYNC)
