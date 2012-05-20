@@ -89,6 +89,7 @@ static struct
 
 static char **favorites = NULL;
 static int n_favorites = 0;
+static char last_picked_file[250] = {0};
 
 static void file_list_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
 static void title_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
@@ -619,6 +620,15 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 	
 	if (!populate_files(domain, gfx, largefont, ".", extension)) return FB_CANCEL;
 	
+	for (int i = 0 ; i < data.n_files ; ++i)
+	{
+		if (strcmp(data.files[i].name, last_picked_file) == 0)
+		{
+			data.selected_file = i;
+			break;
+		}
+	}
+	
 	while (!data.quit)
 	{
 		if (data.picked_file)
@@ -630,6 +640,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 				{
 					set_repeat_timer(NULL);
 					strncpy(buffer, data.picked_file->name, buffer_size);
+					strncpy(last_picked_file, data.picked_file->name, sizeof(last_picked_file));
 					free_files();
 					return FB_OK;
 				}
@@ -753,6 +764,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 										
 										set_repeat_timer(NULL);
 										strncpy(buffer, exp ? exp : data.field, buffer_size);
+										strncpy(last_picked_file, "", sizeof(last_picked_file));
 										
 										if (mode == FB_SAVE && strchr(buffer, '.') == NULL)
 										{
