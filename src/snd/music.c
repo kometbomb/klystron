@@ -347,7 +347,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					{
 						Uint8 prev_vol_tr = mus->song_track[chan].volume;
 						Uint8 prev_vol_cyd = cydchn->volume;
-						mus_trigger_instrument_internal(mus, chan, chn->instrument, chn->last_note);
+						mus_trigger_instrument_internal(mus, chan, chn->instrument, chn->last_note >> 8);
 						mus->song_track[chan].volume = prev_vol_tr;
 						cydchn->volume = prev_vol_cyd;
 					}
