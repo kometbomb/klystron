@@ -969,6 +969,12 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	mus->cyd->channel[chan].sync_source = ins->sync_source == 0xff? chan : ins->sync_source;
 	mus->cyd->channel[chan].ring_mod = ins->ring_mod == 0xff? chan : ins->ring_mod;
 	
+	if (mus->cyd->channel[chan].ring_mod >= mus->cyd->n_channels)
+		mus->cyd->channel[chan].ring_mod = mus->cyd->n_channels -1;
+		
+	if (mus->cyd->channel[chan].sync_source >= mus->cyd->n_channels)
+		mus->cyd->channel[chan].sync_source = mus->cyd->n_channels -1;
+	
 	mus->cyd->channel[chan].flttype = ins->flttype;
 	mus->cyd->channel[chan].lfsr_type = ins->lfsr_type;
 	
