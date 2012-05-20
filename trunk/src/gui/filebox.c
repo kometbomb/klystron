@@ -625,6 +625,14 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 		if (strcmp(data.files[i].name, last_picked_file) == 0)
 		{
 			data.selected_file = i;
+			
+			// We need to draw the view once so the slider gets visibility info
+			
+			
+			SDL_Event e = {0};
+			
+			draw_view(gfx_domain_get_surface(domain), filebox_view, &e);
+			slider_move_position(&data.selected_file, &data.list_position, &data.scrollbar, 0);
 			break;
 		}
 	}
