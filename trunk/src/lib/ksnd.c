@@ -188,6 +188,6 @@ KLYSAPI void KSND_SetVolume(KPlayer *player, int volume)
 KLYSAPI void KSND_GetVUMeters(KPlayer *player, int *dest, int n_channels)
 {
 	int temp[MUS_MAX_CHANNELS];
-	mus_poll_status(&player->mus, NULL, NULL, NULL, NULL, dest, NULL);
+	mus_poll_status(&player->mus, NULL, NULL, NULL, NULL, temp, NULL);
 	memcpy(dest, temp, sizeof(dest[0]) * n_channels);
 }
