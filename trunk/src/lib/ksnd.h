@@ -40,6 +40,7 @@ KLYSAPI extern void KSND_Stop(KPlayer* player);
 KLYSAPI extern void KSND_Pause(KPlayer *player, int state);
 KLYSAPI extern int KSND_GetPlayPosition(KPlayer* player);
 KLYSAPI extern void KSND_SetVolume(KPlayer *player, int volume);
+KLYSAPI extern void KSND_GetVUMeters(KPlayer *player, int *dest, int n_channels);
 
 #ifdef __cplusplus
 }
