@@ -2,6 +2,7 @@
 #include "snd/music.h"
 #include "snd/cyd.h"
 #include "macros.h"
+#include <stdbool.h>
 
 struct KSong_t 
 {
@@ -14,6 +15,7 @@ struct KPlayer_t
 {
 	CydEngine cyd;
 	MusEngine mus;
+	bool cyd_registered;
 };
 
 
@@ -116,7 +118,20 @@ KLYSAPI int KSND_GetSongLength(const KSong *song)
 
 KLYSAPI KPlayer* KSND_CreatePlayer(int sample_rate)
 {
+	KPlayer *player = KSND_CreatePlayerUnregistered(sample_rate);
+	
+	player->cyd_registered = true;
+	
+	cyd_register(&player->cyd);
+	
+	return player;
+}
+
+KLYSAPI KPlayer* KSND_CreatePlayerUnregistered(int sample_rate)
+{
 	KPlayer *player = malloc(sizeof(*player));
+	
+	player->cyd_registered = false;
 	
 	cyd_init(&player->cyd, sample_rate, 1);
 	mus_init_engine(&player->mus, &player->cyd);
@@ -125,8 +140,6 @@ KLYSAPI KPlayer* KSND_CreatePlayer(int sample_rate)
 	free(player->cyd.wavetable_entries); 
 	player->cyd.wavetable_entries = NULL;
 	
-	cyd_register(&player->cyd);
-	
 	return player;
 }
 
@@ -134,7 +147,10 @@ KLYSAPI KPlayer* KSND_CreatePlayer(int sample_rate)
 KLYSAPI void KSND_FreePlayer(KPlayer *player)
 {
 	KSND_Stop(player);
-	cyd_unregister(&player->cyd);
+	
+	if (player->cyd_registered) 
+		cyd_unregister(&player->cyd);
+		
 	cyd_deinit(&player->cyd);
 	free(player);
 }
@@ -150,6 +166,12 @@ KLYSAPI void KSND_PlaySong(KPlayer *player, KSong *song, int start_position)
 		cyd_reserve_channels(&player->cyd, song->song.num_channels);
 	
 	mus_set_song(&player->mus, &song->song, start_position);
+}
+
+
+KLYSAPI void KSND_FillBuffer(KPlayer *player, short int *buffer, int buffer_length)
+{
+	cyd_output_buffer_stereo(0, buffer, buffer_length, &player->cyd);
 }
 
 
