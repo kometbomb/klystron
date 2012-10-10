@@ -66,6 +66,12 @@ Dynamic linking:
 gcc player.c -o player -lksnd 
 }}}
 
+==Using your own mixer routines==
+
+If you are using your own mixer to play audio data or just want to dump the audio in a file, you can use KSND_FillBuffer() to make the player fill your own buffer with audio without playing it. Use that buffer any way you like.
+
+You need to create a KPlayer with KSND_CreatePlayerUnregistered() to bypass the creation of a player thread.
+
 ==Making the lib smaller==
 
 You can compile libksnd using various compilation options that disable player features you do not need. This helps to shave a few kilobytes off the library size.
