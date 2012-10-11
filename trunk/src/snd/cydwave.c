@@ -65,7 +65,7 @@ static Sint32 cyd_wave_get_sample_linear(const CydWavetableEntry *entry, CydWave
 			if (b >= entry->samples)
 				return entry->data[a];
 			else
-				return entry->data[a] + (entry->data[b] - entry->data[a]) * (wave_acc % WAVETABLE_RESOLUTION) / WAVETABLE_RESOLUTION;
+				return entry->data[a] + (entry->data[b] - entry->data[a]) * ((CydWaveAccSigned)wave_acc % WAVETABLE_RESOLUTION) / WAVETABLE_RESOLUTION;
 		}
 		else
 		{
@@ -83,7 +83,7 @@ static Sint32 cyd_wave_get_sample_linear(const CydWavetableEntry *entry, CydWave
 			if (b < 0)
 				return entry->data[a];
 			else
-				return entry->data[a] + (entry->data[b] - entry->data[a]) * (WAVETABLE_RESOLUTION - (wave_acc % WAVETABLE_RESOLUTION)) / WAVETABLE_RESOLUTION;
+				return entry->data[a] + (entry->data[b] - entry->data[a]) * (WAVETABLE_RESOLUTION - ((CydWaveAccSigned)wave_acc % WAVETABLE_RESOLUTION)) / WAVETABLE_RESOLUTION;
 		}
 	}
 	else
