@@ -72,9 +72,21 @@ If you are using your own mixer to play audio data or just want to dump the audi
 
 You need to create a KPlayer with KSND_CreatePlayerUnregistered() to bypass the creation of a player thread.
 
+==Compiling the library==
+
+Here's how to compile it yourself. Note: you can also use "size" in place of "release" to make the library a bit smaller.
+
+  # Get the klystron repo.
+  # {{{make CFG=release EXTFLAGS="-DUSESDLMUTEXES -DSTEREOOUTPUT -DUSENATIVEAPIS -DLOWRESWAVETABLE"}}}
+  # Never mind the warnings.
+  # libksnd.a, ksnd.dll etc. will in the bin.release directory
+  # src/lib has the rest of the files (ksnd.def, ksnd.h)
+
 ==Making the lib smaller==
 
 You can compile libksnd using various compilation options that disable player features you do not need. This helps to shave a few kilobytes off the library size.
+
+E.g. {{{make CFG=release EXTFLAGS="-DCYD_DISABLE_FX -DUSESDLMUTEXES -DSTEREOOUTPUT -DUSENATIVEAPIS -DLOWRESWAVETABLE"}}}
 
 || {{{CYD_DISABLE_BUZZ}}} || Disable buzzer ||
 || {{{CYD_DISABLE_ENVELOPE}}} || Disable envelope ||
