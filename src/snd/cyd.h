@@ -35,8 +35,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #ifdef LOWRESWAVETABLE
 typedef Uint32 CydWaveAcc;
+typedef Sint32 CydWaveAccSigned;
 #else
 typedef Uint64 CydWaveAcc;
+typedef Sint64 CydWaveAccSigned;
 #endif
 
 typedef struct
