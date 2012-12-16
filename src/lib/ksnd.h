@@ -13,6 +13,13 @@ extern "C" {
 
 typedef struct KSong_t KSong;
 typedef struct KPlayer_t KPlayer;
+typedef struct 
+{
+	char *song_title;
+	char *instrument_name[128];
+	int n_instruments;
+} KSongInfo;
+
 
 #ifdef WIN32 
 #ifdef DLLEXPORT
@@ -43,6 +50,7 @@ KLYSAPI extern void KSND_Pause(KPlayer *player, int state);
 KLYSAPI extern int KSND_GetPlayPosition(KPlayer* player);
 KLYSAPI extern void KSND_SetVolume(KPlayer *player, int volume);
 KLYSAPI extern void KSND_GetVUMeters(KPlayer *player, int *dest, int n_channels);
+KLYSAPI extern const KSongInfo * KSND_GetSongInfo(KSong *song, KSongInfo *data);
 
 #ifdef __cplusplus
 }

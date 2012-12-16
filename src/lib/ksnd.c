@@ -213,3 +213,20 @@ KLYSAPI void KSND_GetVUMeters(KPlayer *player, int *dest, int n_channels)
 	mus_poll_status(&player->mus, NULL, NULL, NULL, NULL, temp, NULL);
 	memcpy(dest, temp, sizeof(dest[0]) * n_channels);
 }
+
+
+KLYSAPI const KSongInfo * KSND_GetSongInfo(KSong *song, KSongInfo *data)
+{
+	static KSongInfo buffer;
+
+	if (data == NULL)
+		data = &buffer;
+
+	data->song_title = song->song.title;
+	data->n_instruments = song->song.num_instruments;
+	
+	for (int i = 0 ; i < data->n_instruments ; ++i)
+		data->instrument_name[i] = song->song.instrument[i].name;
+		
+	return data;
+}
