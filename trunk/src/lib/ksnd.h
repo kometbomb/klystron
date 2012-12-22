@@ -37,6 +37,7 @@ KLYSAPI extern KSong* KSND_LoadSong(KPlayer* player, const char *path);
 KLYSAPI extern KSong* KSND_LoadSongFromMemory(KPlayer* player, void *data, int data_size);
 KLYSAPI extern void KSND_FreeSong(KSong *song);
 KLYSAPI extern int KSND_GetSongLength(const KSong *song);
+KLYSAPI extern const KSongInfo * KSND_GetSongInfo(KSong *song, KSongInfo *data);
 
 // Player
 
@@ -50,7 +51,6 @@ KLYSAPI extern void KSND_Pause(KPlayer *player, int state);
 KLYSAPI extern int KSND_GetPlayPosition(KPlayer* player);
 KLYSAPI extern void KSND_SetVolume(KPlayer *player, int volume);
 KLYSAPI extern void KSND_GetVUMeters(KPlayer *player, int *dest, int n_channels);
-KLYSAPI extern const KSongInfo * KSND_GetSongInfo(KSong *song, KSongInfo *data);
 
 #ifdef __cplusplus
 }
