@@ -196,7 +196,11 @@ void cyd_set_filter_coeffs(CydEngine * cyd, CydChannel *chn, Uint16 cutoff, Uint
 void cyd_pause(CydEngine *cyd, Uint8 enable);
 void cyd_set_callback(CydEngine *cyd, int (*callback)(void*), void*param, Uint16 period);
 void cyd_set_callback_rate(CydEngine *cyd, Uint16 period);
+#ifdef NOSDL_MIXER
+int cyd_register(CydEngine * cyd, int buffer_length);
+#else
 int cyd_register(CydEngine * cyd);
+#endif
 int cyd_unregister(CydEngine * cyd);
 void cyd_lock(CydEngine *cyd, Uint8 enable);
 #ifdef ENABLEAUDIODUMP
@@ -207,7 +211,11 @@ void cyd_disable_audio_dump(CydEngine *cyd);
 void cyd_set_panning(CydEngine *cyd, CydChannel *chn, Uint8 panning);
 #endif
 
+#ifdef NOSDL_MIXER
+void cyd_output_buffer_stereo(void *udata, Uint8 *_stream, int len);
+#else
 void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata);
+#endif
 Sint32 cyd_env_output(CydEngine *cyd, CydChannel *chn, Sint32 input);
 
 #endif

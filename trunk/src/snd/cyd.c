@@ -38,9 +38,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "freqs.h"
 
 #ifndef USENATIVEAPIS
-
+# ifndef NOSDL_MIXER
 # include "SDL_mixer.h"
-
+# endif
 #else
 
 # ifdef WIN32
@@ -787,10 +787,14 @@ static void cyd_cycle(CydEngine *cyd)
 }
 
 
+#ifdef NOSDL_MIXER
+void cyd_output_buffer(void *udata, Uint8 *_stream, int len)
+#else
 void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
+#endif
 {
 	CydEngine *cyd = udata;
-	Sint16 * stream = _stream;
+	Sint16 * stream = (void*)_stream;
 	cyd->samples_output = 0;
 	
 	for (int i = 0 ; i < len ; i += sizeof(Sint16), ++stream, ++cyd->samples_output)
@@ -847,7 +851,11 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 			Sint32 output = cyd_output(cyd);
 #endif
 
+#ifdef NOSDL_MIXER
+			Sint32 o = output * PRE_GAIN;
+#else
 			Sint32 o = (Sint32)*(Sint16*)stream + output * PRE_GAIN;
+#endif
 			
 			if (o < -32768) o = -32768;
 			else if (o > 32767) o = 32767;
@@ -866,10 +874,14 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 }
 
 
+#ifdef NOSDL_MIXER
+void cyd_output_buffer_stereo(void *udata, Uint8 *_stream, int len)
+#else
 void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
+#endif
 {
 	CydEngine *cyd = udata;
-	Sint16 *stream = _stream;
+	Sint16 *stream = (void*)_stream;
 	cyd->samples_output = 0;
 	cyd->flags &= ~CYD_CLIPPING;
 	
@@ -921,7 +933,7 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 			left = right = cyd_output(cyd);
 #endif
 
-#ifdef USENATIVEAPIS
+#if defined(USENATIVEAPIS) || defined(NOSDL_MIXER)
 			Sint32 o1 = left * PRE_GAIN;
 #else
 			Sint32 o1 = (Sint32)*(Sint16*)stream + left * PRE_GAIN;
@@ -1165,9 +1177,14 @@ static DWORD WINAPI waveOutProc(void *param)
 #endif
 
 
+#ifdef NOSDL_MIXER
+int cyd_register(CydEngine * cyd, int buffer_length)
+#else
 int cyd_register(CydEngine * cyd)
+#endif
 {
 #ifndef USENATIVEAPIS
+# ifndef NOSDL_MIXER
 	int frequency, channels;
 	Uint16 format;
 	if (Mix_QuerySpec(&frequency, &format, &channels))
@@ -1192,6 +1209,35 @@ int cyd_register(CydEngine * cyd)
 		return 1;
 	}
 	else return 0;
+# else
+
+	SDL_AudioSpec desired, obtained;
+
+	/* 22050Hz - FM Radio quality */
+	desired.freq=cyd->sample_rate;
+
+	/* 16-bit signed audio */
+	desired.format=AUDIO_S16SYS;
+
+	/* Stereo */
+	desired.channels=2;
+
+	/* Large audio buffer reduces risk of dropouts but increases response time */
+	desired.samples=buffer_length;
+
+	/* Our callback function */
+	desired.callback=cyd_output_buffer_stereo;
+	desired.userdata=cyd;
+
+	/* Open the audio device */
+	if ( SDL_OpenAudio(&desired, &obtained) < 0 ){
+	  return 0;
+	}
+
+	SDL_PauseAudio(0);
+	
+	return 1;
+# endif
 #else
 
 # ifdef WIN32
@@ -1247,6 +1293,7 @@ int cyd_register(CydEngine * cyd)
 int cyd_unregister(CydEngine * cyd)
 {
 #ifndef USENATIVEAPIS
+# ifndef NOSDL_MIXER
 	int frequency, channels;
 	Uint16 format;
 	if (Mix_QuerySpec(&frequency, &format, &channels))
@@ -1264,6 +1311,15 @@ int cyd_unregister(CydEngine * cyd)
 		return 1;
 	}
 	else return 0;
+# else
+
+	cyd_lock(cyd, 1);
+	cyd_lock(cyd, 0);
+		
+	SDL_CloseAudio();
+	
+	return 1;
+# endif
 #else
 
 	cyd_pause(cyd, 0);
