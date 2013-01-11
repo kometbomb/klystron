@@ -121,8 +121,12 @@ KLYSAPI KPlayer* KSND_CreatePlayer(int sample_rate)
 	KPlayer *player = KSND_CreatePlayerUnregistered(sample_rate);
 	
 	player->cyd_registered = true;
-	
+
+#ifdef NOSDL_MIXER
+	cyd_register(&player->cyd, 4096);
+#else
 	cyd_register(&player->cyd);
+#endif
 	
 	return player;
 }
@@ -171,7 +175,11 @@ KLYSAPI void KSND_PlaySong(KPlayer *player, KSong *song, int start_position)
 
 KLYSAPI void KSND_FillBuffer(KPlayer *player, short int *buffer, int buffer_length)
 {
+#ifdef NOSDL_MIXER
+	cyd_output_buffer_stereo(&player->cyd, (void*)buffer, buffer_length);
+#else
 	cyd_output_buffer_stereo(0, buffer, buffer_length, &player->cyd);
+#endif
 }
 
 
