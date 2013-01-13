@@ -54,6 +54,7 @@ void cydchr_output(CydChorus *chr, Sint32 in_l, Sint32 in_r, Sint32 *out_l, Sint
 
 void cydchr_set(CydChorus *chr, int rate, int min_delay, int max_delay, int stereo_separation)
 {
+#ifdef STEREOOUTPUT
 	if (rate)
 	{
 		int old = chr->lut_size;
@@ -77,6 +78,7 @@ void cydchr_set(CydChorus *chr, int rate, int min_delay, int max_delay, int ster
 		chr->lut_size = 0;
 		chr->lut[0] = chr->sample_rate * min_delay / 10000;
 	}
+#endif
 }
 
 
