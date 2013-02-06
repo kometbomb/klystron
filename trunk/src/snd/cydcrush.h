@@ -38,7 +38,7 @@ typedef struct
 	Sint32 hold;
 	Sint32 error;
 #endif
-	int counter, bit_drop, downsample, dither;
+	int counter, bit_drop, downsample, dither, gain;
 } CydCrush;
 
 #ifdef STEREOOUTPUT
@@ -47,7 +47,7 @@ void cydcrush_output(CydCrush *crush, Sint32 in_l, Sint32 in_r, Sint32 *out_l, S
 Sint32 cydcrush_output(CydCrush *crush, Sint32 input);
 #endif
 
-void cydcrush_set(CydCrush *crush, int downsample /* 1 = original, 2 = half rate etc. */, int bit_drop, int dither);
+void cydcrush_set(CydCrush *crush, int downsample /* 1 = original, 2 = half rate etc. */, int bit_drop, int dither, int gain);
 
 void cydcrush_init(CydCrush *crush, int sample_rate);
 void cydcrush_deinit(CydCrush *crush);
