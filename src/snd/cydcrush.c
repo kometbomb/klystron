@@ -36,21 +36,21 @@ void cydcrush_output(CydCrush *crush, Sint32 in_l, Sint32 in_r, Sint32 *out_l, S
 		
 		if (!crush->dither)
 		{
-			crush->hold_l = ((in_l + 32768) & crush->bit_drop) - 32768;
-			crush->hold_r = ((in_r + 32768) & crush->bit_drop) - 32768;
+			crush->hold_l = (((in_l + 32768) & crush->bit_drop) - 32768);
+			crush->hold_r = (((in_r + 32768) & crush->bit_drop) - 32768);
 		}
 		else
 		{
-			crush->hold_l = (my_max(0, my_min(65535, in_l + 32768 + crush->error_l)) & crush->bit_drop) - 32768;
-			crush->hold_r = (my_max(0, my_min(65535, in_r + 32768 + crush->error_r)) & crush->bit_drop) - 32768;
+			crush->hold_l = ((my_max(0, my_min(65535, in_l + 32768 + crush->error_l)) & crush->bit_drop) - 32768);
+			crush->hold_r = ((my_max(0, my_min(65535, in_r + 32768 + crush->error_r)) & crush->bit_drop) - 32768);
 			
 			crush->error_l += in_l - crush->hold_l;
 			crush->error_r += in_r - crush->hold_r;
 		}
 	}
 
-	*out_l = crush->hold_l;
-	*out_r = crush->hold_r;
+	*out_l = crush->hold_l * crush->gain / 128;
+	*out_r = crush->hold_r * crush->gain / 128;
 }
 #else
 Sint32 cydcrush_output(CydCrush *crush, Sint32 input)
@@ -58,7 +58,7 @@ Sint32 cydcrush_output(CydCrush *crush, Sint32 input)
 	if (crush->counter++ >= crush->downsample)
 	{
 		crush->counter = 0;
-		crush->hold = input & crush->bit_drop;
+		crush->hold = (input & crush->bit_drop) * crush->gain / 128;
 	}
 
 	return crush->hold;
@@ -66,12 +66,13 @@ Sint32 cydcrush_output(CydCrush *crush, Sint32 input)
 #endif
 
 
-void cydcrush_set(CydCrush *crush, int downsample, int bit_drop, int dither)
+void cydcrush_set(CydCrush *crush, int downsample, int bit_drop, int dither, int gain)
 {
 	crush->downsample = downsample * crush->sample_rate / 44100;
 	//crush->counter = 0;
 	if (bit_drop >= 0) crush->bit_drop = 0xffffffff << (bit_drop);
 	if (dither >= 0) crush->dither = dither;
+	if (gain >= 0) crush->gain = gain;
 }
 
 
@@ -88,6 +89,7 @@ void cydcrush_init(CydCrush *crush, int sample_rate)
 	crush->error = 0;
 	crush->hold = 0;
 #endif
+	crush->gain = 128;
 }
 
 

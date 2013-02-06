@@ -631,7 +631,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 				
 				case MUS_FX_SET_DOWNSAMPLE:
 				{
-					cydcrush_set(&cyd->fx[cydchn->fx_bus].crush, inst & 0xff, -1, -1);
+					cydcrush_set(&cyd->fx[cydchn->fx_bus].crush, inst & 0xff, -1, -1, -1);
 				}
 				break;
 #endif
@@ -1834,12 +1834,22 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 				if (version < 12)
 				{
 					debug("Reading legacy fx format");
-					my_RWread(ctx, &song->fx, sizeof(song->fx[0]) - sizeof(Uint8) * 2, n_fx);
+					my_RWread(ctx, song->fx, sizeof(song->fx[0]) - sizeof(Uint8) * 3, n_fx);
+				}
+				else if (version < 19)
+				{
+					debug("Reading fx format 2");
+					
+					for (int fx = 0 ; fx < n_fx ; ++fx)
+					{
+						my_RWread(ctx, &song->fx[fx], sizeof(song->fx[0]) - sizeof(Uint8) * 1, 1);
+						song->fx[fx].crushex.gain = 128;
+					}
 				}
 				else
 				{
-					debug("Reading fx format 2");
-					my_RWread(ctx, &song->fx, sizeof(song->fx[0]), n_fx);
+					debug("Reading fx format 3");
+					my_RWread(ctx, &song->fx[0], sizeof(song->fx[0]), n_fx);
 				}
 				
 				for (int fx = 0 ; fx < n_fx ; ++fx)
