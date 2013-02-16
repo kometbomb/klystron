@@ -58,10 +58,16 @@ Sint32 cydcrush_output(CydCrush *crush, Sint32 input)
 	if (crush->counter++ >= crush->downsample)
 	{
 		crush->counter = 0;
-		crush->hold = (input & crush->bit_drop) * crush->gain / 128;
+		
+		if (!crush->dither)
+			crush->hold = (((input + 32768) & crush->bit_drop) - 32768);
+		else
+			crush->hold_l = ((my_max(0, my_min(65535, input + 32768 + crush->error)) & crush->bit_drop) - 32768);
+			
+		crush->error += input - crush->hold;
 	}
 
-	return crush->hold;
+	return crush->hold * crush->gain / 128;
 }
 #endif
 
