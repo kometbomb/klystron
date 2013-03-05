@@ -250,7 +250,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 		{
 			mus->song_track[chan].filter_cutoff -= inst & 0xff;
 			if (mus->song_track[chan].filter_cutoff > 0xf000) mus->song_track[chan].filter_cutoff = 0;
-			cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, 0);
+			cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, mus->song_track[chan].filter_resonance);
 		}
 		break;
 		
@@ -258,7 +258,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 		{
 			mus->song_track[chan].filter_cutoff += inst & 0xff;
 			if (mus->song_track[chan].filter_cutoff > 0x7ff) mus->song_track[chan].filter_cutoff = 0x7ff;
-			cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, 0);
+			cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, mus->song_track[chan].filter_resonance);
 		}
 		break;
 #endif
@@ -428,7 +428,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 				{
 					mus->song_track[chan].filter_cutoff = (inst & 0xfff);
 					if (mus->song_track[chan].filter_cutoff > 0x7ff) mus->song_track[chan].filter_cutoff = 0x7ff;
-					cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
+					cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, mus->song_track[chan].filter_resonance);
 				}
 				break;
 #endif
@@ -521,7 +521,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 				{
 					mus->song_track[chan].filter_cutoff = (inst & 0xff) << 3;
 					if (mus->song_track[chan].filter_cutoff > 0x7ff) mus->song_track[chan].filter_cutoff = 0x7ff;
-					cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
+					cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, mus->song_track[chan].filter_resonance);
 				}
 				break;
 				
@@ -531,19 +531,20 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					{
 						mus->song_track[chan].filter_cutoff = (inst & 0xff) << 4;
 						cydchn->flttype = FLT_LP;
-						cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
+						cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, mus->song_track[chan].filter_resonance);
 					}
 					else
 					{
 						mus->song_track[chan].filter_cutoff = ((inst & 0xff) - 0x80) << 4;
 						cydchn->flttype = FLT_HP;
-						cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, chn->instrument->resonance);
+						cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, mus->song_track[chan].filter_resonance);
 					}
 				}
 				break;
 				
 				case MUS_FX_RESONANCE_SET:
 				{
+					mus->song_track[chan].filter_resonance = inst & 3;
 					cyd_set_filter_coeffs(mus->cyd, cydchn, mus->song_track[chan].filter_cutoff, inst & 3);
 				}
 				break;
@@ -987,6 +988,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	if (ins->flags & MUS_INST_SET_CUTOFF)
 	{
 		track->filter_cutoff = ins->cutoff;
+		track->filter_resonance = ins->resonance;
 		cyd_set_filter_coeffs(mus->cyd, &mus->cyd->channel[chan], ins->cutoff, ins->resonance);
 	}
 #endif
