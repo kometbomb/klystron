@@ -159,6 +159,7 @@ typedef struct
 	Uint16 vibrato_position, pwm_position;
 	Sint8 note_offset;
 	Uint16 filter_cutoff;
+	Uint8 filter_resonance;
 	Uint8 extarp1, extarp2;
 	Uint8 volume;
 	Uint8 vib_delay;
