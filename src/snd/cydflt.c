@@ -46,7 +46,7 @@ void cydflt_cycle(CydFilter *flt, Sint32 input)
 	t1 = flt->b3;  
 	flt->b3 = (flt->b2 + t2) * flt->p / 2048 - flt->b3 * flt->f / 2048;
 	flt->b4 = (flt->b3 + t1) * flt->p / 2048 - flt->b4 * flt->f / 2048;
-	flt->b4 = flt->b4 - (flt->b4 * flt->b4) / 16384 * (flt->b4 / 6) / 16384;    //clipping
+	flt->b4 = flt->b4 - ((Sint64)flt->b4 * (Sint64)flt->b4) / 32768 * ((Sint64)flt->b4 / 6) / 32768;    //clipping
 	
 	//if (!(flt->b4 > -16384 && flt->b4 < 16383)) printf("flt->b4 = %d\n", flt->b4);;
 	
