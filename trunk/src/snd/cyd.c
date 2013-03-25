@@ -48,6 +48,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #endif
 
+#define WAVE_AMP (1 << OUTPUT_BITS)
 #define BUFFER_GRANULARITY 150 // mutex is locked and audio generated in 150 sample blocks
 
 #define envspd(cyd,slope) (slope!=0?(((Uint64)0xff0000 / ((slope) * (slope) * 256)) * CYD_BASE_FREQ / cyd->sample_rate):((Uint64)0xff0000 * CYD_BASE_FREQ / cyd->sample_rate))
@@ -400,25 +401,25 @@ static void cyd_sync_channel(CydEngine *cyd, CydChannel *chn)
 
 static inline Uint32 cyd_pulse(Uint32 acc, Uint32 pw) 
 {
-	return (((acc >> (ACC_BITS - OUTPUT_BITS - OVERSAMPLE - 1)) >= (pw << OVERSAMPLE) ? 0x0fff : 0));
+	return (((acc >> ((ACC_BITS - 17))) >= (pw << OVERSAMPLE) ? (WAVE_AMP - 1) : 0));
 }
 
 
 static inline Uint32 cyd_saw(Uint32 acc) 
 {
-	return (acc >> (ACC_BITS - OUTPUT_BITS - 1)) & 0xfff;
+	return (acc >> (ACC_BITS - OUTPUT_BITS - 1)) & (WAVE_AMP - 1);
 }
 
 
 static inline Uint32 cyd_triangle(Uint32 acc)
 {
-	return ((((acc & (ACC_LENGTH / 2)) ? ~acc : acc) >> (ACC_BITS - OUTPUT_BITS - 2)) & 0x1fff);
+	return ((((acc & (ACC_LENGTH / 2)) ? ~acc : acc) >> (ACC_BITS - OUTPUT_BITS - 2)) & (WAVE_AMP * 2 - 1));
 }
 
 
 static inline Uint32 cyd_noise(Uint32 acc) 
 {
-	return acc & 0xfff;
+	return acc & (WAVE_AMP - 1);
 }
 
 #ifndef CYD_DISABLE_LFSR
@@ -453,7 +454,7 @@ static void cyd_advance_oscillators(CydEngine *cyd, CydChannel *chn)
 #ifndef CYD_DISABLE_LFSR		
 	if (chn->flags & CYD_CHN_ENABLE_LFSR)
 	{
-		chn->lfsr_acc = (chn->lfsr & 1) ? 0xfff : 0;
+		chn->lfsr_acc = (chn->lfsr & 1) ? (WAVE_AMP - 1) : 0;
 		
 		if (chn->lfsr_ctr >= chn->lfsr_period)
 		{
@@ -643,7 +644,7 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 		cyd_advance_oscillators(cyd, chn); // Need to move the oscillators per every oversample subcycle
 	}
 	
-	return (ovr >> OVERSAMPLE) - 0x800;
+	return (ovr >> OVERSAMPLE) - (WAVE_AMP / 2);
 }
 
 
@@ -703,7 +704,7 @@ static Sint32 cyd_output(CydEngine *cyd)
 		{
 			if (chn->flags & CYD_CHN_ENABLE_RING_MODULATION)
 			{
-				o = cyd_env_output(cyd, chn, s[i] * (s[chn->ring_mod] + 0x800) / 0x1000);
+				o = cyd_env_output(cyd, chn, s[i] * (s[chn->ring_mod] + (WAVE_AMP / 2)) / WAVE_AMP);
 			}
 			else
 			{
