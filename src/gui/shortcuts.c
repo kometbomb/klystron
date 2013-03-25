@@ -28,6 +28,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 void do_shortcuts(SDL_KeyboardEvent *e, const KeyShortcut *shortcuts)
 {
+	if (e->type != SDL_KEYDOWN)
+		return;
+
 	for (int i = 0 ; shortcuts[i].action ; ++i)
 	{
 		if (e->keysym.sym == shortcuts[i].key
