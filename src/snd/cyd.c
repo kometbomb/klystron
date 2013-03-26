@@ -853,9 +853,9 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 #endif
 
 #ifdef NOSDL_MIXER
-			Sint32 o = output * PRE_GAIN;
+			Sint32 o = (output * PRE_GAIN) / PRE_GAIN_DIVISOR;
 #else
-			Sint32 o = (Sint32)*(Sint16*)stream + output * PRE_GAIN;
+			Sint32 o = (Sint32)*(Sint16*)stream + (output * PRE_GAIN) / PRE_GAIN_DIVISOR;
 #endif
 			
 			if (o < -32768) o = -32768;
@@ -935,9 +935,9 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 #endif
 
 #if defined(USENATIVEAPIS) || defined(NOSDL_MIXER)
-			Sint32 o1 = left * PRE_GAIN;
+			Sint32 o1 = (left * PRE_GAIN) / PRE_GAIN_DIVISOR;
 #else
-			Sint32 o1 = (Sint32)*(Sint16*)stream + left * PRE_GAIN;
+			Sint32 o1 = (Sint32)*(Sint16*)stream + (left * PRE_GAIN) / PRE_GAIN_DIVISOR;
 #endif
 			
 			if (o1 < -32768) 
@@ -954,9 +954,9 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 			*(Sint16*)stream = o1;
 
 #ifdef USENATIVEAPIS			
-			Sint32 o2 = right * PRE_GAIN;
+			Sint32 o2 = (right * PRE_GAIN) / PRE_GAIN_DIVISOR;
 #else
-			Sint32 o2 = (Sint32)*((Sint16*)stream + 1) + right * PRE_GAIN;
+			Sint32 o2 = (Sint32)*((Sint16*)stream + 1) + (right * PRE_GAIN) / PRE_GAIN_DIVISOR;
 #endif
 			
 			if (o2 < -32768) 
