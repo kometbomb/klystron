@@ -956,8 +956,8 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 		note += (Uint16)((int)ins->base_note-MIDDLE_C);
 	}
 	
-	mus_set_note(mus, chan, (Uint16)note << 8, 1, ins->flags & MUS_INST_QUARTER_FREQ ? 4 : 1);
-	chn->last_note = chn->target_note = (Uint16)note << 8;
+	mus_set_note(mus, chan, ((Uint16)note << 8) + ins->finetune, 1, ins->flags & MUS_INST_QUARTER_FREQ ? 4 : 1);
+	chn->last_note = chn->target_note = (((Uint16)note << 8) + ins->finetune);
 	chn->current_tick = 0;
 	
 	track->vibrato_position = 0;
@@ -1278,7 +1278,7 @@ int mus_advance_tick(void* udata)
 								{
 									if (ctrl & MUS_CTRL_LEGATO)
 									{
-										mus_set_slide(mus, i, ((Uint16)note + pinst->base_note - MIDDLE_C) << 8);
+										mus_set_slide(mus, i, (((Uint16)note + pinst->base_note - MIDDLE_C) << 8) + pinst->finetune);
 									}
 									else
 									{
@@ -1290,15 +1290,15 @@ int mus_advance_tick(void* udata)
 								}
 								else if (ctrl & MUS_CTRL_LEGATO)
 								{
-									mus_set_note(mus, i, ((Uint16)note + pinst->base_note - MIDDLE_C) << 8, 1, pinst->flags & MUS_INST_QUARTER_FREQ ? 4 : 1);
-									mus->channel[i].target_note = ((Uint16)note + pinst->base_note - MIDDLE_C) << 8;
+									mus_set_note(mus, i, (((Uint16)note + pinst->base_note - MIDDLE_C) << 8) + pinst->finetune, 1, pinst->flags & MUS_INST_QUARTER_FREQ ? 4 : 1);
+									mus->channel[i].target_note = (((Uint16)note + pinst->base_note - MIDDLE_C) << 8) + pinst->finetune;
 								}
 								else 
 								{
 									Uint8 prev_vol_track = mus->song_track[i].volume;
 									Uint8 prev_vol_cyd = mus->cyd->channel[i].volume;
 									mus_trigger_instrument_internal(mus, i, pinst, note);
-									mus->channel[i].target_note = ((Uint16)note + pinst->base_note - MIDDLE_C) << 8;
+									mus->channel[i].target_note = (((Uint16)note + pinst->base_note - MIDDLE_C) << 8) + pinst->finetune;
 									
 									if (inst == MUS_NOTE_NO_INSTRUMENT)
 									{
@@ -1605,6 +1605,10 @@ int mus_load_instrument_RW(Uint8 version, RWops *ctx, MusInstrument *inst, CydWa
 	_VER_READ(&inst->pwm_depth, 0); 
 	_VER_READ(&inst->slide_speed, 0);
 	_VER_READ(&inst->base_note, 0);
+	
+	if (version >= 20)
+		_VER_READ(&inst->finetune, 0);
+	
 	Uint8 len = 16;
 	VER_READ(version, 11, 0xff, &len, 0);
 	if (len)
@@ -1696,6 +1700,7 @@ void mus_get_default_instrument(MusInstrument *inst)
 	inst->adsr.d = 12;
 	inst->volume = MAX_VOLUME;
 	inst->base_note = MIDDLE_C;
+	inst->finetune = 0;
 	inst->prog_period = 2;
 	inst->cutoff = 2047;
 	inst->slide_speed = 0x80;

@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define MUS_PROG_LEN 32
 #define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
 
-#define MUS_VERSION 19
+#define MUS_VERSION 20
 
 #define MUS_SONG_TITLE_LEN 64
 #define MUS_INSTRUMENT_NAME_LEN 32
@@ -59,6 +59,7 @@ typedef struct
 	char name[MUS_INSTRUMENT_NAME_LEN + 1];
 	Uint8 wavetable_entry;
 	Uint8 lfsr_type;
+	Sint8 finetune;
 } MusInstrument;
 
 enum
