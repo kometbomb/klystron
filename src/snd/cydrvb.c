@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 void cydrvb_init(CydReverb *rvb, int rate)
 {
-	memset(rvb, 0, sizeof(rvb));
+	memset(rvb, 0, sizeof(*rvb));
 	
 	int bufsize = CYDRVB_SIZE * rate / 1000;
 	

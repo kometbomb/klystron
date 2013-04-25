@@ -663,9 +663,9 @@ Sint32 cyd_env_output(CydEngine *cyd, CydChannel *chn, Sint32 input)
 	{
 #ifndef CYD_DISABLE_ENVELOPE	
 		if (chn->envelope_state == ATTACK)
-			return (input * ((Sint32)chn->envelope / 0x10000) / 256) * (Sint32)(chn->volume) / MAX_VOLUME;
+			return ((Sint64)input * ((Sint32)chn->envelope / 0x10000) / 256) * (Sint32)(chn->volume) / MAX_VOLUME;
 		else
-			return (input * (cyd->lookup_table[(chn->envelope / (65536*256 / LUT_SIZE) ) & (LUT_SIZE - 1)]) / 65536) * (Sint32)(chn->volume) / MAX_VOLUME;
+			return ((Sint64)input * (cyd->lookup_table[(chn->envelope / (65536*256 / LUT_SIZE) ) & (LUT_SIZE - 1)]) / 65536) * (Sint32)(chn->volume) / MAX_VOLUME;
 #else
 		return input * (Sint32)(chn->volume) / MAX_VOLUME;
 #endif
