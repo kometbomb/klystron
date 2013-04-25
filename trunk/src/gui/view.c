@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include "view.h"
+#include "macros.h"
 
 extern int event_hit;
 
@@ -56,10 +57,15 @@ void copy_rect(SDL_Rect *dest, const SDL_Rect *src)
 
 void clip_rect(SDL_Rect *rect, const SDL_Rect *limits)
 {
-	if (rect->x < limits->x) { rect->w -= limits->x - rect->x; rect->x = limits->x; }
-	if (rect->y < limits->y) { rect->h -= limits->y - rect->y; rect->y = limits->y; }
-	if (rect->w + rect->x > limits->w + limits->x) { rect->w = limits->w + limits->x - rect->x; }
-	if (rect->h + rect->y > limits->h + limits->y) { rect->h = limits->h + limits->y - rect->y; }
+	int w = rect->w, h = rect->h;
+
+	if (rect->x < limits->x) { w -= limits->x - rect->x; rect->x = limits->x; }
+	if (rect->y < limits->y) { h -= limits->y - rect->y; rect->y = limits->y; }
+	if (w + rect->x > limits->w + limits->x) { w = limits->w + limits->x - rect->x; }
+	if (h + rect->y > limits->h + limits->y) { h = limits->h + limits->y - rect->y; }
+	
+	rect->w = my_max(0, w);
+	rect->h = my_max(0, h);
 }
 
 
