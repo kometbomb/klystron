@@ -149,6 +149,7 @@ typedef struct
 	int channel;
 	MusInstrument *instrument;
 	Uint8 note;
+	int panning;
 } MusDelayedTrigger;
 
 typedef struct
@@ -330,7 +331,7 @@ typedef struct RWops
 #endif
 
 int mus_advance_tick(void* udata);
-int mus_trigger_instrument(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note);
+int mus_trigger_instrument(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note, int panning);
 void mus_release(MusEngine* mus, int chan);
 void mus_init_engine(MusEngine *mus, CydEngine *cyd);
 void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position);

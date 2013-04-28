@@ -33,7 +33,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define VIB_TAB_SIZE 128
 
-static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note);
+static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note, int panning);
 
 #ifdef USENATIVEAPIS
 
@@ -347,7 +347,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					{
 						Uint8 prev_vol_tr = mus->song_track[chan].volume;
 						Uint8 prev_vol_cyd = cydchn->volume;
-						mus_trigger_instrument_internal(mus, chan, chn->instrument, chn->last_note >> 8);
+						mus_trigger_instrument_internal(mus, chan, chn->instrument, chn->last_note >> 8, -1);
 						mus->song_track[chan].volume = prev_vol_tr;
 						cydchn->volume = prev_vol_cyd;
 					}
@@ -910,7 +910,7 @@ static void do_pwm(MusEngine* mus, int chan)
 
 
 //***** USE THIS INSIDE MUS_ADVANCE_TICK TO AVOID MUTEX DEADLOCK
-int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note)
+int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note, int panning)
 {
 	if (chan == -1)
 	{
@@ -1025,6 +1025,12 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 		cyd_set_wave_entry(&mus->cyd->channel[chan], NULL);
 	}
 #endif
+
+#ifdef STEREOOUTPUT
+	if (panning != -1)
+		cyd_set_panning(mus->cyd, &mus->cyd->channel[chan], panning);
+		
+#endif		
 	
 	//cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], chn->frequency);
 	cyd_enable_gate(mus->cyd, &mus->cyd->channel[chan], 1);
@@ -1033,7 +1039,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 }
 
 
-int mus_trigger_instrument(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note)
+int mus_trigger_instrument(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note, int panning)
 {
 	cyd_lock(mus->cyd, 1);
 
@@ -1054,10 +1060,11 @@ int mus_trigger_instrument(MusEngine* mus, int chan, MusInstrument *ins, Uint8 n
 		mus->song_track[chan].delayed.note = note;
 		mus->song_track[chan].delayed.instrument = ins;
 		mus->song_track[chan].delayed.channel = chan;
+		mus->song_track[chan].delayed.panning = panning;
 	}
 	else
 	{
-		chan = mus_trigger_instrument_internal(mus, chan, ins, note);
+		chan = mus_trigger_instrument_internal(mus, chan, ins, note, panning);
 		mus->song_track[chan].delayed.instrument = NULL;
 	}
 	
@@ -1073,7 +1080,7 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 	
 	if (mus->song_track[chan].delayed.instrument != NULL)
 	{
-		mus_trigger_instrument_internal(mus, mus->song_track[chan].delayed.channel, mus->song_track[chan].delayed.instrument, mus->song_track[chan].delayed.note);
+		mus_trigger_instrument_internal(mus, mus->song_track[chan].delayed.channel, mus->song_track[chan].delayed.instrument, mus->song_track[chan].delayed.note, mus->song_track[chan].delayed.panning);
 		mus->song_track[chan].delayed.instrument = NULL;
 	}
 	
@@ -1283,7 +1290,7 @@ int mus_advance_tick(void* udata)
 									else
 									{
 										Uint16 oldnote = mus->channel[i].note;
-										mus_trigger_instrument_internal(mus, i, pinst, note);
+										mus_trigger_instrument_internal(mus, i, pinst, note, -1);
 										mus->channel[i].note = oldnote;
 									}
 									mus->song_track[i].slide_speed = speed;
@@ -1297,7 +1304,7 @@ int mus_advance_tick(void* udata)
 								{
 									Uint8 prev_vol_track = mus->song_track[i].volume;
 									Uint8 prev_vol_cyd = mus->cyd->channel[i].volume;
-									mus_trigger_instrument_internal(mus, i, pinst, note);
+									mus_trigger_instrument_internal(mus, i, pinst, note, -1);
 									mus->channel[i].target_note = (((Uint16)note + pinst->base_note - MIDDLE_C) << 8) + pinst->finetune;
 									
 									if (inst == MUS_NOTE_NO_INSTRUMENT)
