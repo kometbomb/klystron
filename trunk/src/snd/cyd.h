@@ -164,6 +164,7 @@ typedef struct
 	WAVEHDR waveout_hdr[CYD_NUM_WO_BUFFERS]; 
 # endif
 #endif
+	Uint32 samples_played;
 } CydEngine;
 
 enum

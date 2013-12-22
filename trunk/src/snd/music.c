@@ -1460,7 +1460,7 @@ void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position)
 }
 
 
-int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, MusPattern **pattern, MusChannel *channel, int *cyd_env, int *mus_note)
+int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, MusPattern **pattern, MusChannel *channel, int *cyd_env, int *mus_note, Uint32 *time_played)
 {
 	cyd_lock(mus->cyd, 1);
 	
@@ -1504,6 +1504,11 @@ int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, M
 		{
 			mus_note[i] = mus->channel[i].note;
 		}
+	}
+	
+	if (time_played)
+	{
+		*time_played = mus->cyd->samples_played / mus->cyd->sample_rate;
 	}
 	
 	cyd_lock(mus->cyd, 0);
