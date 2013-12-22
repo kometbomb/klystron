@@ -973,8 +973,9 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 			*((Sint16*)stream + 1) = o2;
 			
 			cyd_cycle(cyd);
+			++cyd->samples_played;
 		}
-
+		
 		cyd_lock(cyd, 0);
 	}
 	
@@ -1073,7 +1074,8 @@ void cyd_set_waveform(CydChannel *chn, Uint32 wave)
 void cyd_set_callback(CydEngine *cyd, int (*callback)(void*), void*param, Uint16 period)
 {
 	cyd_lock(cyd, 1);
-	
+
+	cyd->samples_played	= 0;
 	cyd->callback_parameter = param;
 	cyd->callback = callback;
 	cyd->callback_period = cyd->sample_rate / period;
@@ -1293,6 +1295,7 @@ int cyd_register(CydEngine * cyd)
 
 int cyd_unregister(CydEngine * cyd)
 {
+	debug("cyd_unregister");	
 #ifndef USENATIVEAPIS
 # ifndef NOSDL_MIXER
 	int frequency, channels;
@@ -1314,10 +1317,14 @@ int cyd_unregister(CydEngine * cyd)
 	else return 0;
 # else
 
+	debug("Waiting for stuff");	
 	cyd_lock(cyd, 1);
+	debug("Done waiting");	
 	cyd_lock(cyd, 0);
-		
+	
+	debug("Closing audio");	
 	SDL_CloseAudio();
+	debug("SDL_CloseAudio finished");	
 	
 	return 1;
 # endif

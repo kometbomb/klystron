@@ -335,7 +335,7 @@ int mus_trigger_instrument(MusEngine* mus, int chan, MusInstrument *ins, Uint8 n
 void mus_release(MusEngine* mus, int chan);
 void mus_init_engine(MusEngine *mus, CydEngine *cyd);
 void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position);
-int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, MusPattern **pattern, MusChannel *channel, int *cyd_env, int *mus_note);
+int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, MusPattern **pattern, MusChannel *channel, int *cyd_env, int *mus_note, Uint32 *time_played);
 int mus_load_instrument_file(Uint8 version, FILE *f, MusInstrument *inst, CydWavetableEntry *wavetable_entries);
 int mus_load_instrument_file2(FILE *f, MusInstrument *inst, CydWavetableEntry *wavetable_entries);
 int mus_load_instrument_RW(Uint8 version, RWops *ctx, MusInstrument *inst, CydWavetableEntry *wavetable_entries);
