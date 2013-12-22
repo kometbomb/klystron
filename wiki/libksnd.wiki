@@ -98,3 +98,4 @@ E.g. {{{make CFG=release EXTFLAGS="-DCYD_DISABLE_FX -DUSESDLMUTEXES -DSTEREOOUTP
 || {{{CYD_DISABLE_PWM}}} || Disable PWM automation ||
 || {{{CYD_DISABLE_WAVETABLE}}} || Disable wavetable ||
 || {{{CYD_DISABLE_VIBRATO}}} || Disable vibrato automation ||
+|| {{{GENERATE_VIBRATO_TABLES}}} || Generate lookup tables instead of using Protracker tables ||
