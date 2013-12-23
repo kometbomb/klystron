@@ -260,7 +260,6 @@ void mus_init_engine(MusEngine *mus, CydEngine *cyd)
 	{
 		sine_table[i] = sin((float)i / VIB_TAB_SIZE * M_PI * 2) * 127;
 		rnd_table[i] = rand();
-		debug("%d", rnd_table[i]);
 	}
 #endif
 }

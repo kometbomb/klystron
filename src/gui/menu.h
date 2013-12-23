@@ -45,9 +45,11 @@ typedef struct menu_t Menu;
 #include "shortcuts.h"
 #include "gfx/font.h"
 
-void open_menu(const Menu *mainmenu, void (*close_hook)(void), const KeyShortcut *_shortcuts, 
+void open_menu(const Menu *mainmenu, const Menu *action, void (*close_hook)(void), const KeyShortcut *_shortcuts, 
 	const Font *headerfont, const Font *headerfont_selected, 
 	const Font *menufont, const Font *menufont_selected, 
 	const Font *shortcutfont, const Font *shortcutfont_selected, SDL_Surface *gfx);
 void close_menu();
 void draw_menu(SDL_Surface *dest, const SDL_Event *e);
+const Menu * get_current_menu_action();
+const Menu * get_current_menu();
