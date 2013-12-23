@@ -42,13 +42,13 @@ static SDL_Surface *menu_gfx = NULL;
 static const Font * menu_font, *shortcut_font, *header_font;
 static const Font * menu_font_selected, *shortcut_font_selected, *header_font_selected;
 
-void open_menu(const Menu *mainmenu, void (*close_hook)(void), const KeyShortcut *_shortcuts, 
+void open_menu(const Menu *mainmenu, const Menu *action, void (*close_hook)(void), const KeyShortcut *_shortcuts, 
 	const Font *headerfont, const Font *headerfont_selected, 
 	const Font *menufont, const Font *menufont_selected, 
 	const Font *shortcutfont, const Font *shortcutfont_selected, SDL_Surface *gfx)
 {
 	current_menu = mainmenu;
-	current_menu_action = NULL;
+	current_menu_action = action;
 	menu_close_hook = close_hook;
 	shortcuts = _shortcuts;
 	menu_gfx = gfx;
@@ -60,6 +60,17 @@ void open_menu(const Menu *mainmenu, void (*close_hook)(void), const KeyShortcut
 	shortcut_font_selected = shortcutfont_selected;
 }
 
+
+const Menu * get_current_menu()
+{
+	return current_menu;
+}
+
+
+const Menu * get_current_menu_action()
+{
+	return current_menu_action;
+}
 
 void close_menu()
 {
