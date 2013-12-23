@@ -1369,12 +1369,18 @@ int mus_advance_tick(void* udata)
 							Uint16 step = command & 0xff;
 							mus->song_track[i].pattern_step = step;
 						}
+						else if ((command & 0xff00) == MUS_FX_SKIP_PATTERN)
+						{
+							mus->song_position += my_max(mus->song_track[i].pattern->num_steps - mus->song_track[i].pattern_step - 1, 0);
+							mus->song_track[i].pattern = NULL;
+							mus->song_track[i].pattern_step = 0;
+						}
 						else
 						{
 							++mus->song_track[i].pattern_step;
 						}
 						
-						if (mus->song_track[i].pattern_step >= mus->song_track[i].pattern->num_steps)
+						if (mus->song_track[i].pattern && mus->song_track[i].pattern_step >= mus->song_track[i].pattern->num_steps)
 						{
 							mus->song_track[i].pattern = NULL;
 							mus->song_track[i].pattern_step = 0;
