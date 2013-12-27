@@ -41,23 +41,23 @@ typedef struct
 /* The following is a non-aligned packed struct for saving in files */
 typedef struct
 {
-	Uint32 flags;
+	Uint32 flags; // 4
 	struct
 	{
-		Uint8 bit_drop;
+		Uint8 bit_drop; // 1
 	} crush;
 	struct 
 	{
-		Uint8 rate, min_delay, max_delay, sep;
+		Uint8 rate, min_delay, max_delay, sep; // 4
 	} chr;
 	struct 
 	{
-		Uint8 spread;
-		struct { Uint16 delay; Sint16 gain; } tap[CYDRVB_TAPS];
+		Uint8 spread; // 1
+		struct { Uint16 delay; Sint16 gain; } tap[CYDRVB_TAPS]; // 4 * 8
 	} rvb;
 	struct // so we won't fuck up old versions of this struct when freading
 	{
-		Uint8 downsample, gain;
+		Uint8 downsample, gain; // 2
 	} crushex;
 } __attribute__((__packed__)) CydFxSerialized;
 

@@ -1766,6 +1766,46 @@ void mus_set_fx(MusEngine *mus, MusSong *song)
 }
 
 
+static void mus_load_fx(RWops *ctx, CydFxSerialized *fx, int version)
+{
+	Uint8 padding;
+	
+	debug("fx @ %u", my_RWtell(ctx));
+
+	my_RWread(ctx, &fx->flags, 1, 4);
+	my_RWread(ctx, &fx->crush.bit_drop, 1, 1);
+	my_RWread(ctx, &fx->chr.rate, 1, 1);
+	my_RWread(ctx, &fx->chr.min_delay, 1, 1);
+	my_RWread(ctx, &fx->chr.max_delay, 1, 1);
+	my_RWread(ctx, &fx->chr.sep, 1, 1);
+	my_RWread(ctx, &fx->rvb.spread, 1, 1);
+	
+	if (version < 21)
+		my_RWread(ctx, &padding, 1, 1);
+	
+	for (int i = 0 ; i < CYDRVB_TAPS ; ++i)	
+	{
+		my_RWread(ctx, &fx->rvb.tap[i].delay, 2, 1);
+		my_RWread(ctx, &fx->rvb.tap[i].gain, 2, 1);
+		FIX_ENDIAN(fx->rvb.tap[i].gain);
+		FIX_ENDIAN(fx->rvb.tap[i].delay);
+	}
+
+	my_RWread(ctx, &fx->crushex.downsample, 1, 1); 
+	
+	if (version < 19)
+	{
+		fx->crushex.gain = 128;
+	}
+	else
+	{
+		my_RWread(ctx, &fx->crushex.gain, 1, 1);
+	}
+	
+	FIX_ENDIAN(fx->flags);
+}
+
+
 int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_entries)
 {
 	char id[9];
@@ -1874,37 +1914,8 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 				
 				debug("Loading fx at offset %x (%d/%d)", my_RWtell(ctx), sizeof(song->fx[0]) * n_fx, sizeof(song->fx[0]));
 				
-				if (version < 12)
-				{
-					debug("Reading legacy fx format");
-					my_RWread(ctx, song->fx, sizeof(song->fx[0]) - sizeof(Uint8) * 3, n_fx);
-				}
-				else if (version < 19)
-				{
-					debug("Reading fx format 2");
-					
-					for (int fx = 0 ; fx < n_fx ; ++fx)
-					{
-						my_RWread(ctx, &song->fx[fx], sizeof(song->fx[0]) - sizeof(Uint8) * 1, 1);
-						song->fx[fx].crushex.gain = 128;
-					}
-				}
-				else
-				{
-					debug("Reading fx format 3");
-					my_RWread(ctx, &song->fx[0], sizeof(song->fx[0]), n_fx);
-				}
-				
 				for (int fx = 0 ; fx < n_fx ; ++fx)
-				{
-					FIX_ENDIAN(song->fx[fx].flags);
-					
-					for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
-					{
-						FIX_ENDIAN(song->fx[fx].rvb.tap[i].gain);
-						FIX_ENDIAN(song->fx[fx].rvb.tap[i].delay);
-					}
-				}
+					mus_load_fx(ctx, &song->fx[fx], version);
 			}
 			else
 			{
