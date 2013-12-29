@@ -1771,6 +1771,18 @@ static void mus_load_fx(RWops *ctx, CydFxSerialized *fx, int version)
 	Uint8 padding;
 	
 	debug("fx @ %u", my_RWtell(ctx));
+	
+	if (version >= 22)
+	{
+		Uint8 len = 16;
+		my_RWread(ctx, &len, 1, 1);
+		if (len)
+		{
+			memset(fx->name, 0, sizeof(fx->name));
+			_VER_READ(fx->name, my_min(len, sizeof(fx->name)));
+			fx->name[sizeof(fx->name) - 1] = '\0';
+		}
+	}
 
 	my_RWread(ctx, &fx->flags, 1, 4);
 	my_RWread(ctx, &fx->crush.bit_drop, 1, 1);
