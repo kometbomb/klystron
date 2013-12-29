@@ -30,6 +30,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cydchr.h"
 #include "cydcrush.h"
 
+#define CYD_FX_NAME_LEN 32
+
 typedef struct
 {
 	Uint32 flags;
@@ -41,6 +43,7 @@ typedef struct
 /* The following is a non-aligned packed struct for saving in files */
 typedef struct
 {
+	char name[CYD_FX_NAME_LEN + 1];
 	Uint32 flags; // 4
 	struct
 	{
