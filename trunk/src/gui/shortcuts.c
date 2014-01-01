@@ -45,3 +45,43 @@ void do_shortcuts(SDL_KeyboardEvent *e, const KeyShortcut *shortcuts)
 		}
 	}
 }
+
+
+static const char *upcase(char *str)
+{
+	for (char *c = str ; *c ; ++c)
+		*c = toupper(*c);
+		
+	return str;
+}
+
+
+const char * get_shortcut_string(const KeyShortcut *sc)
+{
+	static char buffer[100];
+	strcpy(buffer, "");
+			
+	if (sc->mod & KMOD_CTRL)
+		strncat(buffer, "ctrl-", sizeof(buffer));
+		
+	if (sc->mod & KMOD_ALT)
+		strncat(buffer, "alt-", sizeof(buffer));
+		
+	if (sc->mod & KMOD_SHIFT)
+		strncat(buffer, "shift-", sizeof(buffer));
+	
+	char keyname[4] = { 0 };
+	
+	if (sc->key >= SDLK_KP0 && sc->key <= SDLK_KP_EQUALS)
+	{
+		strncpy(keyname, SDL_GetKeyName(sc->key), 3);
+		keyname[2] = keyname[1];
+		keyname[0] = 'K';
+		keyname[1] = 'P';
+	}
+	else
+		strncpy(keyname, SDL_GetKeyName(sc->key), 3);
+	
+	strncat(buffer, keyname, sizeof(buffer) - 1);
+	return upcase(buffer);
+}
