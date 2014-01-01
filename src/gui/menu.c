@@ -105,21 +105,10 @@ static int get_menu_item_width(const Menu *item)
 }
 
 
-const char *upcase(char *str)
-{
-	for (char *c = str ; *c ; ++c)
-		*c = toupper(*c);
-		
-	return str;
-}
-
-
 static const char * get_shortcut_key(const Menu *item)
 {
 	if (!shortcuts) return NULL;
 
-	static char buffer[100];
-	
 	for (int i = 0 ; shortcuts[i].action ; ++i)
 	{
 		if (((item->action == MENU_CHECK || item->action == MENU_CHECK_NOSET) && (void*)shortcuts[i].action == item->p3) ||
@@ -128,23 +117,7 @@ static const char * get_shortcut_key(const Menu *item)
 			(void*)shortcuts[i].p3 == item->p2 &&
 			(void*)shortcuts[i].p2 == item->p3))
 		{
-			strcpy(buffer, "");
-			
-			if (shortcuts[i].mod & KMOD_CTRL)
-				strncat(buffer, "ctrl-", sizeof(buffer));
-				
-			if (shortcuts[i].mod & KMOD_ALT)
-				strncat(buffer, "alt-", sizeof(buffer));
-				
-			if (shortcuts[i].mod & KMOD_SHIFT)
-				strncat(buffer, "shift-", sizeof(buffer));
-			
-			char keyname[4] = { 0 };
-			
-			strncpy(keyname, SDL_GetKeyName(shortcuts[i].key), 3);
-			
-			strncat(buffer, keyname, sizeof(buffer) - 1);
-			return upcase(buffer);
+			return get_shortcut_string(&shortcuts[i]);
 		}
 		else if (item->submenu)
 		{
