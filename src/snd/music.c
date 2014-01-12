@@ -160,12 +160,12 @@ static void update_volumes(MusEngine *mus, MusTrackStatus *ts, MusChannel *chn, 
 	if (chn->instrument && (chn->instrument->flags & MUS_INST_RELATIVE_VOLUME))
 	{
 		ts->volume = volume;
-		cydchn->volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : (int)chn->instrument->volume * volume / MAX_VOLUME * (int)mus->volume / MAX_VOLUME * (int)mus->play_volume / MAX_VOLUME * (int)chn->volume / MAX_VOLUME;
+		cydchn->adsr.volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : (int)chn->instrument->volume * volume / MAX_VOLUME * (int)mus->volume / MAX_VOLUME * (int)mus->play_volume / MAX_VOLUME * (int)chn->volume / MAX_VOLUME;
 	}
 	else
 	{
 		ts->volume = volume;
-		cydchn->volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : ts->volume * (int)mus->volume / MAX_VOLUME * (int)mus->play_volume / MAX_VOLUME * (int)chn->volume / MAX_VOLUME;
+		cydchn->adsr.volume = (chn->flags & MUS_CHN_DISABLED) ? 0 : ts->volume * (int)mus->volume / MAX_VOLUME * (int)mus->play_volume / MAX_VOLUME * (int)chn->volume / MAX_VOLUME;
 	}
 }
 
@@ -200,12 +200,12 @@ static void mus_set_wavetable_frequency(MusEngine *mus, int chan, Uint16 note)
 	MusChannel *chn = &mus->channel[chan];
 	CydChannel *cydchn = &mus->cyd->channel[chan];
 	
-	if (chn->instrument && (chn->instrument->cydflags & CYD_CHN_ENABLE_WAVE) && (cydchn->wave_entry))
+	if (chn->instrument && (chn->instrument->cydflags & CYD_CHN_ENABLE_WAVE) && (cydchn->wave.entry))
 	{
 #ifndef CYD_DISABLE_INACCURACY
-		Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : note) & mus->pitch_mask;
+		Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave.entry->base_note : note) & mus->pitch_mask;
 #else
-		Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : note);
+		Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave.entry->base_note : note);
 #endif
 		cyd_set_wavetable_frequency(mus->cyd, cydchn, wave_frequency);
 	}
@@ -397,7 +397,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					{
 						if ((inst & 0xf) <= tick)
 						{
-							cydchn->volume = 0;
+							cydchn->adsr.volume = 0;
 							mus->song_track[chan].volume = 0;
 						}
 					}
@@ -409,10 +409,10 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					if ((inst & 0xf) > 0 && (tick % (inst & 0xf)) == 0)
 					{
 						Uint8 prev_vol_tr = mus->song_track[chan].volume;
-						Uint8 prev_vol_cyd = cydchn->volume;
+						Uint8 prev_vol_cyd = cydchn->adsr.volume;
 						mus_trigger_instrument_internal(mus, chan, chn->instrument, chn->last_note >> 8, -1);
 						mus->song_track[chan].volume = prev_vol_tr;
-						cydchn->volume = prev_vol_cyd;
+						cydchn->adsr.volume = prev_vol_cyd;
 					}
 				}
 				break;
@@ -561,6 +561,26 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					chn->buzz_offset = (chn->buzz_offset & 0xff00) | (inst & 0xff);
 					
 					mus_set_buzz_frequency(mus, chan, chn->note);
+				}
+				break;
+#endif
+
+#ifndef CYD_DISABLE_FM
+				case MUS_FX_FM_SET_MODULATION:
+				{
+					cydchn->fm.adsr.volume = inst % MAX_VOLUME;
+				}
+				break;
+				
+				case MUS_FX_FM_SET_HARMONIC:
+				{
+					cydchn->fm.harmonic = inst % 16;
+				}
+				break;
+				
+				case MUS_FX_FM_SET_FEEDBACK:
+				{
+					cydchn->fm.feedback = inst % 8;
 				}
 				break;
 #endif
@@ -1030,7 +1050,12 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	else
 	{
 		mus->cyd->channel[chan].flags &= ~CYD_CHN_ENABLE_YM_ENV;
-		memcpy(&mus->cyd->channel[chan].adsr, &ins->adsr, sizeof(ins->adsr));
+		
+		
+		mus->cyd->channel[chan].adsr.a = ins->adsr.a;
+		mus->cyd->channel[chan].adsr.d = ins->adsr.d;
+		mus->cyd->channel[chan].adsr.s = ins->adsr.s;
+		mus->cyd->channel[chan].adsr.r = ins->adsr.r;
 	}
 	
 #ifndef CYD_DISABLE_WAVETABLE
@@ -1042,6 +1067,17 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	{
 		cyd_set_wave_entry(&mus->cyd->channel[chan], NULL);
 	}
+
+#ifndef CYD_DISABLE_FM	
+	if (ins->fm_flags & CYD_FM_ENABLE_WAVE)
+	{
+		cydfm_set_wave_entry(&mus->cyd->channel[chan].fm, &mus->cyd->wavetable_entries[ins->fm_wave]);
+	}
+	else
+	{
+		cydfm_set_wave_entry(&mus->cyd->channel[chan].fm, NULL);
+	}
+#endif
 #endif
 
 #ifdef STEREOOUTPUT
@@ -1049,6 +1085,19 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 		cyd_set_panning(mus->cyd, &mus->cyd->channel[chan], panning);
 		
 #endif		
+
+#ifndef CYD_DISABLE_FM
+	CydFm *fm = &mus->cyd->channel[chan].fm;
+	
+	fm->flags = ins->fm_flags;
+	fm->harmonic = ins->fm_harmonic;
+	fm->adsr.a = ins->fm_adsr.a;
+	fm->adsr.d = ins->fm_adsr.d;
+	fm->adsr.s = ins->fm_adsr.s;
+	fm->adsr.r = ins->fm_adsr.r;
+	fm->adsr.volume = ins->fm_modulation;
+	fm->feedback = ins->fm_feedback;
+#endif
 	
 	//cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], chn->frequency);
 	cyd_enable_gate(mus->cyd, &mus->cyd->channel[chan], 1);
@@ -1321,14 +1370,14 @@ int mus_advance_tick(void* udata)
 								else 
 								{
 									Uint8 prev_vol_track = mus->song_track[i].volume;
-									Uint8 prev_vol_cyd = mus->cyd->channel[i].volume;
+									Uint8 prev_vol_cyd = mus->cyd->channel[i].adsr.volume;
 									mus_trigger_instrument_internal(mus, i, pinst, note, -1);
 									mus->channel[i].target_note = (((Uint16)note + pinst->base_note - MIDDLE_C) << 8) + pinst->finetune;
 									
 									if (inst == MUS_NOTE_NO_INSTRUMENT)
 									{
 										mus->song_track[i].volume = prev_vol_track;
-										mus->cyd->channel[i].volume = prev_vol_cyd;
+										mus->cyd->channel[i].adsr.volume = prev_vol_cyd;
 									}
 								}
 								
@@ -1337,14 +1386,14 @@ int mus_advance_tick(void* udata)
 									if (pinst->flags & MUS_INST_RELATIVE_VOLUME)
 									{
 										mus->song_track[i].volume = MAX_VOLUME;
-										mus->cyd->channel[i].volume = (mus->channel[i].flags & MUS_CHN_DISABLED) 
+										mus->cyd->channel[i].adsr.volume = (mus->channel[i].flags & MUS_CHN_DISABLED) 
 											? 0 
 											: (int)pinst->volume * (int)mus->volume / MAX_VOLUME * (int)mus->play_volume / MAX_VOLUME * (int)mus->channel[i].volume / MAX_VOLUME;
 									}
 									else
 									{
 										mus->song_track[i].volume = pinst->volume;
-										mus->cyd->channel[i].volume = (mus->channel[i].flags & MUS_CHN_DISABLED) ? 0 : (int)pinst->volume * (int)mus->volume / MAX_VOLUME * (int)mus->play_volume / MAX_VOLUME * (int)mus->channel[i].volume / MAX_VOLUME;
+										mus->cyd->channel[i].adsr.volume = (mus->channel[i].flags & MUS_CHN_DISABLED) ? 0 : (int)pinst->volume * (int)mus->volume / MAX_VOLUME * (int)mus->play_volume / MAX_VOLUME * (int)mus->channel[i].volume / MAX_VOLUME;
 									}
 								}
 							}
@@ -1425,7 +1474,7 @@ int mus_advance_tick(void* udata)
 				}
 				else
 				{
-					cydchn->volume = 0;
+					cydchn->adsr.volume = 0;
 				}
 			}
 			
@@ -1516,9 +1565,9 @@ int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, M
 		for (int i = 0 ; i < my_min(mus->cyd->n_channels, MUS_MAX_CHANNELS) ; ++i)
 		{
 			if (mus->cyd->channel[i].flags & CYD_CHN_ENABLE_YM_ENV)
-				cyd_env[i] = mus->cyd->channel[i].volume;
+				cyd_env[i] = mus->cyd->channel[i].adsr.volume;
 			else
-				cyd_env[i] = cyd_env_output(mus->cyd, &mus->cyd->channel[i], MAX_VOLUME);
+				cyd_env[i] = cyd_env_output(mus->cyd, mus->cyd->channel[i].flags, &mus->cyd->channel[i].adsr, MAX_VOLUME);
 		}
 	}
 	
@@ -1617,6 +1666,23 @@ static void load_wavetable_entry(Uint8 version, CydWavetableEntry * e, RWops *ct
 }
 
 
+static int find_and_load_wavetable(Uint8 version, RWops *ctx, CydWavetableEntry *wavetable_entries)
+{
+	for (int i = 0 ; i < CYD_WAVE_MAX_ENTRIES ; ++i)
+	{
+		CydWavetableEntry *e = &wavetable_entries[i];
+			
+		if (e->samples == 0)
+		{
+			load_wavetable_entry(version, e, ctx);
+			return i;
+		}
+	}
+	
+	return 0;
+}
+
+
 int mus_load_instrument_RW(Uint8 version, RWops *ctx, MusInstrument *inst, CydWavetableEntry *wavetable_entries)
 {
 	mus_get_default_instrument(inst);
@@ -1664,21 +1730,30 @@ int mus_load_instrument_RW(Uint8 version, RWops *ctx, MusInstrument *inst, CydWa
 	VER_READ(version, 11, 0xff, &inst->vib_delay, 0);
 	VER_READ(version, 11, 0xff, &inst->pwm_shape, 0);
 	VER_READ(version, 18, 0xff, &inst->lfsr_type, 0);
-	
 	VER_READ(version, 12, 0xff, &inst->wavetable_entry, 0);
+	
+	VER_READ(version, 23, 0xff, &inst->fm_flags, 0);
+	VER_READ(version, 23, 0xff, &inst->fm_modulation, 0);
+	VER_READ(version, 23, 0xff, &inst->fm_feedback, 0);
+	VER_READ(version, 23, 0xff, &inst->fm_harmonic, 0);
+	VER_READ(version, 23, 0xff, &inst->fm_adsr, 0);
+	VER_READ(version, 23, 0xff, &inst->fm_wave, 0);
 
 #ifndef CYD_DISABLE_WAVETABLE	
-	if (wavetable_entries && inst->wavetable_entry == 0xff)
+	if (wavetable_entries)
 	{
-		for (inst->wavetable_entry = 0 ; inst->wavetable_entry < CYD_WAVE_MAX_ENTRIES ; ++inst->wavetable_entry)
+		if (inst->wavetable_entry == 0xff)
 		{
-			CydWavetableEntry *e = &wavetable_entries[inst->wavetable_entry];
-			
-			if (e->samples == 0)
-			{
-				load_wavetable_entry(version, e, ctx);
-				break;
-			}
+			inst->wavetable_entry = find_and_load_wavetable(version, ctx, wavetable_entries);
+		}
+		
+		if (inst->fm_wave == 0xff)
+		{
+			inst->fm_wave = find_and_load_wavetable(version, ctx, wavetable_entries);
+		}
+		else if (inst->fm_wave == 0xfe)
+		{
+			inst->fm_wave = inst->wavetable_entry;
 		}
 	}
 #endif
@@ -1693,6 +1768,8 @@ int mus_load_instrument_RW(Uint8 version, RWops *ctx, MusInstrument *inst, CydWa
 	
 	for (int i = 0 ; i < progsteps ; ++i)
 		FIX_ENDIAN(inst->program[i]);
+		
+	FIX_ENDIAN(inst->fm_flags);
 	
 	return 1;
 }

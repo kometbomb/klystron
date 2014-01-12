@@ -26,10 +26,18 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "cyd.h"
+#include "cydtypes.h"
 #include "cydentry.h"
 
-Sint32 cyd_wave_get_sample(const CydWavetableEntry *entry, CydWaveAcc wave_acc, int direction);
-void cyd_wave_cycle(CydEngine *cyd, CydChannel *chn);
+typedef struct
+{
+	const CydWavetableEntry *entry;
+	int direction; // 0 = forward, 1 = backwards
+	CydWaveAcc acc; // probably overkill
+	Uint32 frequency;
+} CydWaveState;
+
+Sint32 cyd_wave_get_sample(const CydWaveState *state, CydWaveAcc acc);
+void cyd_wave_cycle(CydWaveState *wave);
 
 #endif
