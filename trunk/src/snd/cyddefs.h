@@ -58,4 +58,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define CYD_CHORUS_OVERSAMPLE 1
 
+#define WAVE_AMP (1 << OUTPUT_BITS)
+#define BUFFER_GRANULARITY 150 // mutex is locked and audio generated in 150 sample blocks
+
 #endif

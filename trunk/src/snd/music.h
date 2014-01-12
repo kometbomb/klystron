@@ -32,16 +32,21 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define MUS_PROG_LEN 32
 #define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
 
-#define MUS_VERSION 22
+#define MUS_VERSION 23
 
 #define MUS_SONG_TITLE_LEN 64
 #define MUS_INSTRUMENT_NAME_LEN 32
 
 typedef struct
 {
+	Uint8 a, d, s, r; // 0-15
+} MusAdsr;
+
+typedef struct
+{
 	Uint32 flags;
 	Uint32 cydflags;
-	CydAdsr adsr;
+	MusAdsr adsr;
 	Uint8 sync_source, ring_mod; // 0xff == self
 	Uint16 pw;
 	Uint8 volume;
@@ -59,6 +64,9 @@ typedef struct
 	Uint8 wavetable_entry;
 	Uint8 lfsr_type;
 	Sint8 finetune;
+	Uint32 fm_flags;
+	Uint8 fm_modulation, fm_feedback, fm_wave, fm_harmonic;
+	MusAdsr fm_adsr;
 } MusInstrument;
 
 enum
@@ -262,6 +270,9 @@ enum
 	MUS_FX_BUZZ_SHAPE = 0x3f00,
 	MUS_FX_BUZZ_SET = 0x3900,
 	MUS_FX_BUZZ_SET_SEMI = 0x3a00,
+	MUS_FX_FM_SET_MODULATION = 0x3300,
+	MUS_FX_FM_SET_FEEDBACK = 0x3400,
+	MUS_FX_FM_SET_HARMONIC = 0x3500,
 	MUS_FX_PW_DN = 0x0700,
 	MUS_FX_PW_UP = 0x0800,
 	MUS_FX_PW_SET = 0x0900,

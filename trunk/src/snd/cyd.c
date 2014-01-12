@@ -36,6 +36,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cyddefs.h"
 #include "cydwave.h"
 #include "freqs.h"
+#include "cydosc.h"
 
 #ifndef USENATIVEAPIS
 # ifndef NOSDL_MIXER
@@ -47,9 +48,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 # endif
 
 #endif
-
-#define WAVE_AMP (1 << OUTPUT_BITS)
-#define BUFFER_GRANULARITY 150 // mutex is locked and audio generated in 150 sample blocks
 
 #define envspd(cyd,slope) (slope!=0?(((Uint64)0xff0000 / ((slope) * (slope) * 256)) * CYD_BASE_FREQ / cyd->sample_rate):((Uint64)0xff0000 * CYD_BASE_FREQ / cyd->sample_rate))
 
@@ -78,6 +76,10 @@ static void cyd_init_channel(CydEngine *cyd, CydChannel *chn)
 	cyd_set_panning(cyd, chn, CYD_PAN_CENTER);
 #endif
 	chn->reg4 = chn->reg5 = chn->reg9 = 0x1;
+	
+#ifndef CYD_DISABLE_FM
+	cydfm_init(&chn->fm);
+#endif
 }
 
 
@@ -247,54 +249,54 @@ void cyd_reset(CydEngine *cyd)
 }
 
 
-static inline void cyd_cycle_adsr(CydEngine *eng, CydChannel *chn)
+Uint32 cyd_cycle_adsr(const CydEngine *eng, Uint32 flags, Uint32 ym_env_shape, CydAdsr *adsr)
 {
-	if (!(chn->flags & CYD_CHN_ENABLE_YM_ENV))
+	if (!(flags & CYD_CHN_ENABLE_YM_ENV))
 	{
 #ifndef CYD_DISABLE_ENVELOPE
 		// SID style ADSR envelope
 
-		switch (chn->envelope_state)
+		switch (adsr->envelope_state)
 		{
 			case SUSTAIN:
-			case DONE: return; break;
+			case DONE: return flags; break;
 			
 			case ATTACK:
 			
-			chn->envelope += chn->env_speed;
+			adsr->envelope += adsr->env_speed;
 			
-			if (chn->envelope >= 0xff0000) 
+			if (adsr->envelope >= 0xff0000) 
 			{
-				chn->envelope_state = DECAY;
-				chn->envelope=0xff0000;
-				chn->env_speed = envspd(eng, chn->adsr.d);
+				adsr->envelope_state = DECAY;
+				adsr->envelope=0xff0000;
+				adsr->env_speed = envspd(eng, adsr->d);
 			}
 			
 			break;
 			
 			case DECAY:
 			
-				if (chn->envelope > ((Uint32)chn->adsr.s << 19) + chn->env_speed)
-					chn->envelope -= chn->env_speed;
+				if (adsr->envelope > ((Uint32)adsr->s << 19) + adsr->env_speed)
+					adsr->envelope -= adsr->env_speed;
 				else
 				{
-					chn->envelope = (Uint32)chn->adsr.s << 19;
-					chn->envelope_state = (chn->adsr.s == 0) ? RELEASE : SUSTAIN;
-					chn->env_speed = envspd(eng, chn->adsr.r);;
+					adsr->envelope = (Uint32)adsr->s << 19;
+					adsr->envelope_state = (adsr->s == 0) ? RELEASE : SUSTAIN;
+					adsr->env_speed = envspd(eng, adsr->r);;
 				}
 			
 			break;
 			
 			case RELEASE:
-			if (chn->envelope > chn->env_speed)
+			if (adsr->envelope > adsr->env_speed)
 			{
-				chn->envelope -= chn->env_speed;
+				adsr->envelope -= adsr->env_speed;
 			}
 			else 
 			{
-				chn->envelope_state = DONE;
-				if ((chn->flags & (CYD_CHN_ENABLE_WAVE|CYD_CHN_WAVE_OVERRIDE_ENV)) != (CYD_CHN_ENABLE_WAVE|CYD_CHN_WAVE_OVERRIDE_ENV)) chn->flags &= ~CYD_CHN_ENABLE_GATE;
-				chn->envelope = 0;
+				adsr->envelope_state = DONE;
+				if ((flags & (CYD_CHN_ENABLE_WAVE|CYD_CHN_WAVE_OVERRIDE_ENV)) != (CYD_CHN_ENABLE_WAVE|CYD_CHN_WAVE_OVERRIDE_ENV)) flags &= ~CYD_CHN_ENABLE_GATE;
+				adsr->envelope = 0;
 			}
 			break;
 		}
@@ -305,23 +307,23 @@ static inline void cyd_cycle_adsr(CydEngine *eng, CydChannel *chn)
 #ifndef CYD_DISABLE_BUZZ	
 		// YM2149 style envelope HOLD is not processed
 	
-		switch (chn->envelope_state)
+		switch (adsr->envelope_state)
 		{
 			case ATTACK:
 			
-				chn->envelope += chn->env_speed;
+				adsr->envelope += adsr->env_speed;
 				
-				if (chn->envelope >= YM_LENGTH) 
+				if (adsr->envelope >= YM_LENGTH) 
 				{
-					if (chn->ym_env_shape & CYD_YM_ENV_ALT)
+					if (ym_env_shape & CYD_YM_ENV_ALT)
 					{
-						chn->envelope = YM_LENGTH - (chn->envelope- YM_LENGTH);
-						chn->envelope_state = DECAY;
+						adsr->envelope = YM_LENGTH - (adsr->envelope - YM_LENGTH);
+						adsr->envelope_state = DECAY;
 					}
 					else
 					{
-						chn->envelope &= YM_LENGTH - 1;
-						chn->envelope_state = ATTACK;
+						adsr->envelope &= YM_LENGTH - 1;
+						adsr->envelope_state = ATTACK;
 					}
 				}
 			
@@ -329,35 +331,37 @@ static inline void cyd_cycle_adsr(CydEngine *eng, CydChannel *chn)
 			
 			case DECAY:
 			
-				if (chn->envelope >= chn->env_speed) 
-					chn->envelope -= chn->env_speed;
+				if (adsr->envelope >= adsr->env_speed) 
+					adsr->envelope -= adsr->env_speed;
 				else
 				{
-					if (chn->ym_env_shape & CYD_YM_ENV_ALT)
+					if (ym_env_shape & CYD_YM_ENV_ALT)
 					{
-						chn->envelope = (Uint32)chn->env_speed - chn->envelope;
-						chn->envelope_state = ATTACK;
+						adsr->envelope = (Uint32)adsr->env_speed - adsr->envelope;
+						adsr->envelope_state = ATTACK;
 					}
 					else
 					{
-						chn->envelope -= chn->env_speed;
-						chn->envelope &= YM_LENGTH - 1;
-						chn->envelope_state = DECAY;		
+						adsr->envelope -= adsr->env_speed;
+						adsr->envelope &= YM_LENGTH - 1;
+						adsr->envelope_state = DECAY;		
 					}
 				}
 			
 			break;
 			
 			case RELEASE:
-				chn->envelope_state = DONE;
-				if ((chn->flags & (CYD_CHN_ENABLE_WAVE|CYD_CHN_WAVE_OVERRIDE_ENV)) != (CYD_CHN_ENABLE_WAVE|CYD_CHN_WAVE_OVERRIDE_ENV)) chn->flags &= ~CYD_CHN_ENABLE_GATE;
-				chn->envelope = 0;
+				adsr->envelope_state = DONE;
+				if ((flags & (CYD_CHN_ENABLE_WAVE|CYD_CHN_WAVE_OVERRIDE_ENV)) != (CYD_CHN_ENABLE_WAVE|CYD_CHN_WAVE_OVERRIDE_ENV)) flags &= ~CYD_CHN_ENABLE_GATE;
+				adsr->envelope = 0;
 			break;
 			
 			default: break;
 		}
 #endif
 	}
+	
+	return flags;
 }
 
 
@@ -377,10 +381,13 @@ static void run_lfsrs(CydChannel *chn)
 
 static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
 {
-	cyd_cycle_adsr(cyd, chn);
+	chn->flags = cyd_cycle_adsr(cyd, chn->flags, chn->ym_env_shape, &chn->adsr);
 	
-	cyd_wave_cycle(cyd, chn);
+	if (chn->flags & CYD_CHN_ENABLE_WAVE) cyd_wave_cycle(&chn->wave);
 	
+#ifndef CYD_DISABLE_FM
+	cydfm_cycle(cyd, &chn->fm);
+#endif
 	// cycle random lfsr
 }
 
@@ -390,44 +397,13 @@ static void cyd_sync_channel(CydEngine *cyd, CydChannel *chn)
 	if (chn->flags & CYD_CHN_ENABLE_SYNC && cyd->channel[chn->sync_source].sync_bit)
 	{
 		chn->accumulator = 0;
-		chn->wave_acc = 0;
-		chn->wave_direction = 0;
+		chn->wave.acc = 0;
+		chn->wave.direction = 0;
 		chn->random = RANDOM_SEED;
 		chn->reg4 = chn->reg5 = chn->reg9 = 0x1;
 		chn->lfsr_ctr = 0;
 	}
 }
-
-
-static inline Uint32 cyd_pulse(Uint32 acc, Uint32 pw) 
-{
-	return (((acc >> ((ACC_BITS - 17))) >= (pw << OVERSAMPLE) ? (WAVE_AMP - 1) : 0));
-}
-
-
-static inline Uint32 cyd_saw(Uint32 acc) 
-{
-	return (acc >> (ACC_BITS - OUTPUT_BITS - 1)) & (WAVE_AMP - 1);
-}
-
-
-static inline Uint32 cyd_triangle(Uint32 acc)
-{
-	return ((((acc & (ACC_LENGTH / 2)) ? ~acc : acc) >> (ACC_BITS - OUTPUT_BITS - 2)) & (WAVE_AMP * 2 - 1));
-}
-
-
-static inline Uint32 cyd_noise(Uint32 acc) 
-{
-	return acc & (WAVE_AMP - 1);
-}
-
-#ifndef CYD_DISABLE_LFSR
-static inline Uint32 cyd_lfsr(Uint32 bits) 
-{
-	return bits;
-}
-#endif
 
 
 static void cyd_advance_oscillators(CydEngine *cyd, CydChannel *chn)
@@ -500,174 +476,54 @@ static void cyd_advance_oscillators(CydEngine *cyd, CydChannel *chn)
 
 static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 {
-	Sint32 v = 0;
 	Sint32 ovr = 0;
 	
 	chn->sync_bit = 0;
+
+#ifndef CYD_DISABLE_FM	
+	const Uint32 mod = (chn->flags & CYD_CHN_ENABLE_FM) ? cydfm_modulate(cyd, &chn->fm, 0) : 0;
+#endif
 	
 	for (int i = 0 ; i < (1 << OVERSAMPLE) ; ++i)
 	{
-		switch (chn->flags & WAVEFORMS & ~CYD_CHN_ENABLE_WAVE)
-		{
-			case CYD_CHN_ENABLE_PULSE:
-			v = cyd_pulse(chn->accumulator, chn->pw);
-			break;
-			
-			case CYD_CHN_ENABLE_SAW:
-			v = cyd_saw(chn->accumulator);
-			break;
-			
-			case CYD_CHN_ENABLE_TRIANGLE:
-			v = cyd_triangle(chn->accumulator);
-			break;
-			
-			case CYD_CHN_ENABLE_NOISE:
-			v = cyd_noise(chn->random);
-			break;
-			
-			case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_PULSE:
-			v = cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator);
-			break;
-			
-			case CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_PULSE:
-			v = cyd_saw(chn->accumulator) & cyd_pulse(chn->accumulator, chn->pw);
-			break;
-			
-			case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_PULSE:
-			v = cyd_noise(chn->random) & cyd_pulse(chn->accumulator, chn->pw);
-			break;
-			
-			case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_SAW:
-			v = cyd_triangle(chn->accumulator) & cyd_saw(chn->accumulator);
-			break;
-			
-			case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_SAW:
-			v = cyd_noise(chn->random) & cyd_saw(chn->accumulator);
-			break;
-			
-			case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_TRIANGLE:
-			v = cyd_noise(chn->random) & cyd_triangle(chn->accumulator);
-			break;
-			
-			case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_SAW:
-			v = cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_saw(chn->accumulator);
-			break;
-			
-			case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_NOISE:
-			v = cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_noise(chn->random);
-			break;
-			
-			case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_SAW:
-			v = cyd_saw(chn->accumulator) & cyd_triangle(chn->accumulator) & cyd_noise(chn->random);
-			break;
-			
-			case CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_SAW:
-			v = cyd_pulse(chn->accumulator, chn->pw) & cyd_saw(chn->accumulator) & cyd_noise(chn->random);
-			break;
-			
-			case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_TRIANGLE:
-			v = cyd_saw(chn->accumulator) & cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_noise(chn->random);
-			break;
-			
-#ifndef CYD_DISABLE_LFSR			
-			case CYD_CHN_ENABLE_LFSR:
-			v = cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_LFSR:
-			v = cyd_pulse(chn->accumulator, chn->pw) & cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_LFSR:
-			v = cyd_saw(chn->accumulator) & cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_LFSR:
-			v = cyd_triangle(chn->accumulator) & cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_LFSR:
-			v = cyd_noise(chn->random) & cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_LFSR:
-			v = cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_LFSR:
-			v = cyd_saw(chn->accumulator) & cyd_pulse(chn->accumulator, chn->pw) & cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_LFSR:
-			v = cyd_noise(chn->random) & cyd_pulse(chn->accumulator, chn->pw) & cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_LFSR:
-			v = cyd_triangle(chn->accumulator) & cyd_saw(chn->accumulator) & cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_LFSR:
-			v = cyd_noise(chn->random) & cyd_saw(chn->accumulator) & cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_LFSR:
-			v = cyd_noise(chn->random) & cyd_triangle(chn->accumulator) & cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_LFSR:
-			v = cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_saw(chn->accumulator) & cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_LFSR:
-			v = cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_noise(chn->random) & cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_LFSR:
-			v = cyd_saw(chn->accumulator) & cyd_triangle(chn->accumulator) & cyd_noise(chn->random) & cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_LFSR:
-			v = cyd_pulse(chn->accumulator, chn->pw) & cyd_saw(chn->accumulator) & cyd_noise(chn->random) & cyd_lfsr(chn->lfsr_acc);
-			break;
-			
-			case CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_LFSR:
-			v = cyd_saw(chn->accumulator) & cyd_pulse(chn->accumulator, chn->pw) & cyd_triangle(chn->accumulator) & cyd_noise(chn->random) & cyd_lfsr(chn->lfsr_acc);
-			break;
-#endif
-			default:
-			return 0;
-			break;
-		}
-		
-		ovr += v;
+#ifdef CYD_DISABLE_FM
+		Uint32 accumulator = chn->accumulator;
+#else
+		Uint32 accumulator = chn->accumulator + mod;
+#endif	
+		ovr += cyd_osc(chn->flags, accumulator, chn->pw, chn->random, chn->lfsr_acc);
 		
 		cyd_advance_oscillators(cyd, chn); // Need to move the oscillators per every oversample subcycle
+		
+#ifndef CYD_DISABLE_FM
+		cydfm_cycle_oversample(cyd, &chn->fm);
+#endif
 	}
 	
 	return (ovr >> OVERSAMPLE) - (WAVE_AMP / 2);
 }
 
 
-Sint32 cyd_env_output(CydEngine *cyd, CydChannel *chn, Sint32 input)
+Sint32 cyd_env_output(const CydEngine *cyd, Uint32 chn_flags, const CydAdsr *adsr, Sint32 input)
 {
-	if (chn->flags & CYD_CHN_ENABLE_YM_ENV)
+	if (chn_flags & CYD_CHN_ENABLE_YM_ENV)
 	{
 #ifndef CYD_DISABLE_BUZZ	
-		int idx = chn->envelope * (Uint32)YM_LUT_SIZE / YM_LENGTH;
-		return input * cyd->lookup_table_ym[idx] / 32768 * (Sint32)(chn->volume) / MAX_VOLUME;
+		int idx = adsr->envelope * (Uint32)YM_LUT_SIZE / YM_LENGTH;
+		return input * cyd->lookup_table_ym[idx] / 32768 * (Sint32)(adsr->volume) / MAX_VOLUME;
 #else
-		return input * (Sint32)(chn->volume) / MAX_VOLUME;
+		return input * (Sint32)(adsr->volume) / MAX_VOLUME;
 #endif
 	}
 	else
 	{
 #ifndef CYD_DISABLE_ENVELOPE	
-		if (chn->envelope_state == ATTACK)
-			return ((Sint64)input * ((Sint32)chn->envelope / 0x10000) / 256) * (Sint32)(chn->volume) / MAX_VOLUME;
+		if (adsr->envelope_state == ATTACK)
+			return ((Sint64)input * ((Sint32)adsr->envelope / 0x10000) / 256) * (Sint32)(adsr->volume) / MAX_VOLUME;
 		else
-			return ((Sint64)input * (cyd->lookup_table[(chn->envelope / (65536*256 / LUT_SIZE) ) & (LUT_SIZE - 1)]) / 65536) * (Sint32)(chn->volume) / MAX_VOLUME;
+			return ((Sint64)input * (cyd->lookup_table[(adsr->envelope / (65536*256 / LUT_SIZE) ) & (LUT_SIZE - 1)]) / 65536) * (Sint32)(adsr->volume) / MAX_VOLUME;
 #else
-		return input * (Sint32)(chn->volume) / MAX_VOLUME;
+		return input * (Sint32)(adsr->volume) / MAX_VOLUME;
 #endif
 	}
 }
@@ -691,8 +547,15 @@ static Sint32 cyd_output(CydEngine *cyd)
 	{
 		s[i] = (Sint32)cyd_output_channel(cyd, &cyd->channel[i]);
 #ifndef CYD_DISABLE_WAVETABLE
-		if ((cyd->channel[i].flags & CYD_CHN_ENABLE_WAVE) && cyd->channel[i].wave_entry && !(cyd->channel[i].flags & CYD_CHN_WAVE_OVERRIDE_ENV))
-			s[i] += cyd_wave_get_sample(cyd->channel[i].wave_entry, cyd->channel[i].wave_acc, cyd->channel[i].wave_direction);
+		if ((cyd->channel[i].flags & CYD_CHN_ENABLE_WAVE) && cyd->channel[i].wave.entry && !(cyd->channel[i].flags & CYD_CHN_WAVE_OVERRIDE_ENV))
+		{
+#ifdef CYD_DISABLE_FM
+			CydWaveAcc accumulator = cyd->channel[i].wave.acc;
+#else
+			CydWaveAcc accumulator = cydfm_modulate_wave(cyd, &cyd->channel[i].fm, cyd->channel[i].wave.entry, cyd->channel[i].wave.acc);
+#endif	
+			s[i] += cyd_wave_get_sample(&cyd->channel[i].wave, accumulator);
+		}
 #endif
 	}
 	
@@ -704,17 +567,22 @@ static Sint32 cyd_output(CydEngine *cyd)
 		{
 			if (chn->flags & CYD_CHN_ENABLE_RING_MODULATION)
 			{
-				o = cyd_env_output(cyd, chn, s[i] * (s[chn->ring_mod] + (WAVE_AMP / 2)) / WAVE_AMP);
+				o = cyd_env_output(cyd, chn->flags, &chn->adsr, s[i] * (s[chn->ring_mod] + (WAVE_AMP / 2)) / WAVE_AMP);
 			}
 			else
 			{
-				o = cyd_env_output(cyd, chn, s[i]);
+				o = cyd_env_output(cyd, chn->flags, &chn->adsr, s[i]);
 			}
 
 #ifndef CYD_DISABLE_WAVETABLE			
-			if ((cyd->channel[i].flags & CYD_CHN_ENABLE_WAVE) && cyd->channel[i].wave_entry && (cyd->channel[i].flags & CYD_CHN_WAVE_OVERRIDE_ENV))
+			if ((cyd->channel[i].flags & CYD_CHN_ENABLE_WAVE) && cyd->channel[i].wave.entry && (cyd->channel[i].flags & CYD_CHN_WAVE_OVERRIDE_ENV))
 			{
-				o += cyd_wave_get_sample(cyd->channel[i].wave_entry, cyd->channel[i].wave_acc, cyd->channel[i].wave_direction) * (Sint32)(chn->volume) / MAX_VOLUME;
+#ifdef CYD_DISABLE_FM
+				CydWaveAcc accumulator = cyd->channel[i].wave.acc;
+#else
+				CydWaveAcc accumulator = cydfm_modulate_wave(cyd, &cyd->channel[i].fm, cyd->channel[i].wave.entry, cyd->channel[i].wave.acc);
+#endif	
+				o += cyd_wave_get_sample(&cyd->channel[i].wave, accumulator) * (Sint32)(chn->adsr.volume) / MAX_VOLUME;
 			}
 #endif
 
@@ -988,8 +856,13 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 {
 	chn->frequency = (Uint64)(ACC_LENGTH >> OVERSAMPLE)/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
+
 #ifndef CYD_DISABLE_LFSR	
 	chn->lfsr_period = (Uint64)cyd->sample_rate * 16 / frequency;
+#endif
+
+#ifndef CYD_DISABLE_FM
+	cydfm_set_frequency(cyd, &chn->fm, frequency);
 #endif
 }
 
@@ -997,8 +870,8 @@ void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 void cyd_set_wavetable_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 {	
 #ifndef CYD_DISABLE_WAVETABLE
-	if (chn->wave_entry)
-		chn->wave_frequency = (Uint64)WAVETABLE_RESOLUTION * (Uint64)chn->wave_entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)frequency / (Uint64)get_freq(chn->wave_entry->base_note);
+	if (chn->wave.entry)
+		chn->wave.frequency = (Uint64)WAVETABLE_RESOLUTION * (Uint64)chn->wave.entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)frequency / (Uint64)get_freq(chn->wave.entry->base_note);
 #endif
 }
 
@@ -1006,7 +879,7 @@ void cyd_set_wavetable_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequen
 void cyd_set_env_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 {
 #ifndef CYD_DISABLE_BUZZ
-	chn->env_speed = (Uint64)YM_LENGTH/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
+	chn->adsr.env_speed = (Uint64)YM_LENGTH/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
 #endif
 }
 
@@ -1016,17 +889,17 @@ void cyd_set_env_shape(CydChannel *chn, Uint8 shape)
 #ifndef CYD_DISABLE_BUZZ
 	chn->ym_env_shape = shape;
 	
-	if ((chn->flags & CYD_CHN_ENABLE_KEY_SYNC) || (chn->envelope_state == DONE || chn->envelope_state == SUSTAIN))
+	if ((chn->flags & CYD_CHN_ENABLE_KEY_SYNC) || (chn->adsr.envelope_state == DONE || chn->adsr.envelope_state == SUSTAIN))
 	{
 		if (shape & CYD_YM_ENV_ATT)
 		{
-			chn->envelope = 0;
-			chn->envelope_state = ATTACK;
+			chn->adsr.envelope = 0;
+			chn->adsr.envelope_state = ATTACK;
 		}
 		else
 		{
-			chn->envelope = YM_LENGTH;
-			chn->envelope_state = DECAY;
+			chn->adsr.envelope = YM_LENGTH;
+			chn->adsr.envelope_state = DECAY;
 		}
 	}
 #endif
@@ -1040,10 +913,15 @@ void cyd_enable_gate(CydEngine *cyd, CydChannel *chn, Uint8 enable)
 		if (!(chn->flags & CYD_CHN_ENABLE_YM_ENV))
 		{
 #ifndef CYD_DISABLE_ENVELOPE
-			chn->envelope_state = ATTACK;
-			chn->envelope = 0x0;
-			chn->env_speed = envspd(cyd, chn->adsr.a);
-			cyd_cycle_adsr(cyd, chn);
+			chn->adsr.envelope_state = ATTACK;
+			chn->adsr.envelope = 0x0;
+			chn->adsr.env_speed = envspd(cyd, chn->adsr.a);
+			chn->flags = cyd_cycle_adsr(cyd, chn->flags, chn->ym_env_shape, &chn->adsr);
+			
+			chn->fm.adsr.envelope_state = ATTACK;
+			chn->fm.adsr.envelope = 0x0;
+			chn->fm.adsr.env_speed = envspd(cyd, chn->fm.adsr.a);
+			cyd_cycle_adsr(cyd, 0, 0, &chn->fm.adsr);
 #endif
 		}
 		
@@ -1052,6 +930,10 @@ void cyd_enable_gate(CydEngine *cyd, CydChannel *chn, Uint8 enable)
 			chn->accumulator = 0;
 			chn->reg4 = chn->reg5 = chn->reg9 = 0x1;
 			chn->lfsr_ctr = 0;
+#ifndef CYD_DISABLE_FM
+			chn->fm.accumulator = 0;
+			chn->fm.wave.acc = 0;
+#endif
 		}
 		
 		chn->flags |= CYD_CHN_ENABLE_GATE;
@@ -1059,8 +941,13 @@ void cyd_enable_gate(CydEngine *cyd, CydChannel *chn, Uint8 enable)
 	else
 	{
 		chn->flags &= ~CYD_CHN_WAVE_OVERRIDE_ENV;
-		chn->envelope_state = RELEASE;
-		chn->env_speed = envspd(cyd, chn->adsr.r);
+		chn->adsr.envelope_state = RELEASE;
+		chn->adsr.env_speed = envspd(cyd, chn->adsr.r);
+		
+#ifndef CYD_DISABLE_FM
+		chn->fm.adsr.envelope_state = RELEASE;
+		chn->fm.adsr.env_speed = envspd(cyd, chn->fm.adsr.r);
+#endif		
 	}
 }
 
@@ -1459,19 +1346,19 @@ void cyd_set_panning(CydEngine *cyd, CydChannel *chn, Uint8 panning)
 
 void cyd_set_wave_entry(CydChannel *chn, const CydWavetableEntry * entry)
 {
-	chn->wave_entry = entry;
-	chn->wave_acc = 0;
-	chn->wave_frequency = 0;
-	chn->wave_direction = 0;
+	chn->wave.entry = entry;
+	chn->wave.acc = 0;
+	chn->wave.frequency = 0;
+	chn->wave.direction = 0;
 }
 
 
 void cyd_set_wavetable_offset(CydChannel *chn, Uint16 offset /* 0..0x1000 = 0-100% */)
 {
 #ifndef CYD_DISABLE_WAVETABLE
-	if (chn->wave_entry)
+	if (chn->wave.entry)
 	{
-		chn->wave_acc = (Uint64)offset * WAVETABLE_RESOLUTION * chn->wave_entry->samples / 0x1000;
+		chn->wave.acc = (Uint64)offset * WAVETABLE_RESOLUTION * chn->wave.entry->samples / 0x1000;
 	}
 #endif
 }

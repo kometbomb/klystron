@@ -32,19 +32,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cydfx.h"
 #include "cydentry.h"
 #include "cyddefs.h"
-
-#ifdef LOWRESWAVETABLE
-typedef Uint32 CydWaveAcc;
-typedef Sint32 CydWaveAccSigned;
-#else
-typedef Uint64 CydWaveAcc;
-typedef Sint64 CydWaveAccSigned;
-#endif
-
-typedef struct
-{
-	Uint8 a, d, s , r; // 0-15
-} CydAdsr;
+#include "cydadsr.h"
+#include "cydfm.h"
+#include "cydwave.h"
 
 typedef struct
 {
@@ -55,7 +45,6 @@ typedef struct
 	Uint8 flttype;
 	CydAdsr adsr;
 	Uint8 ym_env_shape;
-	volatile Uint8 volume; // 0-127
 #ifdef STEREOOUTPUT
 	volatile Uint8 panning; // 0-128, 64 = center
 	volatile Sint32 gain_left, gain_right;
@@ -66,15 +55,11 @@ typedef struct
 	Uint32 accumulator;
 	Uint32 random; // random lfsr
 	Uint32 lfsr, lfsr_type, lfsr_period, lfsr_ctr, lfsr_acc; // lfsr state
-	volatile Uint32 envelope, env_speed;
-	volatile Uint8 envelope_state;
 	CydFilter flt;
 	int fx_bus;
-	const CydWavetableEntry *wave_entry;
-	int wave_direction; // 0 = forward, 1 = backwards
-	CydWaveAcc wave_acc; // probably overkill
-	Uint32 wave_frequency;
+	CydWaveState wave;
 	Uint32 reg4, reg5, reg9; // "pokey" lfsr registers
+	CydFm fm;
 } CydChannel;
 
 enum
@@ -101,7 +86,16 @@ enum
 	CYD_CHN_ENABLE_YM_ENV = 2048,
 	CYD_CHN_ENABLE_WAVE = 4096,
 	CYD_CHN_WAVE_OVERRIDE_ENV = 8192,
-	CYD_CHN_ENABLE_LFSR = 16384
+	CYD_CHN_ENABLE_LFSR = 16384,
+	CYD_CHN_ENABLE_FM = 32768
+};
+
+enum
+{
+	CYD_FM_ENABLE_WAVE = CYD_CHN_ENABLE_WAVE,
+	CYD_FM_ENABLE_TRIANGLE = CYD_CHN_ENABLE_TRIANGLE,
+	CYD_FM_ENABLE_PULSE = CYD_CHN_ENABLE_PULSE,
+	CYD_FM_ENABLE_SAW = CYD_CHN_ENABLE_SAW
 };
 
 enum {
@@ -130,7 +124,7 @@ enum
 
 #define CYD_NUM_LFSR 16
 
-typedef struct
+typedef struct CydEngine_t
 {
 	CydChannel *channel;
 	int n_channels;
@@ -217,6 +211,8 @@ void cyd_output_buffer_stereo(void *udata, Uint8 *_stream, int len);
 #else
 void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata);
 #endif
-Sint32 cyd_env_output(CydEngine *cyd, CydChannel *chn, Sint32 input);
+
+Sint32 cyd_env_output(const CydEngine *cyd, Uint32 channel_flags, const CydAdsr *adsr, Sint32 input);
+Uint32 cyd_cycle_adsr(const CydEngine *eng, Uint32 flags, Uint32 ym_env_shape, CydAdsr *adsr);
 
 #endif
