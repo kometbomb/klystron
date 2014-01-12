@@ -552,7 +552,7 @@ static Sint32 cyd_output(CydEngine *cyd)
 #ifdef CYD_DISABLE_FM
 			CydWaveAcc accumulator = cyd->channel[i].wave.acc;
 #else
-			CydWaveAcc accumulator = cydfm_modulate_wave(cyd, &cyd->channel[i].fm, cyd->channel[i].wave.entry, cyd->channel[i].wave.acc);
+			CydWaveAcc accumulator = (cyd->channel[i].flags & CYD_CHN_ENABLE_FM) ? cydfm_modulate_wave(cyd, &cyd->channel[i].fm, cyd->channel[i].wave.entry, cyd->channel[i].wave.acc) : cyd->channel[i].wave.acc;
 #endif	
 			s[i] += cyd_wave_get_sample(&cyd->channel[i].wave, accumulator);
 		}
@@ -580,7 +580,7 @@ static Sint32 cyd_output(CydEngine *cyd)
 #ifdef CYD_DISABLE_FM
 				CydWaveAcc accumulator = cyd->channel[i].wave.acc;
 #else
-				CydWaveAcc accumulator = cydfm_modulate_wave(cyd, &cyd->channel[i].fm, cyd->channel[i].wave.entry, cyd->channel[i].wave.acc);
+				CydWaveAcc accumulator = (cyd->channel[i].flags & CYD_CHN_ENABLE_FM) ? cydfm_modulate_wave(cyd, &cyd->channel[i].fm, cyd->channel[i].wave.entry, cyd->channel[i].wave.acc) : cyd->channel[i].wave.acc;
 #endif	
 				o += cyd_wave_get_sample(&cyd->channel[i].wave, accumulator) * (Sint32)(chn->adsr.volume) / MAX_VOLUME;
 			}
