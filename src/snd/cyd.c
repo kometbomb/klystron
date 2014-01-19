@@ -491,7 +491,7 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 #else
 		Uint32 accumulator = chn->accumulator + mod;
 #endif	
-		ovr += cyd_osc(chn->flags, accumulator, chn->pw, chn->random, chn->lfsr_acc);
+		ovr += cyd_osc(chn->flags, accumulator % ACC_LENGTH, chn->pw, chn->random, chn->lfsr_acc);
 		
 		cyd_advance_oscillators(cyd, chn); // Need to move the oscillators per every oversample subcycle
 		

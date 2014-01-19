@@ -1747,13 +1747,16 @@ int mus_load_instrument_RW(Uint8 version, RWops *ctx, MusInstrument *inst, CydWa
 			inst->wavetable_entry = find_and_load_wavetable(version, ctx, wavetable_entries);
 		}
 		
-		if (inst->fm_wave == 0xff)
+		if (version >= 23)
 		{
-			inst->fm_wave = find_and_load_wavetable(version, ctx, wavetable_entries);
-		}
-		else if (inst->fm_wave == 0xfe)
-		{
-			inst->fm_wave = inst->wavetable_entry;
+			if (inst->fm_wave == 0xff)
+			{
+				inst->fm_wave = find_and_load_wavetable(version, ctx, wavetable_entries);
+			}
+			else if (inst->fm_wave == 0xfe)
+			{
+				inst->fm_wave = inst->wavetable_entry;
+			}
 		}
 	}
 #endif
