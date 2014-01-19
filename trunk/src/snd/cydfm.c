@@ -5,7 +5,7 @@
 #include "macros.h"
 
 
-#define MODULATOR_MAX 512
+#define MODULATOR_MAX 1024
 
 
 void cydfm_init(CydFm *fm)
@@ -36,7 +36,7 @@ static Uint32 get_modulator(const CydEngine *cyd, const CydFm *fm)
 	{
 		Uint32 acc = fm->accumulator;
 		if (fm->feedback) acc += ((Uint64)(fm->fb1 + fm->fb2) / 2 * (ACC_LENGTH * 4 / fbtab[fm->feedback]) / MODULATOR_MAX);
-		return (Uint64)cyd_osc(CYD_CHN_ENABLE_TRIANGLE, acc, 0, 0, 0) * fm->env_output / WAVE_AMP + WAVE_AMP / 2;
+		return (Uint64)cyd_osc(CYD_CHN_ENABLE_TRIANGLE, acc % ACC_LENGTH, 0, 0, 0) * fm->env_output / WAVE_AMP + WAVE_AMP / 2;
 	}
 }
 
@@ -60,20 +60,20 @@ void cydfm_cycle(const CydEngine *cyd, CydFm *fm)
 	Uint32 mod = get_modulator(cyd, fm);
 	
 	fm->fb2 = fm->fb1;
-	fm->fb1 = mod % MODULATOR_MAX;
+	fm->fb1 = mod;
 	fm->current_modulation = mod;
 }
 
 
 void cydfm_set_frequency(const CydEngine *cyd, CydFm *fm, Uint32 base_frequency)
 {
-	const int MUL = 16;
-	static Sint32 harmonic[16] = { 0.125 * MUL, 0.25 * MUL,  0.5 * MUL, 1.0 * MUL, 1.5 * MUL, 2 * MUL, 3 * MUL, 4 * MUL, 5 * MUL, 6 * MUL, 7 * MUL, 8 * MUL, 9 * MUL, 10 * MUL, 12 * MUL, 15 * MUL };
+	const int MUL = 2;
+	static Sint32 harmonic[16] = { 0.5 * MUL, 1.0 * MUL, 2.0 * MUL, 3 * MUL, 4 * MUL, 5 * MUL, 6 * MUL, 7 * MUL, 8 * MUL, 9 * MUL, 10 * MUL, 10 * MUL, 12 * MUL, 12 * MUL, 15 * MUL, 15 * MUL };
 
-	fm->period = ((Uint64)(ACC_LENGTH)/16 * (Uint64)base_frequency / (Uint64)cyd->sample_rate) * harmonic[fm->harmonic] / MUL;
+	fm->period = ((Uint64)(ACC_LENGTH)/16 * (Uint64)base_frequency / (Uint64)cyd->sample_rate) * (Uint64)harmonic[fm->harmonic & 15] / (Uint64)harmonic[fm->harmonic >> 4];
 	
 	if (fm->wave.entry)
-		fm->wave.frequency = ((Uint64)(WAVETABLE_RESOLUTION) * (Uint64)fm->wave.entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)base_frequency / (Uint64)get_freq(fm->wave.entry->base_note)) * harmonic[fm->harmonic] / MUL;
+		fm->wave.frequency = ((Uint64)(WAVETABLE_RESOLUTION) * (Uint64)fm->wave.entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)base_frequency / (Uint64)get_freq(fm->wave.entry->base_note)) * (Uint64)harmonic[fm->harmonic & 15] / (Uint64)harmonic[fm->harmonic >> 4];
 }
 
 
