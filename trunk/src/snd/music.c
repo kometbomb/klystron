@@ -574,7 +574,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 				
 				case MUS_FX_FM_SET_HARMONIC:
 				{
-					cydchn->fm.harmonic = inst % 16;
+					cydchn->fm.harmonic = inst % 256;
 				}
 				break;
 				
