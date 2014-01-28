@@ -3,7 +3,7 @@ VPATH=src:src
 ECHO = echo
 CFG = debug
 REV = cp -f
-MACHINE = -march=pentium2 
+MACHINE = 
 
 util_SRC = $(notdir ${wildcard src/util/*.c}) 
 util_DEP = $(patsubst %.c, deps/util_$(CFG)_%.d, ${util_SRC})
