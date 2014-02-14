@@ -1,28 +1,3 @@
-/*
-Copyright (c) 2009-2010 Tero Lindeman (kometbomb)
-
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without
-restriction, including without limitation the rights to use,
-copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the
-Software is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-*/
-
 #include "levelbase.h"
 
 #define ptr_read(dest, ptr) SDL_RWread(data, &dest, sizeof(dest), 1);
@@ -40,8 +15,8 @@ int lev_load(Background *bg, int *n_layers, SDL_RWops* data, int (*interpret_eve
 		if (x == LOP_END) break;
 		
 		LevOpCode opcode;
-		((Uint8*)&opcode)[0] = x;
-		SDL_RWread(data, &((Uint8*)&opcode)[1], 1, sizeof(opcode) - 1);
+		opcode.opcode = x;
+		ptr_read(opcode.repeat, data);
 		
 		FIX_ENDIAN(opcode.repeat);
 		
@@ -57,7 +32,11 @@ int lev_load(Background *bg, int *n_layers, SDL_RWops* data, int (*interpret_eve
 				case LOP_EVENT:
 				{
 					LevEvent event = {0};
-					ptr_read(event, data);
+					ptr_read(event.x, data);
+					ptr_read(event.y, data);
+					ptr_read(event.w, data);
+					ptr_read(event.h, data);
+					SDL_RWread(data, &event.param[0], sizeof(event.param[0]), EV_PARAMS);
 					
 					if (!interpret_event) break;
 					
@@ -90,7 +69,13 @@ int lev_load(Background *bg, int *n_layers, SDL_RWops* data, int (*interpret_eve
 					
 					LevLayer header;
 	
-					ptr_read(header, data);
+					ptr_read(header.flags, data);
+					ptr_read(header.w, data);
+					ptr_read(header.h, data);
+					ptr_read(header.prx_mlt_x, data);
+					ptr_read(header.prx_mlt_y, data);
+					ptr_read(header.off_x, data);
+					ptr_read(header.off_y, data);
 					
 					FIX_ENDIAN(header.flags);
 					FIX_ENDIAN(header.w);
@@ -114,7 +99,7 @@ int lev_load(Background *bg, int *n_layers, SDL_RWops* data, int (*interpret_eve
 				{
 					LevTile tile = {0};
 					
-					ptr_read(tile, data);
+					ptr_read(tile.type, data);
 					
 					FIX_ENDIAN(tile.type);
 					
@@ -128,7 +113,8 @@ int lev_load(Background *bg, int *n_layers, SDL_RWops* data, int (*interpret_eve
 				{
 					LevRepTile tile = {0};
 					
-					ptr_read(tile, data);
+					ptr_read(tile.repeat, data);
+					ptr_read(tile.type, data);
 					
 					FIX_ENDIAN(tile.type);
 					FIX_ENDIAN(tile.repeat);
