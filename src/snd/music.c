@@ -729,6 +729,17 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 				}
 				break;
 #endif
+
+#ifndef CYD_DISABLE_WAVETABLE
+				case MUS_FX_SET_WAVETABLE_ITEM:
+				{
+					if ((inst & 255) < CYD_WAVE_MAX_ENTRIES)
+					{
+						cydchn->wave.entry = &mus->cyd->wavetable_entries[inst & 255];
+					}
+				}
+				break;
+#endif
 				
 				case MUS_FX_SET_WAVEFORM:
 				{
@@ -748,6 +759,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 						
 					if (inst & MUS_FX_WAVE_WAVE)
 						final |= CYD_CHN_ENABLE_WAVE;
+						
 #ifndef CYD_DISABLE_LFSR						
 					if (inst & MUS_FX_WAVE_LFSR)
 						final |= CYD_CHN_ENABLE_LFSR;
