@@ -27,6 +27,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cyddefs.h"
 #include "freqs.h"
 #include "SDL_endian.h"
+#include <stdlib.h>
+#include <string.h>
+
 
 void cyd_wave_entry_deinit(CydWavetableEntry *entry)
 {

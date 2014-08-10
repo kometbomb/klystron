@@ -31,6 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "SDL_rwops.h"
 #include "tiledescriptor.h"
 #include "gfxsurf.h"
+#include <stdbool.h>
 
 #ifdef USEOPENGL
 #include <GL/gl.h>
@@ -56,23 +57,24 @@ typedef Uint64 FramerateTimer;
 typedef Uint32 FramerateTimer;
 #endif
 
-typedef struct
+struct GfxDomain_t
 {
-	SDL_Surface *screen, *buf, *buf2;
-#ifdef USEOPENGL
-	SDL_Surface *opengl_screen;
-	GLuint texture;
-#endif
+	SDL_Window *window;
+	SDL_Renderer *renderer;
 	int screen_w, screen_h;
 	int scale, fullscreen, fps;
 	GfxScaleType scale_type;
 	FramerateTimer last_ticks, frame_time, clock_resolution;
 	int flags;
-} GfxDomain;
+	Uint8 texmod_r, texmod_g, texmod_b;
+};
 
-GfxSurface* gfx_load_surface(const char* filename, const int flags);
-GfxSurface* gfx_load_surface_RW(SDL_RWops *rw, const int flags);
+typedef struct GfxDomain_t GfxDomain;
+
+GfxSurface* gfx_load_surface(GfxDomain *domain, const char* filename, const int flags);
+GfxSurface* gfx_load_surface_RW(GfxDomain *domain, SDL_RWops *rw, const int flags);
 int * gfx_build_collision_mask(SDL_Surface *s);
+GfxSurface * gfx_create_surface(GfxDomain *domain, int w, int h);
 void gfx_free_surface(GfxSurface *surface);
 void gfx_blit_2x(SDL_Surface *dest, SDL_Surface *src);
 void gfx_blit_2x_resample(SDL_Surface *dest, SDL_Surface *src);
@@ -88,12 +90,20 @@ void gfx_circle_inverted(SDL_Surface *dest, const int xc, const int yc, const in
 void gfx_circle(SDL_Surface *dest, const int xc, const int yc, const int r, const Uint32 color);
 void gfx_clear(GfxDomain *domain, Uint32 color);
 void gfx_blit(GfxSurface *src, SDL_Rect *srcrect, GfxDomain *domain, SDL_Rect *dest);
+void gfx_rect(GfxDomain *domain, SDL_Rect *dest, Uint32 rgb);
+void gfx_surface_set_color(GfxSurface *surf, Uint32 color);
+void gfx_update_texture(GfxDomain *domain, GfxSurface *surface);
 
-GfxDomain * gfx_create_domain();
-void gfx_domain_update(GfxDomain *domain);
-SDL_Surface *gfx_domain_get_surface(GfxDomain *domain);
+GfxDomain * gfx_create_domain(Uint32 window_flags, int window_w, int window_h, int scale);
+void gfx_domain_update(GfxDomain *domain, bool resize_window);
 void gfx_domain_flip(GfxDomain *domain);
 void gfx_domain_free(GfxDomain *domain);
 int gfx_domain_is_next_frame(GfxDomain *domain);
+
+void gfx_domain_set_clip(GfxDomain *domain, const SDL_Rect *rect);
+void gfx_domain_get_clip(GfxDomain *domain, SDL_Rect *rect);
+
+//
+void my_BlitSurface(GfxSurface *src, SDL_Rect *src_rect, GfxDomain *dest, SDL_Rect *dest_rect);
 
 #endif

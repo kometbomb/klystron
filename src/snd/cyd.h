@@ -59,7 +59,9 @@ typedef struct
 	int fx_bus;
 	CydWaveState wave;
 	Uint32 reg4, reg5, reg9; // "pokey" lfsr registers
+#ifndef CYD_DISABLE_FM
 	CydFm fm;
+#endif
 } CydChannel;
 
 enum
@@ -141,9 +143,6 @@ typedef struct CydEngine_t
 #else
 	volatile sig_atomic_t lock_request;
 	volatile sig_atomic_t lock_locked;
-#endif
-#ifdef ENABLEAUDIODUMP
-	FILE *dump;
 #endif
 	size_t samples_output; // bytes in last cyd_output_buffer
 	CydWavetableEntry *wavetable_entries;

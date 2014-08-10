@@ -26,6 +26,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cydrvb.h"
 #include "macros.h"
 #include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 void cydrvb_init(CydReverb *rvb, int rate)
 {

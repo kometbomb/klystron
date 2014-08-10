@@ -26,6 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include <assert.h>
 #include "gfx.h"
 #include <math.h>
+#include <stdlib.h>
 
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -36,9 +37,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "SDL_image.h"
 #endif
 
-#ifdef USEOPENGL
-#include <GL/glext.h>
-#endif
 
 // gives the optimizer an opportunity to vectorize the second loop
 
@@ -95,13 +93,13 @@ int * gfx_build_collision_mask(SDL_Surface *s)
 }
 	
 	
-GfxSurface* gfx_load_surface(const char* filename, const int flags)
+GfxSurface* gfx_load_surface(GfxDomain *domain, const char* filename, const int flags)
 {
 	FILE *f = fopen(filename, "rb");
 	if (f)
 	{
 		SDL_RWops * rw = SDL_RWFromFP(f, 1);
-		GfxSurface * s = gfx_load_surface_RW(rw, flags);
+		GfxSurface * s = gfx_load_surface_RW(domain, rw, flags);
 		return s;
 	}
 	else
@@ -112,7 +110,7 @@ GfxSurface* gfx_load_surface(const char* filename, const int flags)
 }
 
 
-GfxSurface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
+GfxSurface* gfx_load_surface_RW(GfxDomain *domain, SDL_RWops *rw, const int flags)
 {
 #ifdef USESDL_IMAGE
 	SDL_Surface* loaded = IMG_Load_RW(rw, 1);
@@ -130,69 +128,21 @@ GfxSurface* gfx_load_surface_RW(SDL_RWops *rw, const int flags)
 	
 	if (flags & GFX_KEYED)
 	{
-		SDL_Surface* optimal = NULL;
 		Uint32 c = SDL_MapRGB(loaded->format, 255, 0, 255);
 		Uint8 r, g, b;
 		SDL_GetRGB(c, loaded->format, &r, &g, &b);
 		
 		if (r == 255 && g == 0 && b == 255)
-			SDL_SetColorKey(loaded, SDL_RLEACCEL | SDL_SRCCOLORKEY, c);
-			
-		optimal = SDL_DisplayFormat(loaded);
-		
-		if (!optimal)
-		{
-			warning("Conversion failed %dx%d", loaded->w, loaded->h);
-			gs->surface = loaded;
-			goto out;
-		}
-		
-		if (optimal && (flags & GFX_TRANS_HALF))
-		{
-			SDL_SetAlpha(optimal, SDL_RLEACCEL | SDL_SRCALPHA, 128);  
-		}
-		
-		SDL_FreeSurface(loaded);
-		
-		gs->surface = optimal;
+			SDL_SetColorKey(loaded, SDL_TRUE, c);
 	}
-	else if (flags & GFX_ALPHA)
-	{
-		SDL_Surface* optimal = NULL;
-		SDL_SetAlpha(loaded, SDL_RLEACCEL | SDL_SRCALPHA, (flags & GFX_TRANS_HALF)?128:SDL_ALPHA_OPAQUE);  
-		optimal = SDL_DisplayFormatAlpha(loaded);
 		
-		if (!optimal)
-		{
-			warning("Conversion failed %dx%d", loaded->w, loaded->h);
-			gs->surface = loaded;
-			goto out;
-		}
-		
-		SDL_FreeSurface(loaded);
-		
-		gs->surface = optimal;
-	}
-	else
-	{
-		SDL_Surface* optimal = SDL_DisplayFormatAlpha(loaded);
-		
-		if (!optimal)
-		{
-			warning("Conversion failed %dx%d", loaded->w, loaded->h);
-			gs->surface = loaded;
-			goto out;
-		}
-		
-		SDL_FreeSurface(loaded);
-	
-		gs->surface = optimal;
-	}
-	out:
+	gs->surface = loaded;
 	
 	if (flags & GFX_COL_MASK) gs->mask = gfx_build_collision_mask(gs->surface);
 	
 	gs->flags = flags;
+	
+	gfx_update_texture(domain, gs);
 	
 	return gs;
 }
@@ -686,108 +636,14 @@ static void gfx_domain_set_framerate(GfxDomain *d)
 }
 
 
-void gfx_domain_update(GfxDomain *domain)
+void gfx_domain_update(GfxDomain *domain, bool resize_window)
 {
 	debug("Setting screen mode (scale = %d%s)", domain->scale, domain->fullscreen ? ", fullscreen" : "");
 	
-#ifdef USEOPENGL
-	const int flags = SDL_OPENGL;
-#else
-	int flags = 0;
-#endif
-	
-	domain->screen = SDL_SetVideoMode(domain->screen_w * domain->scale, domain->screen_h * domain->scale, 32, (domain->fullscreen ? SDL_FULLSCREEN : 0) | SDL_HWSURFACE | SDL_DOUBLEBUF | domain->flags | flags);
-	
-	if (!domain->screen)
-	{
-		fatal("SDL_SetVideoMode failed: %s",  SDL_GetError());
-		exit(1);
-	}
-
-#ifdef USEOPENGL	
-	if (domain->opengl_screen) SDL_FreeSurface(domain->opengl_screen);
-	
-	if (domain->scale > 1 && domain->scale_type == GFX_SCALE_SMOOTH)
-		domain->opengl_screen = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w * domain->scale, domain->screen_h * domain->scale, 32, 0xff0000, 0x00ff00, 0x0000ff, 0);
-	else
-		domain->opengl_screen = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w, domain->screen_h, 32, 0xff0000, 0x00ff00, 0x0000ff, 0);
-
-	if (!domain->opengl_screen)
-	{
-		fatal("OGL texture surface init failed: %s",  SDL_GetError());
-		exit(1);
-	}
-	
-	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 0);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	
-	if (domain->texture) glDeleteTextures(1, &domain->texture);
-	glGenTextures(1, &domain->texture);
-	glBindTexture(GL_TEXTURE_2D, domain->texture);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-	glEnable(GL_TEXTURE_2D);
-	glViewport(0, 0, domain->screen_w * domain->scale, domain->screen_h * domain->scale);
-
-	// Select The Projection Matrix
-	glMatrixMode(GL_PROJECTION);
-
-	// Reset The Projection Matrix
-	glLoadIdentity();
-
-	// Select The Modelview Matrix
-	glMatrixMode(GL_MODELVIEW);
-
-	// Reset The Modelview Matrix
-	glLoadIdentity();
-#endif
-
-	if (domain->buf) SDL_FreeSurface(domain->buf);
-	domain->buf = NULL;
-	if (domain->buf2) SDL_FreeSurface(domain->buf2);
-	domain->buf2 = NULL;
-		
-#ifndef USEOPENGL
-	if (domain->scale > 1) 
-#else
-	if (domain->scale > 1 && domain->scale_type == GFX_SCALE_SMOOTH) 
-#endif
-	{
-		SDL_Surface *temp = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w, domain->screen_h, 32, 0, 0, 0, 0);
-		domain->buf = SDL_ConvertSurface(temp, domain->screen->format, SDL_SWSURFACE);
-		SDL_FreeSurface(temp);
-		
-		if (!domain->buf)
-		{
-			fatal("%s",  SDL_GetError());
-			exit(1);
-		}
-		
-		if (domain->scale == 4 && domain->scale_type == GFX_SCALE_SMOOTH)
-		{
-			SDL_Surface *temp = SDL_CreateRGBSurface(SDL_SWSURFACE, domain->screen_w * 2, domain->screen_h * 2, 32, 0, 0, 0, 0);
-			domain->buf2 = SDL_ConvertSurface(temp, domain->screen->format, SDL_SWSURFACE);
-			SDL_FreeSurface(temp);
-			
-			if (!domain->buf2)
-			{
-				fatal("%s",  SDL_GetError());
-				exit(1);
-			}
-		}
-		else
-		{
-			if (domain->buf2) SDL_FreeSurface(domain->buf2);
-			domain->buf2 = NULL;
-		}
-	}
+	SDL_RenderSetScale(domain->renderer, domain->scale, domain->scale);
+	if (resize_window) 
+		SDL_SetWindowSize(domain->window, domain->screen_w * domain->scale, domain->screen_h * domain->scale);
+	SDL_RenderSetViewport(domain->renderer, NULL);
 	
 	gfx_domain_set_framerate(domain);
 }
@@ -795,131 +651,38 @@ void gfx_domain_update(GfxDomain *domain)
 
 void gfx_domain_flip(GfxDomain *domain)
 {
-#ifdef USEOPENGL	
-	SDL_Surface *screen = domain->opengl_screen;
-#else
-	SDL_Surface *screen = domain->screen;
-#endif
-
-	if (domain->scale > 1)
-	{
-		if (domain->scale_type == GFX_SCALE_FAST)
-		{
-#ifndef USEOPENGL
-			// opengl nearest does the same thing
-			my_lock(screen);
-			my_lock(domain->buf);
-			switch (domain->scale)
-			{
-				default: break;
-				case 2: 
-					gfx_blit_2x(screen, domain->buf); 
-				break;
-				case 3: 
-					gfx_blit_3x(screen, domain->buf); 
-				break;
-				case 4: 
-					gfx_blit_4x(screen, domain->buf); 
-				break;
-			}
-			my_unlock(screen);
-			my_unlock(domain->buf);
-#endif
-		}
-		else
-		{
-			my_lock(screen);
-			my_lock(domain->buf);
-			switch (domain->scale)
-			{
-				default: break;
-				case 2: 
-					gfx_blit_2x_resample(screen, domain->buf); 
-				break;
-				case 3: 
-					gfx_blit_3x_resample(screen, domain->buf); 
-				break;
-				case 4: 
-					my_lock(domain->buf2);
-					gfx_blit_2x_resample(domain->buf2, domain->buf); 
-					gfx_blit_2x_resample(screen, domain->buf2);
-					my_unlock(domain->buf2);
-				break;
-			}
-			my_unlock(screen);
-			my_unlock(domain->buf);
-		}
-	}
-	
-#ifdef USEOPENGL
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, screen->w, screen->h, 0, GL_BGRA, GL_UNSIGNED_BYTE, screen->pixels);
-	glBegin(GL_QUADS);
-	glTexCoord2d(0.0,0.0); glVertex2d(-1.0,1.0);
-	glTexCoord2d(1.0,0.0); glVertex2d(1.0,1.0);
-	glTexCoord2d(1.0,1.0); glVertex2d(1.0,-1.0);
-	glTexCoord2d(0.0,1.0); glVertex2d(-1.0,-1.0);
-	glEnd();
-	SDL_GL_SwapBuffers();
-#else
-	SDL_Flip(domain->screen);
-#endif
+	SDL_RenderPresent(domain->renderer);
 }
-
-
-SDL_Surface * gfx_domain_get_surface(GfxDomain *domain)
-{
-	if (domain->scale > 1)
-	{
-#ifndef USEOPENGL
-		return domain->buf;
-#else
-		// opengl nearest is used for fast scaling (no resample)
-		// smooth scaling is still done in software (TODO: shader)
-		if (domain->scale_type == GFX_SCALE_FAST)
-			return domain->opengl_screen;
-		else
-			return domain->buf;
-#endif
-	}
-	else
-#ifdef USEOPENGL	
-		return domain->opengl_screen;
-#else
-		return domain->screen;
-#endif
-}
-
 
 
 void gfx_domain_free(GfxDomain *domain)
 {
-	if (domain->buf) SDL_FreeSurface(domain->buf);
-	if (domain->buf2) SDL_FreeSurface(domain->buf2);
-	
-#ifdef USEOPENGL
-	if (domain->opengl_screen) SDL_FreeSurface(domain->opengl_screen);
-	if (domain->texture) glDeleteTextures(1, &domain->texture);
-#endif
+	SDL_DestroyRenderer(domain->renderer);
+	SDL_DestroyWindow(domain->window);
 	
 	free(domain);
 }
 
 
-GfxDomain * gfx_create_domain()
+GfxDomain * gfx_create_domain(Uint32 window_flags, int window_w, int window_h, int scale)
 {
 	GfxDomain *d = malloc(sizeof(GfxDomain));
-	d->screen = d->buf = d->buf2 = NULL;
-	d->screen_w = 320;
-	d->screen_h = 320;
-	d->scale = 1;
+	d->screen_w = window_w / scale;
+	d->screen_h = window_h / scale;
+	d->scale = scale;
 	d->scale_type = GFX_SCALE_FAST;
 	d->fullscreen = 0;
 	d->fps = 50;
 	d->flags = 0;
+	d->window = SDL_CreateWindow("klystron", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_w, window_h, window_flags);
+	d->renderer = SDL_CreateRenderer(d->window, -1, SDL_RENDERER_PRESENTVSYNC|SDL_RENDERER_ACCELERATED);
 	
-#ifdef USEOPENGL
-	d->texture = 0;
-	d->opengl_screen = NULL;
+#ifdef DEBUG
+	SDL_RendererInfo info;
+	SDL_GetRendererInfo(d->renderer, &info);
+
+	debug("Renderer: %s (%s)", info.name, (info.flags & SDL_RENDERER_ACCELERATED) ? "Accelerated" : "Not accelerated");
+	
 #endif
 	
 	gfx_domain_set_framerate(d);
@@ -949,17 +712,37 @@ int gfx_domain_is_next_frame(GfxDomain *domain)
 }
 
 
+GfxSurface * gfx_create_surface(GfxDomain *domain, int w, int h)
+{
+	GfxSurface *gs = calloc(1, sizeof(GfxSurface));
+	gs->surface = SDL_CreateRGBSurface(SDL_SWSURFACE, w, h, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
+	
+	return gs;
+}
+
+
+void gfx_update_texture(GfxDomain *domain, GfxSurface *surface)
+{
+	if (surface->texture)
+		SDL_DestroyTexture(surface->texture);
+		
+	surface->texture = SDL_CreateTextureFromSurface(domain->renderer, surface->surface);
+}
+
+
 void gfx_free_surface(GfxSurface *surface)
 {
 	if (surface->surface) SDL_FreeSurface(surface->surface);
 	if (surface->mask) free(surface->mask);
+	if (surface->texture) SDL_DestroyTexture(surface->texture);
 	free(surface);
 }
 
 
 void gfx_clear(GfxDomain *domain, Uint32 color)
 {
-	SDL_FillRect(gfx_domain_get_surface(domain), 0, color);
+	SDL_SetRenderDrawColor(domain->renderer, (color >> 16) & 255, (color >> 8) & 255, color & 255, 255);
+	SDL_RenderClear(domain->renderer);
 }
 
 
@@ -981,63 +764,37 @@ void gfx_clear(GfxDomain *domain, Uint32 color)
 
 void gfx_blit(GfxSurface *_src, SDL_Rect *_src_rect, GfxDomain *domain, SDL_Rect *_dest_rect)
 {
-	SDL_Surface *dest = gfx_domain_get_surface(domain);
-	SDL_Surface *src = _src->surface;
-	SDL_Rect dest_temp = { 0, 0, dest->w, dest->h }, src_temp = { 0, 0, src->w, src->h };
-	SDL_Rect *src_rect = _src_rect ? _src_rect : &src_temp;
-	SDL_Rect *dest_rect = _dest_rect ? _dest_rect : &dest_temp;
-
-	int w = dest_rect->w, h = dest_rect->h;
-	
-	/*if (dest_rect->w == src_rect->w && dest_rect->h == src_rect->h)
-	{
-		SDL_BlitSurface(src, src_rect, dest, dest_rect);
-		return;
-	}*/
-	
-	if (dest_rect->w == 0 || dest_rect->h == 0)
-		return;
-	
-	assert(src->format->BytesPerPixel == 4 && dest->format->BytesPerPixel == 4);
-	
-	if (dest_rect->x < 0)
-	{
-		src_rect->x -= dest_rect->x * (int)src_rect->w / w;
-		dest_rect->w = my_max(0, (int)dest_rect->w + dest_rect->x);
-		dest_rect->x = 0;
-	}
-	
-	if (dest_rect->y < 0)
-	{
-		src_rect->y -= dest_rect->y * (int)src_rect->h / h;
-		dest_rect->h = my_max(0, (int)dest_rect->h + dest_rect->y);
-		dest_rect->y = 0;
-	}
-	
-	if (dest_rect->x + dest_rect->w >= dest->w)
-	{
-		dest_rect->w = my_max(0, (int)dest->w - dest_rect->x);
-	}
-	
-	if (dest_rect->y + dest_rect->h >= dest->h)
-	{
-		dest_rect->h = my_max(0, (int)dest->h - dest_rect->y);
-	}
-	
-	if (dest_rect->w == 0 || dest_rect->h == 0)
-		return;
-	
-	int xspd = 256 * src_rect->w / w;
-	int yspd = 256 * src_rect->h / h;
-	
-	my_lock(dest);
-	my_lock(src);
-	
-	if (GFX_KEYED & _src->flags)
-		SCALEHELPER(sptr[sx / 256] != 0xff00ff);
-	else
-		SCALEHELPER(1);
-	
-	my_unlock(dest);
-	my_unlock(src);	
+	SDL_RenderCopy(domain->renderer, _src->texture,  _src_rect, _dest_rect);
 }
+
+
+void gfx_rect(GfxDomain *domain, SDL_Rect *dest, Uint32 color)
+{
+	SDL_SetRenderDrawColor(domain->renderer, (color >> 16) & 255, (color >> 8) & 255, color & 255, 255);
+	SDL_RenderFillRect(domain->renderer, dest);
+}
+
+
+void my_BlitSurface(GfxSurface *src, SDL_Rect *src_rect, GfxDomain *dest, SDL_Rect *dest_rect)
+{
+	gfx_blit(src, src_rect, dest, dest_rect);
+}
+
+
+void gfx_domain_set_clip(GfxDomain *domain, const SDL_Rect *rect)
+{
+	SDL_RenderSetClipRect(domain->renderer, rect);
+}
+
+
+void gfx_domain_get_clip(GfxDomain *domain, SDL_Rect *rect)
+{
+	SDL_RenderGetClipRect(domain->renderer, rect);
+}
+
+
+void gfx_surface_set_color(GfxSurface *surf, Uint32 color)
+{
+	SDL_SetTextureColorMod(surf->texture, (color >> 16) & 255, (color >> 8) & 255, color & 255);
+}
+

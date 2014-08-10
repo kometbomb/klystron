@@ -27,7 +27,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "font.h"
 #include "gfx.h"
 #include <string.h>
-
+#include <stdlib.h>
+#include <ctype.h>
 
 static int tile_width(TileDescriptor *desc)
 {
@@ -111,10 +112,10 @@ static const TileDescriptor * findchar(const Font *font, char c)
 }
 
 
-static void inner_write(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text)
+static void inner_write(const Font *font, GfxDomain *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text)
 {
 	const char *c = text;
-	int x = (*cursor & 0xff) * font->w, y = ((*cursor >> 8) & 0xff) * font->h, cr = 0, right = dest->w;
+	int x = (*cursor & 0xff) * font->w, y = ((*cursor >> 8) & 0xff) * font->h, cr = 0, right = dest->screen_w;
 	
 	if (r)
 	{
@@ -122,7 +123,7 @@ static void inner_write(const Font *font, SDL_Surface *dest, const SDL_Rect *r, 
 		y = r->y + y;
 		right = r->w + r->x;
 	}
-	
+		
 	for (;*c;++c)
 	{
 		if (*c == '\n' || x >= right)
@@ -141,7 +142,7 @@ static void inner_write(const Font *font, SDL_Surface *dest, const SDL_Rect *r, 
 		if (tile)
 		{
 			SDL_Rect rect = { x, y, tile->rect.w, tile->rect.h };
-			SDL_BlitSurface(tile->surface->surface, (SDL_Rect*)&tile->rect, dest, &rect);
+			my_BlitSurface(tile->surface, (SDL_Rect*)&tile->rect, dest, &rect);
 			
 			if (bounds)
 			{
@@ -186,7 +187,7 @@ static void inner_write(const Font *font, SDL_Surface *dest, const SDL_Rect *r, 
 }
 
 
-void font_write_va(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text, va_list va)
+void font_write_va(const Font *font, GfxDomain *dest, const SDL_Rect *r, Uint16 * cursor, SDL_Rect *bounds, const char * text, va_list va)
 {
 #ifdef USESTATICTEMPSTRINGS
    const int len = 2048;
@@ -210,7 +211,7 @@ void font_write_va(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint1
 }
 
 
-static int font_load_inner(Font *font, Bundle *fb)
+static int font_load_inner(GfxDomain *domain, Font *font, Bundle *fb)
 {
 	SDL_RWops *rw = SDL_RWFromBundle(fb, "font.bmp");
 	
@@ -221,7 +222,7 @@ static int font_load_inner(Font *font, Bundle *fb)
 	
 	if (rw)
 	{
-		GfxSurface * s= gfx_load_surface_RW(rw, GFX_KEYED);
+		GfxSurface * s= gfx_load_surface_RW(domain, rw, GFX_KEYED);
 		
 		char map[1000];
 		memset(map, 0, sizeof(map));
@@ -331,21 +332,21 @@ static int font_load_inner(Font *font, Bundle *fb)
 }
 
 
-int font_load_file(Font *font, char *filename)
+int font_load_file(GfxDomain *domain, Font *font, char *filename)
 {
 	debug("Loading font '%s'", filename);
 	
 	Bundle fb; 
 	if (bnd_open(&fb, filename))
 	{
-		return font_load_inner(font, &fb);
+		return font_load_inner(domain, font, &fb);
 	}
 	
 	return 0;
 }
 
 
-int font_load(Font *font, Bundle *bundle, char *name)
+int font_load(GfxDomain *domain, Font *font, Bundle *bundle, char *name)
 {
 	debug("Loading font '%s'", name);
 
@@ -359,7 +360,7 @@ int font_load(Font *font, Bundle *bundle, char *name)
 		
 		if (bnd_open_RW(&fb, rw))
 		{
-			r = font_load_inner(font, &fb);
+			r = font_load_inner(domain, font, &fb);
 		}
 		
 		SDL_RWclose(rw);
@@ -371,7 +372,7 @@ int font_load(Font *font, Bundle *bundle, char *name)
 }
 
 
-void font_write_cursor_args(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text, ...)
+void font_write_cursor_args(const Font *font, GfxDomain *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text, ...)
 {
 	va_list va;
 	va_start(va, text);
@@ -382,20 +383,20 @@ void font_write_cursor_args(const Font *font, SDL_Surface *dest, const SDL_Rect 
 }
 
 
-void font_write_cursor(const Font *font, SDL_Surface *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text)
+void font_write_cursor(const Font *font, GfxDomain *dest, const SDL_Rect *r, Uint16 *cursor, SDL_Rect *bounds, const char * text)
 {
 	inner_write(font, dest, r, cursor, bounds, text);
 }
 
 
-void font_write(const Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text)
+void font_write(const Font *font, GfxDomain *dest, const SDL_Rect *r, const char * text)
 {
 	Uint16 cursor = 0;
 	inner_write(font, dest, r, &cursor, NULL, text);
 }
 
 
-void font_write_args(const Font *font, SDL_Surface *dest, const SDL_Rect *r, const char * text, ...)
+void font_write_args(const Font *font, GfxDomain *dest, const SDL_Rect *r, const char * text, ...)
 {
 	Uint16 cursor = 0;
 	
@@ -408,7 +409,7 @@ void font_write_args(const Font *font, SDL_Surface *dest, const SDL_Rect *r, con
 }
 
 
-int font_load_RW(Font *font, SDL_RWops *rw)
+int font_load_RW(GfxDomain *domain, Font *font, SDL_RWops *rw)
 {
 	int r = 0;
 		
@@ -416,7 +417,7 @@ int font_load_RW(Font *font, SDL_RWops *rw)
 	
 	if (bnd_open_RW(&fb, rw))
 	{
-		r = font_load_inner(font, &fb);
+		r = font_load_inner(domain, font, &fb);
 	}
 	
 	return r;
@@ -436,4 +437,10 @@ int font_text_width(const Font *font, const char *text)
 	
 	return w;
 		
+}
+
+
+void font_set_color(Font *font, Uint32 rgb)
+{
+	gfx_surface_set_color(font->surface, rgb);
 }

@@ -30,9 +30,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "gfx/gfx.h"
 #include "gfx/font.h"
 
-FILE *open_dialog(const char *mode, const char *title, const char *filter, GfxDomain *domain, SDL_Surface *gfx, const Font *largefont, const Font *smallfont, const char *deffilename);
-int confirm(GfxDomain *domain, SDL_Surface *gfx, const Font *font, const char *msg);
-int confirm_ync(GfxDomain *domain, SDL_Surface *gfx, const Font *font, const char *msg);
+FILE *open_dialog(const char *mode, const char *title, const char *filter, GfxDomain *domain, GfxSurface *gfx, const Font *largefont, const Font *smallfont, const char *deffilename);
+int confirm(GfxDomain *domain, GfxSurface *gfx, const Font *font, const char *msg);
+int confirm_ync(GfxDomain *domain, GfxSurface *gfx, const Font *font, const char *msg);
 char * expand_tilde(const char * path);
 
 #endif

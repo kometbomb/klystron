@@ -27,8 +27,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 
-#include "bgcell.h"
 #include "gfxsurf.h"
+#include "bgcell.h"
 
 typedef struct
 {

@@ -3,6 +3,9 @@
 #include "snd/cyd.h"
 #include "macros.h"
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+
 
 struct KSong_t 
 {
@@ -40,7 +43,7 @@ KLYSAPI KSong* KSND_LoadSong(KPlayer* player, const char *path)
 	}
 }
 
-#ifdef USENATIVEAPIS
+#ifndef USESDL_RWOPS
 static int RWread(struct RWops *context, void *ptr, int size, int maxnum)
 {
 	const int len = my_min(size * maxnum, context->mem.length - context->mem.ptr);
@@ -62,7 +65,7 @@ static int RWclose(struct RWops *context)
 
 KLYSAPI KSong* KSND_LoadSongFromMemory(KPlayer* player, void *data, int data_size)
 {
-#ifdef USENATIVEAPIS
+#ifndef USESDL_RWOPS
 	RWops *ops = calloc(sizeof(*ops), 1);
 	ops->read = RWread;
 	ops->close = RWclose;
@@ -87,7 +90,7 @@ KLYSAPI KSong* KSND_LoadSongFromMemory(KPlayer* player, void *data, int data_siz
 	else
 	{
 		free(song);
-#ifdef USENATIVEAPIS
+#ifndef USESDL_RWOPS
 		RWclose(ops);
 #else
 		SDL_RWclose(ops);

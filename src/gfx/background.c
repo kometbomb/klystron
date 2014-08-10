@@ -25,7 +25,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 #include "background.h"
-
+#include "gfx.h"
+#include <stdlib.h>
+#include <string.h>
 
 int bg_check_collision(const Background *bg, const ObjHdr *object, ObjHdr *collided_object)
 {
@@ -86,12 +88,12 @@ int bg_check_collision(const Background *bg, const ObjHdr *object, ObjHdr *colli
 	return 0;
 }
 
-void bg_draw(SDL_Surface *surface, const SDL_Rect * dest, const Background *bg, int xofs, int yofs)
+void bg_draw(GfxDomain *surface, const SDL_Rect * dest, const Background *bg, int xofs, int yofs)
 {
 	int sx = 0;
 	int sy = 0;
 	
-	const SDL_Rect def = {0, 0, surface->w, surface->h};
+	const SDL_Rect def = {0, 0, surface->screen_w, surface->screen_h};
 	
 	if (dest == NULL)
 		dest = &def;
@@ -119,7 +121,7 @@ void bg_draw(SDL_Surface *surface, const SDL_Rect * dest, const Background *bg, 
 			if ( cell->tile ) 
 			{
 				SDL_Rect rect = { sx - (xofs % (CELLSIZE)) + dest->x - CELLSIZE, sy - (yofs % (CELLSIZE)) + dest->y - CELLSIZE, CELLSIZE, CELLSIZE };
-				SDL_BlitSurface(bg->tiles[cell->tile-1].surface->surface, &bg->tiles[cell->tile-1].rect, surface, &rect);
+				my_BlitSurface(bg->tiles[cell->tile-1].surface, &bg->tiles[cell->tile-1].rect, surface, &rect);
 				// SDL_FillRect(surface, &rect, 0x808080);
 			}
 		
@@ -137,10 +139,13 @@ const ObjHdr * bg_check_collision_chained(const Background *bg, const ObjHdr *he
 }
 
 
-int bg_create_tile_objhdr(ObjHdr* object_array, const Background *bg, int x, int y, int w, int h, int zero_src)
+int bg_create_tile_objhdr(ObjHdr* object_array, const Background *bg, int x, int y, int w, int h, int zero_src, TileDescriptor *tiles)
 {
 	int items = 0;
 	ObjHdr *obj = object_array;
+	
+	if (!tiles)
+		tiles = bg->tiles;
 	
 	for (int _y = y ; _y < h + y ; ++_y)
 	{
@@ -148,16 +153,16 @@ int bg_create_tile_objhdr(ObjHdr* object_array, const Background *bg, int x, int
 		{
 			if (bg->data[_x + _y * bg->w].tile)
 			{
-				if (object_array != NULL)
+				if (obj != NULL)
 				{
-					obj->objflags = bg->tiles[bg->data[_x + _y * bg->w].tile-1].flags & OBJ_COL_FLAGS;
+					obj->objflags = tiles[bg->data[_x + _y * bg->w].tile-1].flags & OBJ_COL_FLAGS;
 					obj->x = (_x - x) * CELLSIZE;
 					obj->y = (_y - y) * CELLSIZE;
 					obj->w = obj->h = CELLSIZE;
 					obj->anim = NULL;
-					obj->current_frame = bg->tiles[bg->data[_x + _y * bg->w].tile-1].rect.x / CELLSIZE;
-					obj->_yofs = bg->tiles[bg->data[_x + _y * bg->w].tile-1].rect.y;
-					obj->surface = bg->tiles[bg->data[_x + _y * bg->w].tile-1].surface;
+					obj->current_frame = tiles[bg->data[_x + _y * bg->w].tile-1].rect.x / CELLSIZE;
+					obj->_yofs = tiles[bg->data[_x + _y * bg->w].tile-1].rect.y;
+					obj->surface = tiles[bg->data[_x + _y * bg->w].tile-1].surface;
 					obj = obj->next;
 					if (zero_src) bg->data[_x + _y * bg->w].tile = 0;
 				}

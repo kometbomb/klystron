@@ -35,7 +35,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 
-FILE *open_dialog(const char *mode, const char *title, const char *filter, GfxDomain *domain, SDL_Surface *gfx, const Font *largefont, const Font *smallfont, const char *deffilename)
+FILE *open_dialog(const char *mode, const char *title, const char *filter, GfxDomain *domain, GfxSurface *gfx, const Font *largefont, const Font *smallfont, const char *deffilename)
 {
 	char filename[5000];
 	
@@ -55,12 +55,12 @@ FILE *open_dialog(const char *mode, const char *title, const char *filter, GfxDo
 }
 
 
-int confirm(GfxDomain *domain, SDL_Surface *gfx, const Font *font, const char *msg)
+int confirm(GfxDomain *domain, GfxSurface *gfx, const Font *font, const char *msg)
 {
 	return msgbox(domain, gfx, font, msg, MB_YES|MB_NO) == MB_YES; // MessageBox(0, msg, "Confirm", MB_YESNO) == IDYES;
 }
 
-int confirm_ync(GfxDomain *domain, SDL_Surface *gfx, const Font *font, const char *msg)
+int confirm_ync(GfxDomain *domain, GfxSurface *gfx, const Font *font, const char *msg)
 {
 	int r = msgbox(domain, gfx, font, msg, MB_YES|MB_NO|MB_CANCEL);
 	

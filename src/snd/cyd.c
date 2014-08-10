@@ -221,11 +221,6 @@ void cyd_deinit(CydEngine *cyd)
 
 #endif
 
-#ifdef ENABLEAUDIODUMP
-	if (cyd->dump) fclose(cyd->dump);
-	cyd->dump = NULL;
-#endif
-
 #ifndef CYD_DISABLE_WAVETABLE
 	if (cyd->wavetable_entries)
 	{
@@ -386,7 +381,7 @@ static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
 	if (chn->flags & CYD_CHN_ENABLE_WAVE) cyd_wave_cycle(&chn->wave);
 	
 #ifndef CYD_DISABLE_FM
-	cydfm_cycle(cyd, &chn->fm);
+	if (chn->flags & CYD_CHN_ENABLE_FM) cydfm_cycle(cyd, &chn->fm);
 #endif
 	// cycle random lfsr
 }
@@ -394,7 +389,7 @@ static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
 
 static void cyd_sync_channel(CydEngine *cyd, CydChannel *chn)
 {
-	if (chn->flags & CYD_CHN_ENABLE_SYNC && cyd->channel[chn->sync_source].sync_bit)
+	if ((chn->flags & CYD_CHN_ENABLE_SYNC) && cyd->channel[chn->sync_source].sync_bit)
 	{
 		chn->accumulator = 0;
 		chn->wave.acc = 0;
@@ -737,9 +732,6 @@ void cyd_output_buffer(int chan, void *_stream, int len, void *udata)
 		cyd_lock(cyd, 0);
 	}
 	
-#ifdef ENABLEAUDIODUMP
-	if (cyd->dump) fwrite(_stream, len, 1, cyd->dump);
-#endif	
 }
 
 
@@ -802,11 +794,7 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 			left = right = cyd_output(cyd);
 #endif
 
-#if defined(USENATIVEAPIS) || defined(NOSDL_MIXER)
 			Sint32 o1 = (left * PRE_GAIN) / PRE_GAIN_DIVISOR;
-#else
-			Sint32 o1 = (Sint32)*(Sint16*)stream + (left * PRE_GAIN) / PRE_GAIN_DIVISOR;
-#endif
 			
 			if (o1 < -32768) 
 			{
@@ -821,11 +809,7 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 			
 			*(Sint16*)stream = o1;
 
-#ifdef USENATIVEAPIS			
 			Sint32 o2 = (right * PRE_GAIN) / PRE_GAIN_DIVISOR;
-#else
-			Sint32 o2 = (Sint32)*((Sint16*)stream + 1) + (right * PRE_GAIN) / PRE_GAIN_DIVISOR;
-#endif
 			
 			if (o2 < -32768) 
 			{
@@ -846,10 +830,6 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 		
 		cyd_lock(cyd, 0);
 	}
-	
-#ifdef ENABLEAUDIODUMP
-	if (cyd->dump) fwrite(_stream, len, 1, cyd->dump);
-#endif	
 }
 
 
@@ -917,11 +897,12 @@ void cyd_enable_gate(CydEngine *cyd, CydChannel *chn, Uint8 enable)
 			chn->adsr.envelope = 0x0;
 			chn->adsr.env_speed = envspd(cyd, chn->adsr.a);
 			chn->flags = cyd_cycle_adsr(cyd, chn->flags, chn->ym_env_shape, &chn->adsr);
-			
+#ifndef CYD_DISABLE_FM	
 			chn->fm.adsr.envelope_state = ATTACK;
 			chn->fm.adsr.envelope = 0x0;
 			chn->fm.adsr.env_speed = envspd(cyd, chn->fm.adsr.a);
 			cyd_cycle_adsr(cyd, 0, 0, &chn->fm.adsr);
+#endif
 #endif
 		}
 		
@@ -1119,11 +1100,17 @@ int cyd_register(CydEngine * cyd)
 	desired.callback=cyd_output_buffer_stereo;
 	desired.userdata=cyd;
 
+	debug("Opening SDL audio");
+	
 	/* Open the audio device */
-	if ( SDL_OpenAudio(&desired, &obtained) < 0 ){
-	  return 0;
+	if ( SDL_OpenAudio(&desired, &obtained) < 0 )
+	{
+		warning("Could not open audio device");
+		return 0;
 	}
-
+	
+	debug("Got %d Hz/format %d/%d channels", obtained.freq, obtained.format, obtained.channels);
+	
 	SDL_PauseAudio(0);
 	
 	return 1;
@@ -1288,11 +1275,11 @@ void cyd_lock(CydEngine *cyd, Uint8 enable)
 #else	
 	if (enable)
 	{
-		SDL_mutexP(cyd->mutex);
+		SDL_LockMutex(cyd->mutex);
 	}
 	else
 	{
-		SDL_mutexV(cyd->mutex);
+		SDL_UnlockMutex(cyd->mutex);
 	}
 #endif
 #else
@@ -1311,25 +1298,6 @@ void cyd_lock(CydEngine *cyd, Uint8 enable)
 #endif
 }
 
-#ifdef ENABLEAUDIODUMP
-void cyd_enable_audio_dump(CydEngine *cyd)
-{
-	cyd_lock(cyd, 1);
-	
-	char fn[100];
-	sprintf(fn, "cyd-dump-%d-%u.raw", cyd->sample_rate, (Uint32)time(NULL));
-	
-	cyd->dump = fopen(fn, "wb");
-	
-	cyd_lock(cyd, 0);
-}
-
-void cyd_disable_audio_dump(CydEngine *cyd)
-{
-	if (cyd->dump) fclose(cyd->dump);
-	cyd->dump = NULL;
-}
-#endif
 
 #ifdef STEREOOUTPUT
 void cyd_set_panning(CydEngine *cyd, CydChannel *chn, Uint8 panning)

@@ -33,6 +33,7 @@ typedef struct
 	SDL_Surface *surface; // this can now be a hw surface
 	int *mask; // collision mask 
 	int flags;
+	SDL_Texture *texture;
 } GfxSurface;
 
 #endif

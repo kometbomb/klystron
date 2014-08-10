@@ -28,6 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "cyd.h"
 #include "cydfx.h"
+#include <stdio.h>
 
 #define MUS_PROG_LEN 32
 #define MUS_MAX_CHANNELS CYD_MAX_CHANNELS
@@ -319,7 +320,7 @@ enum
 #define MUS_INST_SIG "cyd!inst"
 #define MUS_SONG_SIG "cyd!song"
 
-#ifndef USENATIVEAPIS
+#ifdef USESDL_RWOPS
 #include "SDL_rwops.h"
 typedef SDL_RWops RWops;
 #else

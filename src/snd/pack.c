@@ -27,6 +27,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 // note: compression code added for convenience (and klystrack)
 
 #include "pack.h"
+#include <stdlib.h>
+#include <string.h>
+
 
 /* bitpack() bitplane codes */
 enum
