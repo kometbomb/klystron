@@ -94,7 +94,7 @@ void gfx_rect(GfxDomain *domain, SDL_Rect *dest, Uint32 rgb);
 void gfx_surface_set_color(GfxSurface *surf, Uint32 color);
 void gfx_update_texture(GfxDomain *domain, GfxSurface *surface);
 
-GfxDomain * gfx_create_domain(Uint32 window_flags, int window_w, int window_h, int scale);
+GfxDomain * gfx_create_domain(const char *title, Uint32 window_flags, int window_w, int window_h, int scale);
 void gfx_domain_update(GfxDomain *domain, bool resize_window);
 void gfx_domain_flip(GfxDomain *domain);
 void gfx_domain_free(GfxDomain *domain);

@@ -664,7 +664,7 @@ void gfx_domain_free(GfxDomain *domain)
 }
 
 
-GfxDomain * gfx_create_domain(Uint32 window_flags, int window_w, int window_h, int scale)
+GfxDomain * gfx_create_domain(const char *title, Uint32 window_flags, int window_w, int window_h, int scale)
 {
 	GfxDomain *d = malloc(sizeof(GfxDomain));
 	d->screen_w = window_w / scale;
@@ -674,7 +674,7 @@ GfxDomain * gfx_create_domain(Uint32 window_flags, int window_w, int window_h, i
 	d->fullscreen = 0;
 	d->fps = 50;
 	d->flags = 0;
-	d->window = SDL_CreateWindow("klystron", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_w, window_h, window_flags);
+	d->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_w, window_h, window_flags);
 	d->renderer = SDL_CreateRenderer(d->window, -1, SDL_RENDERER_PRESENTVSYNC|SDL_RENDERER_ACCELERATED);
 	
 #ifdef DEBUG
