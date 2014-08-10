@@ -29,6 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "gui/view.h"
 #include "shortcuts.h"
 #include "bevdefs.h"
+#include <string.h>
 
 #define SC_SIZE 64
 
@@ -38,14 +39,14 @@ static void (*menu_close_hook)(void)  = NULL;
 static const Menu *current_menu = NULL;
 static const Menu *current_menu_action = NULL;
 static const KeyShortcut *shortcuts = NULL;
-static SDL_Surface *menu_gfx = NULL;
+static GfxSurface *menu_gfx = NULL;
 static const Font * menu_font, *shortcut_font, *header_font;
 static const Font * menu_font_selected, *shortcut_font_selected, *header_font_selected;
 
 void open_menu(const Menu *mainmenu, const Menu *action, void (*close_hook)(void), const KeyShortcut *_shortcuts, 
 	const Font *headerfont, const Font *headerfont_selected, 
 	const Font *menufont, const Font *menufont_selected, 
-	const Font *shortcutfont, const Font *shortcutfont_selected, SDL_Surface *gfx)
+	const Font *shortcutfont, const Font *shortcutfont_selected, GfxSurface *gfx)
 {
 	current_menu = mainmenu;
 	current_menu_action = action;
@@ -133,9 +134,9 @@ static const char * get_shortcut_key(const Menu *item)
 // handlers otherwhere in the project) so it can handle overlapping zones correctly. Otherwhere in the app there simply
 // are no overlapping zones, menus however can overlap because of the cascading submenus etc.
 
-static void draw_submenu(SDL_Surface *menu_dest, const SDL_Event *event, const Menu *items, const Menu *child, SDL_Rect *child_position, int pass)
+static void draw_submenu(GfxDomain *menu_dest, const SDL_Event *event, const Menu *items, const Menu *child, SDL_Rect *child_position, int pass)
 {
-	SDL_Rect area = { 0, 0, menu_dest->w, shortcut_font->h + 4 + 1 };
+	SDL_Rect area = { 0, 0, menu_dest->screen_w, shortcut_font->h + 4 + 1 };
 	SDL_Rect r;
 	const Font *font = NULL;
 	int horiz = 0;
@@ -171,8 +172,8 @@ static void draw_submenu(SDL_Surface *menu_dest, const SDL_Event *event, const M
 			
 			area.w += SC_SIZE;
 			
-			if (area.w + area.x > menu_dest->w)
-				area.x -= area.w + area.x - menu_dest->w + 2;
+			if (area.w + area.x > menu_dest->screen_w)
+				area.x -= area.w + area.x - menu_dest->screen_w + 2;
 			
 			copy_rect(&r, &area);
 			
@@ -305,7 +306,7 @@ static void draw_submenu(SDL_Surface *menu_dest, const SDL_Event *event, const M
 }
 
 
-void draw_menu(SDL_Surface *dest, const SDL_Event *e)
+void draw_menu(GfxDomain *dest, const SDL_Event *e)
 {
 	draw_submenu(dest, e, current_menu, NULL, NULL, ZONE);
 	draw_submenu(dest, e, current_menu, NULL, NULL, DRAW);

@@ -29,6 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "gui/view.h"
 #include "gfx/font.h"
 #include "gui/bevdefs.h"
+#include <string.h>
 
 
 static void flip(void *bits, void *mask, void *unused)
@@ -37,7 +38,7 @@ static void flip(void *bits, void *mask, void *unused)
 }
 
 
-int checkbox(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, const Font * font,  int offset, int offset_pressed, int decal, const char* _label, Uint32 *flags, Uint32 mask)
+int checkbox(GfxDomain *dest, const SDL_Event *event, const SDL_Rect *area, GfxSurface *gfx, const Font * font,  int offset, int offset_pressed, int decal, const char* _label, Uint32 *flags, Uint32 mask)
 {
 	SDL_Rect tick, label;
 	copy_rect(&tick, area);
@@ -66,7 +67,7 @@ static void delegate(void *p1, void *p2, void *p3)
 }
 
 
-int button_event(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, int offset, int offset_pressed, int decal, void (*action)(void*,void*,void*), void *param1, void *param2, void *param3)
+int button_event(GfxDomain *dest, const SDL_Event *event, const SDL_Rect *area, GfxSurface *gfx, int offset, int offset_pressed, int decal, void (*action)(void*,void*,void*), void *param1, void *param2, void *param3)
 {
 	Uint32 mask = ((Uint32)area->x << 16) | (Uint32)area->y | 0x80000000;
 	void *p[3] = { param1, param2, param3 };
@@ -78,7 +79,7 @@ int button_event(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area
 }
 
 
-int button_text_event(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *area, SDL_Surface *gfx, const Font *font, int offset, int offset_pressed, const char * label, void (*action)(void*,void*,void*), void *param1, void *param2, void *param3)
+int button_text_event(GfxDomain *dest, const SDL_Event *event, const SDL_Rect *area, GfxSurface *gfx, const Font *font, int offset, int offset_pressed, const char * label, void (*action)(void*,void*,void*), void *param1, void *param2, void *param3)
 {
 	Uint32 mask = ((Uint32)area->x << 16) | (Uint32)area->y | 0x80000000;
 	void *p[3] = { param1, param2, param3 };
@@ -90,7 +91,7 @@ int button_text_event(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect 
 }
 
 
-int spinner(SDL_Surface *dest, const SDL_Event *event, const SDL_Rect *_area, SDL_Surface *gfx, int param)
+int spinner(GfxDomain *dest, const SDL_Event *event, const SDL_Rect *_area, GfxSurface *gfx, int param)
 {
 	int plus, minus;
 	SDL_Rect area;
@@ -109,6 +110,18 @@ int generic_edit_text(SDL_Event *e, char *edit_buffer, size_t edit_buffer_size, 
 {
 	switch (e->type)
 	{
+		case SDL_TEXTINPUT:
+			if (*editpos < (edit_buffer_size - 1) && strlen(edit_buffer) < edit_buffer_size - 1)
+			{
+				memmove(&edit_buffer[*editpos + 1], &edit_buffer[*editpos], edit_buffer_size - *editpos - 1);
+				edit_buffer[*editpos] = e->text.text[0];
+				clamp(*editpos, +1, 0,edit_buffer_size-1);
+			}
+			break;
+		case SDL_TEXTEDITING:
+			break;
+		
+	
 		case SDL_KEYDOWN:
 		
 		switch (e->key.keysym.sym)
@@ -152,12 +165,7 @@ int generic_edit_text(SDL_Event *e, char *edit_buffer, size_t edit_buffer_size, 
 		
 			default:
 			{
-				if (*editpos < (edit_buffer_size - 1) && (e->key.keysym.unicode >= 0x20 && e->key.keysym.unicode < 0xff) && strlen(edit_buffer) < edit_buffer_size - 1)
-				{
-					memmove(&edit_buffer[*editpos + 1], &edit_buffer[*editpos], edit_buffer_size - *editpos - 1);
-					edit_buffer[*editpos] = e->key.keysym.unicode;
-					clamp(*editpos, +1, 0,edit_buffer_size-1);
-				}
+				/**/
 			}
 			break;
 		}

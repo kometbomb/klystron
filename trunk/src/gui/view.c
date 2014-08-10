@@ -25,6 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "view.h"
 #include "macros.h"
+#include <string.h>
 
 extern int event_hit;
 
@@ -69,7 +70,7 @@ void clip_rect(SDL_Rect *rect, const SDL_Rect *limits)
 }
 
 
-void draw_view(SDL_Surface *dest, const View* views, const SDL_Event *_event)
+void draw_view(GfxDomain *dest, const View* views, const SDL_Event *_event)
 {
 	SDL_Event event;
 	memcpy(&event, _event, sizeof(event));
@@ -78,10 +79,10 @@ void draw_view(SDL_Surface *dest, const View* views, const SDL_Event *_event)
 		const View *view = &views[i];
 		
 		SDL_Rect area;
-		area.x = view->position.x >= 0 ? view->position.x : dest->w + view->position.x;
-		area.y = view->position.y >= 0 ? view->position.y : dest->h + view->position.y;
-		area.w = *(Sint16*)&view->position.w > 0 ? *(Sint16*)&view->position.w : dest->w + *(Sint16*)&view->position.w - view->position.x;
-		area.h = *(Sint16*)&view->position.h > 0 ? *(Sint16*)&view->position.h : dest->h + *(Sint16*)&view->position.h - view->position.y;
+		area.x = view->position.x >= 0 ? view->position.x : dest->screen_w + view->position.x;
+		area.y = view->position.y >= 0 ? view->position.y : dest->screen_h + view->position.y;
+		area.w = *(Sint16*)&view->position.w > 0 ? *(Sint16*)&view->position.w : dest->screen_w + *(Sint16*)&view->position.w - view->position.x;
+		area.h = *(Sint16*)&view->position.h > 0 ? *(Sint16*)&view->position.h : dest->screen_h + *(Sint16*)&view->position.h - view->position.y;
 
 		int iter = 0;
 		do

@@ -25,6 +25,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 #include "shortcuts.h"
+#include <string.h>
+#include <ctype.h>
 
 void do_shortcuts(SDL_KeyboardEvent *e, const KeyShortcut *shortcuts)
 {
@@ -72,7 +74,7 @@ const char * get_shortcut_string(const KeyShortcut *sc)
 	
 	char keyname[4] = { 0 };
 	
-	if (sc->key >= SDLK_KP0 && sc->key <= SDLK_KP_EQUALS)
+	if (sc->key >= SDLK_KP_0 && sc->key <= SDLK_KP_EQUALS)
 	{
 		strncpy(keyname, SDL_GetKeyName(sc->key), 3);
 		keyname[2] = keyname[1];

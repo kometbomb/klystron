@@ -69,7 +69,7 @@ static void drag_begin(void *event, void *_param, void *area)
 }
 
 
-void slider(SDL_Surface *dest_surface, const SDL_Rect *_area, const SDL_Event *event, void *_param)
+void slider(GfxDomain *dest_surface, const SDL_Rect *_area, const SDL_Event *event, void *_param)
 {
 	SliderParam *param = _param;
 	
@@ -196,7 +196,7 @@ void slider(SDL_Surface *dest_surface, const SDL_Rect *_area, const SDL_Event *e
 }
 
 
-void slider_set_params(SliderParam *param, int first, int last, int first_visible, int last_visible, int *position, int granularity, int orientation, SDL_Surface *gfx)
+void slider_set_params(SliderParam *param, int first, int last, int first_visible, int last_visible, int *position, int granularity, int orientation, GfxSurface *gfx)
 {
 	param->first = first;
 	param->last = last;
@@ -217,23 +217,18 @@ void check_mouse_wheel_event(const SDL_Event *event, const SDL_Rect *rect, Slide
 {
 	switch (event->type) 
 	{
-		case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEWHEEL:
 		{
-			if ((event->button.x >= rect->x) && (event->button.y >= rect->y) 
-					&& (event->button.x < rect->x + rect->w) && (event->button.y < rect->y + rect->h))
+			int p = (slider->visible_last - slider->visible_first) / 2;
+			if (event->wheel.y > 0)
 			{
-				int p = (slider->visible_last - slider->visible_first) / 2;
-				switch (event->button.button)
-				{
-					case 4: 
-						*slider->position -= p;
-					break;
-					case 5: 
-						*slider->position += p;
-					break;
-				}
-				*slider->position = my_max(my_min(*slider->position, slider->last - (slider->visible_last - slider->visible_first)), slider->first);
+				*slider->position -= p;
 			}
+			else
+			{
+				*slider->position += p;
+			}
+			*slider->position = my_max(my_min(*slider->position, slider->last - (slider->visible_last - slider->visible_first)), slider->first);
 		}
 		break;
 	}

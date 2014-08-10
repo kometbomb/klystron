@@ -3,6 +3,8 @@
 #include "freqs.h"
 #include "cydosc.h"
 #include "macros.h"
+#include <stdlib.h>
+#include <string.h>
 
 
 #define MODULATOR_MAX 1024

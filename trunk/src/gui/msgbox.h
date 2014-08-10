@@ -33,6 +33,6 @@ enum { MB_YES = 1, MB_NO = 2, MB_CANCEL = 4, MB_OK = 8 };
 #include "gfx/gfx.h"
 #include "gfx/font.h"
 
-int msgbox(GfxDomain *domain, SDL_Surface *gfx, const Font *font, const char *msg, int buttons);
+int msgbox(GfxDomain *domain, GfxSurface *gfx, const Font *font, const char *msg, int buttons);
 
 #endif

@@ -26,7 +26,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "objhdr.h"
 #include <stdio.h>
 #include <assert.h>
-
+#include "gfx.h"
 
 static inline int surf_alpha_both(const int *a, const int *b, int ax, int ay, int bx, int by, int w, int h, int stride_a, int stride_b)
 {
@@ -209,7 +209,7 @@ const ObjHdr * objhdr_check_collision_chained2(const ObjHdr *head1, const ObjHdr
 }
 
 
-void objhdr_draw(SDL_Surface *destination, const ObjHdr *object, int xofs, int yofs)
+void objhdr_draw(GfxDomain *destination, const ObjHdr *object, int xofs, int yofs)
 {
 	if (object->objflags & OBJ_RELATIVE_CHILDREN)
 		objhdr_draw_chained(destination, object, xofs, yofs);
@@ -221,20 +221,20 @@ void objhdr_draw(SDL_Surface *destination, const ObjHdr *object, int xofs, int y
 #ifdef DEBUG	
 		if (object->surface == NULL)
 		{
-			SDL_FillRect(destination, &dest, 0xffffffff);
+			gfx_rect(destination, &dest, 0xffffffff);
 		}
 		else 
 #endif	
 		if (object->objflags & OBJ_DRAW_RECT)
 		{
-			SDL_FillRect(destination, &dest, *(Uint32*)&object->surface);
+			gfx_rect(destination, &dest, *(Uint32*)&object->surface);
 		}
 		else
 		{
 			if (object->surface != NULL)
 			{
 				SDL_Rect src = { object->current_frame * object->w, object->_yofs, object->w, object->h };
-				SDL_BlitSurface(object->surface->surface , &src, destination, &dest);
+				my_BlitSurface(object->surface , &src, destination, &dest);
 			}
 		}
 		
@@ -243,14 +243,14 @@ void objhdr_draw(SDL_Surface *destination, const ObjHdr *object, int xofs, int y
 		{
 			SDL_Rect dest = {object->x - xofs + object->colrect.x, object->y - yofs + object->colrect.y, object->colrect.w, object->colrect.h};
 			
-			SDL_FillRect(destination, &dest, 0xff0000);
+			gfx_rect(destination, &dest, 0xff0000);
 		}
 #endif
 	}
 }
 
 
-void objhdr_draw_chained(SDL_Surface *destination, const ObjHdr *head, int xofs, int yofs)
+void objhdr_draw_chained(GfxDomain *destination, const ObjHdr *head, int xofs, int yofs)
 {
 	const ObjHdr *ptr;
 	

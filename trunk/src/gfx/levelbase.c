@@ -1,4 +1,5 @@
 #include "levelbase.h"
+#include <stdlib.h>
 
 #define ptr_read(dest, ptr) SDL_RWread(data, &dest, sizeof(dest), 1);
 

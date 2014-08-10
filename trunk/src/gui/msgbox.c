@@ -30,7 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "view.h"
 #include "gui/mouse.h"
 
-static int draw_box(SDL_Surface *dest, SDL_Surface *gfx, const Font *font, const SDL_Event *event, const char *msg, int buttons, int *selected)
+static int draw_box(GfxDomain *dest, GfxSurface *gfx, const Font *font, const SDL_Event *event, const char *msg, int buttons, int *selected)
 {
 	int w = 0, max_w = 200, h = font->h;
 	
@@ -45,7 +45,7 @@ static int draw_box(SDL_Surface *dest, SDL_Surface *gfx, const Font *font, const
 		}
 	}
 	
-	SDL_Rect area = { dest->w / 2 - max_w / 2, dest->h / 2 - h / 2 - 8, max_w, h + 16 + 16 + 4 };
+	SDL_Rect area = { dest->screen_w / 2 - max_w / 2, dest->screen_h / 2 - h / 2 - 8, max_w, h + 16 + 16 + 4 };
 	
 	bevel(dest, &area, gfx, BEV_MENU);
 	SDL_Rect content, pos;
@@ -95,11 +95,13 @@ static int draw_box(SDL_Surface *dest, SDL_Surface *gfx, const Font *font, const
 }
 
 
-int msgbox(GfxDomain *domain, SDL_Surface *gfx, const Font *font, const char *msg, int buttons)
+int msgbox(GfxDomain *domain, GfxSurface *gfx, const Font *font, const char *msg, int buttons)
 {
 	set_repeat_timer(NULL);
 	
 	int selected = 0;
+	
+	SDL_StopTextInput();
 	
 	while (1)
 	{
@@ -138,7 +140,8 @@ int msgbox(GfxDomain *domain, SDL_Surface *gfx, const Font *font, const char *ms
 						++selected;
 						break;
 						
-						default: break;
+						default: 
+						break;
 					}
 				}
 				break;
@@ -176,7 +179,7 @@ int msgbox(GfxDomain *domain, SDL_Surface *gfx, const Font *font, const char *ms
 		
 		if (got_event || gfx_domain_is_next_frame(domain))
 		{
-			int r = draw_box(gfx_domain_get_surface(domain), gfx, font, &e, msg, buttons, &selected);
+			int r = draw_box(domain, gfx, font, &e, msg, buttons, &selected);
 			gfx_domain_flip(domain);
 			set_repeat_timer(NULL);
 			if (r) 

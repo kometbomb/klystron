@@ -61,6 +61,8 @@ enum { FB_DIRECTORY, FB_FILE };
 
 enum { FOCUS_LIST, FOCUS_FIELD };
 
+static GfxDomain *domain;
+
 typedef struct
 {
 	int type;
@@ -83,7 +85,7 @@ static struct
 	int quit;
 	char path[1024], fullpath[2048];
 	const Font *largefont, *smallfont;
-	SDL_Surface *gfx;
+	GfxSurface *gfx;
 	int elemwidth, list_width;
 } data;
 
@@ -91,12 +93,12 @@ static char **favorites = NULL;
 static int n_favorites = 0;
 static char last_picked_file[250] = {0};
 
-static void file_list_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
-static void title_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
-static void field_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
-static void path_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
-static void window_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
-static void buttons_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
+static void file_list_view(GfxDomain *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
+static void title_view(GfxDomain *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
+static void field_view(GfxDomain *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
+static void path_view(GfxDomain *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
+static void window_view(GfxDomain *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
+static void buttons_view(GfxDomain *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param);
 
 static const View filebox_view[] =
 {
@@ -109,6 +111,19 @@ static const View filebox_view[] =
 	{{ SCREENMARGIN+MARGIN, -SCREENMARGIN-MARGIN-BUTTONS+2, -MARGIN-SCREENMARGIN, BUTTONS-2 }, buttons_view, &data, -1},
 	{{0, 0, 0, 0}, NULL}
 };
+
+
+static void setfocus(int focus)
+{
+	data.focus = focus;
+	
+	if (focus == FOCUS_FIELD)
+	{
+		SDL_StartTextInput();
+	}
+	else
+		SDL_StopTextInput();
+}
 
 
 static void add_file(int type, const char *name)
@@ -332,7 +347,7 @@ static void ok_action(void *unused0, void *unused1, void *unused2)
 {
 	// Fake return keypress when field focused :)
 	
-	data.focus = FOCUS_FIELD;
+	setfocus(FOCUS_FIELD);
 	SDL_Event e = {0};
 	e.type = SDL_KEYDOWN;
 	e.key.keysym.sym = SDLK_RETURN;
@@ -340,7 +355,7 @@ static void ok_action(void *unused0, void *unused1, void *unused2)
 }
 
 
-static void buttons_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
+static void buttons_view(GfxDomain *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
 {
 	SDL_Rect button;
 	
@@ -372,7 +387,7 @@ static void pick_file_action(void *file, void *unused1, void *unused2)
 {
 	if (data.focus == FOCUS_LIST && data.selected_file == CASTPTR(int,file)) data.picked_file = &data.files[CASTPTR(int,file)];
 	data.selected_file = CASTPTR(int,file);
-	data.focus = FOCUS_LIST;
+	setfocus(FOCUS_LIST);
 	if (data.files[data.selected_file].type == FB_FILE)
 	{
 		strncpy(data.field, data.files[CASTPTR(int,file)].name, sizeof(data.field));
@@ -381,13 +396,13 @@ static void pick_file_action(void *file, void *unused1, void *unused2)
 }
 
 
-void window_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
+void window_view(GfxDomain *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
 {
 	bevel(dest_surface, area, data.gfx, BEV_MENU);
 }
 
 
-void title_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
+void title_view(GfxDomain *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
 {
 	const char* title = data.title;
 	SDL_Rect titlearea, button;
@@ -403,7 +418,7 @@ void title_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event
 }
 
 
-void file_list_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
+void file_list_view(GfxDomain *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
 {
 	SDL_Rect content, pos;
 	copy_rect(&content, area);
@@ -412,7 +427,7 @@ void file_list_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_E
 	pos.h = data.largefont->h;
 	bevel(dest_surface,area, data.gfx, BEV_FIELD);
 	
-	SDL_SetClipRect(dest_surface, &content);
+	gfx_domain_set_clip(dest_surface, &content);
 	
 	for (int i = data.list_position ; i < data.n_files && pos.y < content.h + content.y ; ++i)
 	{
@@ -433,13 +448,14 @@ void file_list_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_E
 		update_rect(&content, &pos);
 	}
 	
-	SDL_SetClipRect(dest_surface, NULL);
+	gfx_domain_set_clip(dest_surface, NULL);
 	
-	check_mouse_wheel_event(event, area, &data.scrollbar);
+	if (data.focus == FOCUS_LIST)
+		check_mouse_wheel_event(event, area, &data.scrollbar);
 }
 
 
-void field_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
+void field_view(GfxDomain *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
 {
 	SDL_Rect content, pos;
 	copy_rect(&content, area);
@@ -471,11 +487,11 @@ void field_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event
 		font_write(data.largefont, dest_surface, &content, temp);
 	}
 	
-	if (check_event(event, area, NULL, 0, 0, 0)) data.focus = FOCUS_FIELD;
+	if (check_event(event, area, NULL, 0, 0, 0)) setfocus(FOCUS_FIELD);
 }
 
 
-static void path_view(SDL_Surface *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
+static void path_view(GfxDomain *dest_surface, const SDL_Rect *area, const SDL_Event *event, void *param)
 {
 	SDL_Rect button;
 	copy_rect(&button, area);
@@ -529,7 +545,7 @@ static int checkext(const char * filename, const char *extension)
 }
 
 
-static int populate_files(GfxDomain *domain, SDL_Surface *gfx, const Font *font, const char *dirname, const char *extension)
+static int populate_files(GfxDomain *domain, GfxSurface *gfx, const Font *font, const char *dirname, const char *extension)
 {
 	debug("Opening directory %s", dirname);
 
@@ -603,8 +619,10 @@ static int populate_files(GfxDomain *domain, SDL_Surface *gfx, const Font *font,
 }
 
 
-int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const char *extension, GfxDomain *domain, SDL_Surface *gfx, const Font *largefont, const Font *smallfont)
+int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const char *extension, GfxDomain *_domain, GfxSurface *gfx, const Font *largefont, const Font *smallfont)
 {
+	domain = _domain;
+
 	set_repeat_timer(NULL);
 	
 	memset(&data, 0, sizeof(data));
@@ -631,7 +649,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 			
 			SDL_Event e = {0};
 			
-			draw_view(gfx_domain_get_surface(domain), filebox_view, &e);
+			draw_view(domain, filebox_view, &e);
 			slider_move_position(&data.selected_file, &data.list_position, &data.scrollbar, 0);
 			break;
 		}
@@ -650,6 +668,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 					strncpy(buffer, data.picked_file->name, buffer_size);
 					strncpy(last_picked_file, data.picked_file->name, sizeof(last_picked_file));
 					free_files();
+					SDL_StopTextInput();
 					return FB_OK;
 				}
 				
@@ -676,6 +695,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 				set_repeat_timer(NULL);
 				SDL_PushEvent(&e);
 				free_files();
+				SDL_StopTextInput();
 				return FB_CANCEL;
 				
 				break;
@@ -690,6 +710,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 							
 							set_repeat_timer(NULL);
 							free_files();
+							SDL_StopTextInput();
 							return FB_CANCEL;
 							
 							break;
@@ -713,7 +734,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 							break;
 							
 							case SDLK_TAB:
-							data.focus = FOCUS_FIELD;
+							setfocus(FOCUS_FIELD);
 							break;
 							
 							default: break;
@@ -724,94 +745,98 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 						switch (e.key.keysym.sym)
 						{
 							case SDLK_TAB:
-							data.focus = FOCUS_LIST;
-							break;
-						
-							default:
-							{
-								int r = generic_edit_text(&e, data.field, sizeof(data.field) - 1, &data.editpos);
-								if (r == 1)
-								{
-								enter_pressed:;
-									struct stat attribute;
-				
-									char * exp = expand_tilde(data.field);
-				
-									int s = stat(exp ? exp : data.field, &attribute);
-									
-									if (s != -1)
-									{
-										if (!(attribute.st_mode & S_IFDIR) && mode == FB_SAVE)
-										{
-											if (msgbox(domain, gfx, largefont, "Overwrite?", MB_YES|MB_NO) == MB_YES)
-											{
-												goto exit_ok;
-											}
-										}
-										else
-										{
-											if (attribute.st_mode & S_IFDIR)
-												populate_files(domain, gfx, largefont, data.field, extension);
-											else
-											{
-												goto exit_ok;
-											}
-										}
-									}
-									else 
-									{
-										if (mode == FB_SAVE)
-										{
-											goto exit_ok;
-										}
-									}
-									
-									if (0)
-									{
-									exit_ok:;
-										
-										set_repeat_timer(NULL);
-										strncpy(buffer, exp ? exp : data.field, buffer_size);
-										strncpy(last_picked_file, "", sizeof(last_picked_file));
-										
-										if (mode == FB_SAVE && strchr(buffer, '.') == NULL)
-										{
-											strncat(buffer, ".", buffer_size);
-											strncat(buffer, extension, buffer_size);
-											
-											char * exp = expand_tilde(buffer);
-				
-											int s = stat(exp ? exp : buffer, &attribute);
-											
-											if (exp) free(exp);
-											
-											if (s != -1 && mode == FB_SAVE)
-											{
-												if (msgbox(domain, gfx, largefont, "Overwrite?", MB_YES|MB_NO) == MB_NO)
-												{
-													break;
-												}
-											}
-										}
-										
-										free_files();
-										if (exp) free(exp);
-										return FB_OK;
-									}
-									
-									if (exp) free(exp);
-								}
-								else if (r == -1)
-								{
-									free_files();
-									return FB_CANCEL;
-								}
-							}
+							setfocus(FOCUS_LIST);
 							break;
 						}
 					}
 				}
 				break;
+				
+				case SDL_TEXTINPUT:
+				case SDL_TEXTEDITING:
+					if (data.focus != FOCUS_LIST)
+					{
+						int r = generic_edit_text(&e, data.field, sizeof(data.field) - 1, &data.editpos);
+						if (r == 1)
+						{
+						enter_pressed:;
+							struct stat attribute;
+		
+							char * exp = expand_tilde(data.field);
+		
+							int s = stat(exp ? exp : data.field, &attribute);
+							
+							if (s != -1)
+							{
+								if (!(attribute.st_mode & S_IFDIR) && mode == FB_SAVE)
+								{
+									if (msgbox(domain, gfx, largefont, "Overwrite?", MB_YES|MB_NO) == MB_YES)
+									{
+										goto exit_ok;
+									}
+								}
+								else
+								{
+									if (attribute.st_mode & S_IFDIR)
+										populate_files(domain, gfx, largefont, data.field, extension);
+									else
+									{
+										goto exit_ok;
+									}
+								}
+							}
+							else 
+							{
+								if (mode == FB_SAVE)
+								{
+									goto exit_ok;
+								}
+							}
+							
+							if (0)
+							{
+							exit_ok:;
+								
+								set_repeat_timer(NULL);
+								strncpy(buffer, exp ? exp : data.field, buffer_size);
+								strncpy(last_picked_file, "", sizeof(last_picked_file));
+								
+								if (mode == FB_SAVE && strchr(buffer, '.') == NULL)
+								{
+									strncat(buffer, ".", buffer_size);
+									strncat(buffer, extension, buffer_size);
+									
+									char * exp = expand_tilde(buffer);
+		
+									int s = stat(exp ? exp : buffer, &attribute);
+									
+									if (exp) free(exp);
+									
+									if (s != -1 && mode == FB_SAVE)
+									{
+										if (msgbox(domain, gfx, largefont, "Overwrite?", MB_YES|MB_NO) == MB_NO)
+										{
+											break;
+										}
+									}
+								}
+								
+								free_files();
+								if (exp) free(exp);
+								SDL_StopTextInput();
+								return FB_OK;
+							}
+							
+							if (exp) free(exp);
+						}
+						else if (r == -1)
+						{
+							free_files();
+							SDL_StopTextInput();
+							return FB_CANCEL;
+						}
+					}
+					break;
 			
 				case SDL_USEREVENT:
 					e.type = SDL_MOUSEBUTTONDOWN;
@@ -852,7 +877,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 		
 		if (got_event || gfx_domain_is_next_frame(domain))
 		{
-			draw_view(gfx_domain_get_surface(domain), filebox_view, &e);
+			draw_view(domain, filebox_view, &e);
 			gfx_domain_flip(domain);
 		}
 		else
@@ -860,5 +885,6 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 	}
 	
 	free_files();
+	SDL_StopTextInput();
 	return FB_CANCEL;
 }

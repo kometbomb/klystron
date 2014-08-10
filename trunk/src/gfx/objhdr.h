@@ -78,12 +78,14 @@ typedef struct
 	OBJHDR;
 } ObjHdr;
 
+struct GfxDomain_t;
+
 // rect collision
 int objhdr_check_collision(const ObjHdr *a, const ObjHdr *b);
 const ObjHdr * objhdr_check_collision_chained(const ObjHdr *a, const ObjHdr *head);
 const ObjHdr * objhdr_check_collision_chained2(const ObjHdr *head1, const ObjHdr *head2);
-void objhdr_draw(SDL_Surface *destination, const ObjHdr *object, int xofs, int yofs);
-void objhdr_draw_chained(SDL_Surface *destination, const ObjHdr *head, int xofs, int yofs);
+void objhdr_draw(struct GfxDomain_t *destination, const ObjHdr *object, int xofs, int yofs);
+void objhdr_draw_chained(struct GfxDomain_t *destination, const ObjHdr *head, int xofs, int yofs);
 void objhdr_set_animation(ObjHdr *obj, const AnimFrame *anim, int anim_speed_fine);
 void objhdr_advance_animation(ObjHdr *obj);
 void objhdr_advance_animation_chained(ObjHdr *head);

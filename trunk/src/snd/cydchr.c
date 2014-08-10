@@ -26,6 +26,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "cyddefs.h"
 #include "cydchr.h"
 #include <math.h>
+#include <stdlib.h>
+#include <string.h>
+
 
 #ifdef CYD_DISABLE_CHORUS_INTERPOLATION
 # define CHORUS_ACCURACY 1
