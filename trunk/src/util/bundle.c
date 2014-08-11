@@ -98,7 +98,6 @@ int bnd_open_RW(Bundle *bundle, SDL_RWops *ctx)
 	for (int i = 0 ; i < bundle->n_files ; ++i)
 	{
 		bundle->file[i].offset += header_size;
-		debug("%s @ %u", bundle->file[i].name, bundle->file[i].offset);
 	}
 	
 	bundle->handle = ctx;
@@ -175,7 +174,6 @@ static int bnd_read(struct SDL_RWops *context, void *ptr, int size, int num)
 
 static int bnd_close(struct SDL_RWops *context)
 {
-	debug("bnd_close");
 	RWOpsBundle *b = context->hidden.unknown.data1;
 	free(b);
 	SDL_FreeRW(context);
