@@ -36,7 +36,7 @@ endif
 ifdef COMSPEC
 	SDLFLAGS = -I /MinGW/include/SDL2 -lSDL_mixer -lSDL2 -lwinmm
 else
-	SDLFLAGS = `sdl-config --cflags` -U_FORTIFY_SOURCE
+	SDLFLAGS = `sdl2-config --cflags` -U_FORTIFY_SOURCE
 endif
 
 INCLUDEFLAGS= -I ../Common -I src $(SDLFLAGS) -I src/gfx -I src/snd -I src/util -I src/gui $(EXTFLAGS)
