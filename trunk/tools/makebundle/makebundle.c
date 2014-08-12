@@ -27,7 +27,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "util/bundle.h"
 #include "macros.h"
 #include <dirent.h>
+#include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #define BS 1024*4
 #define TEMP_NAME "makebundle.temp.$$$"
