@@ -37,6 +37,7 @@ typedef struct
 {
 	char *charmap;
 	TileDescriptor *tiledescriptor;
+	const TileDescriptor *ordered_tiles[256];
 	GfxSurface * surface;
 	int w, h;
 	int char_spacing, space_width;
