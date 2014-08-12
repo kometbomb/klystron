@@ -65,36 +65,13 @@ static int tile_width(TileDescriptor *desc)
 }
 
 
-void font_create(Font *font, GfxSurface *tiles, const int w, const int h, const int char_spacing, const int space_width, char *charmap)
-{
-	font->tiledescriptor = gfx_build_tiledescriptor(tiles,w,h);
-	font->charmap = strdup(charmap);
-	font->w = w;
-	font->h = h;
-	font->char_spacing = char_spacing;
-	font->space_width = space_width ? space_width : w;
-	
-	if (space_width)
-	{
-		for (int i = 0 ; i < (tiles->surface->w/w)*(tiles->surface->h/h) ; ++i)
-			font->tiledescriptor[i].rect.w = tile_width(&font->tiledescriptor[i]);
-	}
-}
-
-
-void font_destroy(Font *font)
-{
-	if (font->tiledescriptor) free(font->tiledescriptor);
-	if (font->charmap) free(font->charmap);
-	if (font->surface) gfx_free_surface(font->surface);
-	
-	font->tiledescriptor = NULL;
-	font->charmap = NULL;
-	font->surface = NULL;
-}
-
-
 static const TileDescriptor * findchar(const Font *font, char c)
+{
+	return font->ordered_tiles[(unsigned char)c];
+}
+
+
+static const TileDescriptor * findchar_slow(const Font *font, char c)
 {
 	if (c == ' ') return NULL;
 
@@ -109,6 +86,40 @@ static const TileDescriptor * findchar(const Font *font, char c)
 		if (tolower(*tc) == c) return tile;
 	//debug("Could not find character '%c'", c);
 	return NULL;
+}
+
+
+void font_create(Font *font, GfxSurface *tiles, const int w, const int h, const int char_spacing, const int space_width, char *charmap)
+{
+	font->tiledescriptor = gfx_build_tiledescriptor(tiles,w,h);
+	font->charmap = strdup(charmap);
+	font->w = w;
+	font->h = h;
+	font->char_spacing = char_spacing;
+	font->space_width = space_width ? space_width : w;
+	
+	if (space_width)
+	{
+		for (int i = 0 ; i < (tiles->surface->w/w)*(tiles->surface->h/h) ; ++i)
+			font->tiledescriptor[i].rect.w = tile_width(&font->tiledescriptor[i]);
+	}
+	
+	for (int i = 0 ; i < 256 ; ++i)
+	{
+		font->ordered_tiles[i] = findchar_slow(font, i);
+	}
+}
+
+
+void font_destroy(Font *font)
+{
+	if (font->tiledescriptor) free(font->tiledescriptor);
+	if (font->charmap) free(font->charmap);
+	if (font->surface) gfx_free_surface(font->surface);
+	
+	font->tiledescriptor = NULL;
+	font->charmap = NULL;
+	font->surface = NULL;
 }
 
 
