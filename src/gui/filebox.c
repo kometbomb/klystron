@@ -87,6 +87,7 @@ static struct
 	const Font *largefont, *smallfont;
 	GfxSurface *gfx;
 	int elemwidth, list_width;
+	bool selected;
 } data;
 
 static char **favorites = NULL;
@@ -347,11 +348,7 @@ static void ok_action(void *unused0, void *unused1, void *unused2)
 {
 	// Fake return keypress when field focused :)
 	
-	setfocus(FOCUS_FIELD);
-	SDL_Event e = {0};
-	e.type = SDL_KEYDOWN;
-	e.key.keysym.sym = SDLK_RETURN;
-	SDL_PushEvent(&e);
+	data.selected = true;
 }
 
 
@@ -750,7 +747,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 						}
 					}
 				}
-				break;
+				// fallthru
 				
 				case SDL_TEXTINPUT:
 				case SDL_TEXTEDITING:
@@ -759,75 +756,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 						int r = generic_edit_text(&e, data.field, sizeof(data.field) - 1, &data.editpos);
 						if (r == 1)
 						{
-						enter_pressed:;
-							struct stat attribute;
-		
-							char * exp = expand_tilde(data.field);
-		
-							int s = stat(exp ? exp : data.field, &attribute);
-							
-							if (s != -1)
-							{
-								if (!(attribute.st_mode & S_IFDIR) && mode == FB_SAVE)
-								{
-									if (msgbox(domain, gfx, largefont, "Overwrite?", MB_YES|MB_NO) == MB_YES)
-									{
-										goto exit_ok;
-									}
-								}
-								else
-								{
-									if (attribute.st_mode & S_IFDIR)
-										populate_files(domain, gfx, largefont, data.field, extension);
-									else
-									{
-										goto exit_ok;
-									}
-								}
-							}
-							else 
-							{
-								if (mode == FB_SAVE)
-								{
-									goto exit_ok;
-								}
-							}
-							
-							if (0)
-							{
-							exit_ok:;
-								
-								set_repeat_timer(NULL);
-								strncpy(buffer, exp ? exp : data.field, buffer_size);
-								strncpy(last_picked_file, "", sizeof(last_picked_file));
-								
-								if (mode == FB_SAVE && strchr(buffer, '.') == NULL)
-								{
-									strncat(buffer, ".", buffer_size);
-									strncat(buffer, extension, buffer_size);
-									
-									char * exp = expand_tilde(buffer);
-		
-									int s = stat(exp ? exp : buffer, &attribute);
-									
-									if (exp) free(exp);
-									
-									if (s != -1 && mode == FB_SAVE)
-									{
-										if (msgbox(domain, gfx, largefont, "Overwrite?", MB_YES|MB_NO) == MB_NO)
-										{
-											break;
-										}
-									}
-								}
-								
-								free_files();
-								if (exp) free(exp);
-								SDL_StopTextInput();
-								return FB_OK;
-							}
-							
-							if (exp) free(exp);
+							data.selected = true;
 						}
 						else if (r == -1)
 						{
@@ -873,6 +802,79 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 			// ensure the last event is a mouse click so it gets passed to the draw/event code
 			
 			if (e.type == SDL_MOUSEBUTTONDOWN || (e.type == SDL_MOUSEMOTION && e.motion.state)) break; 
+		}
+		
+		if (data.selected)
+		{
+		enter_pressed:;
+			struct stat attribute;
+
+			char * exp = expand_tilde(data.field);
+
+			int s = stat(exp ? exp : data.field, &attribute);
+			
+			if (s != -1)
+			{
+				if (!(attribute.st_mode & S_IFDIR) && mode == FB_SAVE)
+				{
+					if (msgbox(domain, gfx, largefont, "Overwrite?", MB_YES|MB_NO) == MB_YES)
+					{
+						goto exit_ok;
+					}
+				}
+				else
+				{
+					if (attribute.st_mode & S_IFDIR)
+						populate_files(domain, gfx, largefont, data.field, extension);
+					else
+					{
+						goto exit_ok;
+					}
+				}
+			}
+			else 
+			{
+				if (mode == FB_SAVE)
+				{
+					goto exit_ok;
+				}
+			}
+			
+			if (0)
+			{
+			exit_ok:;
+				
+				set_repeat_timer(NULL);
+				strncpy(buffer, exp ? exp : data.field, buffer_size);
+				strncpy(last_picked_file, "", sizeof(last_picked_file));
+				
+				if (mode == FB_SAVE && strchr(buffer, '.') == NULL)
+				{
+					strncat(buffer, ".", buffer_size);
+					strncat(buffer, extension, buffer_size);
+					
+					char * exp = expand_tilde(buffer);
+
+					int s = stat(exp ? exp : buffer, &attribute);
+					
+					if (exp) free(exp);
+					
+					if (s != -1 && mode == FB_SAVE)
+					{
+						if (msgbox(domain, gfx, largefont, "Overwrite?", MB_YES|MB_NO) == MB_NO)
+						{
+							break;
+						}
+					}
+				}
+				
+				free_files();
+				if (exp) free(exp);
+				SDL_StopTextInput();
+				return FB_OK;
+			}
+			
+			if (exp) free(exp);
 		}
 		
 		if (got_event || gfx_domain_is_next_frame(domain))
