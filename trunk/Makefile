@@ -34,7 +34,7 @@ endif
 
 # What include flags to pass to the compiler
 ifdef COMSPEC
-	SDLFLAGS = -I /MinGW/include/SDL2 -lSDL_mixer -lSDL2 -lwinmm
+	SDLFLAGS = -I /MinGW/include/SDL2 -lSDL2 -lwinmm
 else
 	SDLFLAGS = `sdl2-config --cflags` -U_FORTIFY_SOURCE
 endif

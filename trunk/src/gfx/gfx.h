@@ -33,8 +33,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "gfxsurf.h"
 #include <stdbool.h>
 
-#ifdef USEOPENGL
-#include <GL/gl.h>
+#ifdef USESDL_GPU
+#include "SDL_gpu.h"
 #endif
 
 enum
@@ -59,14 +59,22 @@ typedef Uint32 FramerateTimer;
 
 struct GfxDomain_t
 {
+#ifdef USESDL_GPU
+	GPU_Target *screen;
+	SDL_Rect clip;
+#else
 	SDL_Window *window;
 	SDL_Renderer *renderer;
+#endif
 	int screen_w, screen_h;
 	int scale, fullscreen, fps;
 	GfxScaleType scale_type;
 	FramerateTimer last_ticks, frame_time, clock_resolution;
 	int flags;
 	Uint8 texmod_r, texmod_g, texmod_b;
+#ifdef DEBUG
+	int calls_per_frame;
+#endif
 };
 
 typedef struct GfxDomain_t GfxDomain;

@@ -639,27 +639,42 @@ static void gfx_domain_set_framerate(GfxDomain *d)
 void gfx_domain_update(GfxDomain *domain, bool resize_window)
 {
 	debug("Setting screen mode (scale = %d%s)", domain->scale, domain->fullscreen ? ", fullscreen" : "");
-	
+#ifdef USESDL_GPU
+	GPU_SetWindowResolution(domain->screen_w * domain->scale, domain->screen_h * domain->scale);
+	GPU_SetVirtualResolution(domain->screen, domain->screen_w, domain->screen_h);
+#else	
 	SDL_RenderSetScale(domain->renderer, domain->scale, domain->scale);
 	if (resize_window) 
 		SDL_SetWindowSize(domain->window, domain->screen_w * domain->scale, domain->screen_h * domain->scale);
 	SDL_RenderSetViewport(domain->renderer, NULL);
-	
+#endif
 	gfx_domain_set_framerate(domain);
 }
 
 
 void gfx_domain_flip(GfxDomain *domain)
 {
+#ifdef USESDL_GPU
+    GPU_Flip(domain->screen);
+#else
 	SDL_RenderPresent(domain->renderer);
+#endif
+
+#ifdef DEBUG
+	domain->calls_per_frame = 0;
+#endif
 }
 
 
 void gfx_domain_free(GfxDomain *domain)
 {
+#ifdef USESDL_GPU
+    GPU_Quit();
+#else
 	SDL_DestroyRenderer(domain->renderer);
 	SDL_DestroyWindow(domain->window);
-	
+#endif
+
 	free(domain);
 }
 
@@ -674,14 +689,25 @@ GfxDomain * gfx_create_domain(const char *title, Uint32 window_flags, int window
 	d->fullscreen = 0;
 	d->fps = 50;
 	d->flags = 0;
+#ifdef USESDL_GPU
+	d->screen = GPU_Init(window_w, window_h, GPU_DEFAULT_INIT_FLAGS);
+#else	
 	d->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_w, window_h, window_flags);
 	d->renderer = SDL_CreateRenderer(d->window, -1, SDL_RENDERER_PRESENTVSYNC|SDL_RENDERER_ACCELERATED);
+#endif
 	
 #ifdef DEBUG
+
+	d->calls_per_frame = 0;
+
+#ifndef USESDL_GPU
+	
 	SDL_RendererInfo info;
 	SDL_GetRendererInfo(d->renderer, &info);
-
+	
 	debug("Renderer: %s (%s)", info.name, (info.flags & SDL_RENDERER_ACCELERATED) ? "Accelerated" : "Not accelerated");
+	
+#endif
 	
 #endif
 	
@@ -716,33 +742,50 @@ GfxSurface * gfx_create_surface(GfxDomain *domain, int w, int h)
 {
 	GfxSurface *gs = calloc(1, sizeof(GfxSurface));
 	gs->surface = SDL_CreateRGBSurface(SDL_SWSURFACE, w, h, 32, 0xff000000, 0x00ff0000, 0x0000ff00, 0x000000ff);
-	
 	return gs;
 }
 
 
 void gfx_update_texture(GfxDomain *domain, GfxSurface *surface)
 {
+#ifdef USESDL_GPU
+	if (!surface->texture)
+		surface->texture = GPU_CreateImage(surface->surface->w, surface->surface->h, GPU_FORMAT_RGBA);
+
+	GPU_UpdateImage(surface->texture, surface->surface, NULL);
+	/*GPU_SetImageFilter(surface->texture, GPU_FILTER_NEAREST);
+	GPU_SetSnapMode(surface->texture, GPU_SNAP_POSITION_AND_DIMENSIONS);*/
+#else
 	if (surface->texture)
 		SDL_DestroyTexture(surface->texture);
 		
 	surface->texture = SDL_CreateTextureFromSurface(domain->renderer, surface->surface);
+#endif
 }
 
 
 void gfx_free_surface(GfxSurface *surface)
 {
+#ifdef USESDL_GPU
+	if (surface->texture) GPU_FreeImage(surface->texture);
+#else
+	if (surface->texture) SDL_DestroyTexture(surface->texture);
+#endif
 	if (surface->surface) SDL_FreeSurface(surface->surface);
 	if (surface->mask) free(surface->mask);
-	if (surface->texture) SDL_DestroyTexture(surface->texture);
+	
 	free(surface);
 }
 
 
 void gfx_clear(GfxDomain *domain, Uint32 color)
 {
+#ifdef USESDL_GPU
+	GPU_ClearRGBA(domain->screen, (color >> 16) & 255, (color >> 8) & 255, color & 255, 255);
+#else
 	SDL_SetRenderDrawColor(domain->renderer, (color >> 16) & 255, (color >> 8) & 255, color & 255, 255);
 	SDL_RenderClear(domain->renderer);
+#endif
 }
 
 
@@ -764,14 +807,32 @@ void gfx_clear(GfxDomain *domain, Uint32 color)
 
 void gfx_blit(GfxSurface *_src, SDL_Rect *_src_rect, GfxDomain *domain, SDL_Rect *_dest_rect)
 {
+#ifdef USESDL_GPU
+	GPU_Rect rect = GPU_MakeRect(_src_rect->x, _src_rect->y, _src_rect->w, _src_rect->h);
+	GPU_BlitScale(_src->texture, &rect, domain->screen, _dest_rect->x + _dest_rect->w / 2, _dest_rect->y + _dest_rect->h / 2, (float)_dest_rect->w / _src_rect->w, (float)_dest_rect->h / _src_rect->h);
+#else
 	SDL_RenderCopy(domain->renderer, _src->texture,  _src_rect, _dest_rect);
+#endif
+
+#ifdef DEBUG
+	domain->calls_per_frame++;
+#endif
 }
 
 
 void gfx_rect(GfxDomain *domain, SDL_Rect *dest, Uint32 color)
 {
+#ifdef USESDL_GPU
+	SDL_Color rgb = { (color >> 16) & 255, (color >> 8) & 255, color & 255, 255 };
+	
+	if (dest)
+		GPU_RectangleFilled(domain->screen, dest->x, dest->y, dest->w + dest->x - 1, dest->y + dest->h - 1, rgb);
+	else
+		GPU_RectangleFilled(domain->screen, 0, 0, domain->screen_w, domain->screen_h, rgb);
+#else
 	SDL_SetRenderDrawColor(domain->renderer, (color >> 16) & 255, (color >> 8) & 255, color & 255, 255);
 	SDL_RenderFillRect(domain->renderer, dest);
+#endif
 }
 
 
@@ -783,18 +844,40 @@ void my_BlitSurface(GfxSurface *src, SDL_Rect *src_rect, GfxDomain *dest, SDL_Re
 
 void gfx_domain_set_clip(GfxDomain *domain, const SDL_Rect *rect)
 {
+#ifdef USESDL_GPU
+	if (rect)
+		memcpy(&domain->clip, rect, sizeof(*rect));
+	else
+	{
+		domain->clip.x = 0;
+		domain->clip.y = 0;
+		domain->clip.w = domain->screen_w;
+		domain->clip.h = domain->screen_h;
+	}
+	
+	GPU_SetClip(domain->screen, domain->clip.x, domain->clip.y, domain->clip.w, domain->clip.h);
+#else
 	SDL_RenderSetClipRect(domain->renderer, rect);
+#endif
 }
 
 
 void gfx_domain_get_clip(GfxDomain *domain, SDL_Rect *rect)
 {
+#ifdef USESDL_GPU
+	memcpy(rect, &domain->clip, sizeof(*rect));
+#else
 	SDL_RenderGetClipRect(domain->renderer, rect);
+#endif
 }
 
 
 void gfx_surface_set_color(GfxSurface *surf, Uint32 color)
 {
+#ifdef USESDL_GPU
+	//GPU_SetTargetRGB(surf->texture, (color >> 16) & 255, (color >> 8) & 255, color & 255);
+#else
 	SDL_SetTextureColorMod(surf->texture, (color >> 16) & 255, (color >> 8) & 255, color & 255);
+#endif
 }
 
