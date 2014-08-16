@@ -28,12 +28,20 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "SDL.h"
 
+#ifdef USESDL_GPU
+#include "SDL_gpu.h"
+#endif
+
 typedef struct
 {
 	SDL_Surface *surface; // this can now be a hw surface
 	int *mask; // collision mask 
 	int flags;
+#ifdef USESDL_GPU
+	GPU_Image *texture;
+#else
 	SDL_Texture *texture;
+#endif
 } GfxSurface;
 
 #endif

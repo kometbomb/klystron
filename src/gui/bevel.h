@@ -31,7 +31,17 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "gfx/gfx.h"
 #include "gfx/font.h"
 
+enum
+{
+	BEV_F_NORMAL = 0,
+	BEV_F_STRETCH_BORDERS = 1,
+	BEV_F_STRETCH_CENTER = 2,
+	BEV_F_DISABLE_CENTER = 4,
+	BEV_F_STRETCH_ALL = BEV_F_STRETCH_BORDERS|BEV_F_STRETCH_CENTER
+};
+
 void bevel(GfxDomain *screen, const SDL_Rect *area, GfxSurface *gfx, int offset);
+void bevelex(GfxDomain *screen, const SDL_Rect *area, GfxSurface *gfx, int offset, int bevel_flags);
 void button(GfxDomain *screen, const SDL_Rect *area, GfxSurface *gfx, int offset, int decal);
 void button_text(GfxDomain *screen, const SDL_Rect *area, GfxSurface *gfx, int offset, const Font *font, const char *label);
 void separator(GfxDomain *dest, const SDL_Rect *parent, SDL_Rect *rect, GfxSurface *gfx, int offset);
