@@ -8,4 +8,4 @@ endif
 
 $(TARGET): makebundle.c ../../src/util/bundle.h
 	@mkdir -p ../bin
-	gcc -o $(TARGET) makebundle.c -std=c99 -I ../../src $(SDL) -Wall -O3
+	gcc -o $(TARGET) -D_XOPEN_SOURCE makebundle.c -std=c99 -I ../../src $(SDL) -Wall -O3
