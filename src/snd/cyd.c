@@ -123,12 +123,6 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 #ifndef CYD_DISABLE_BUZZ
 	cyd->lookup_table_ym = malloc(sizeof(*cyd->lookup_table) * YM_LUT_SIZE);
 #endif
-	cyd->n_channels = channels;
-	
-	if (cyd->n_channels > CYD_MAX_CHANNELS)
-		cyd->n_channels = CYD_MAX_CHANNELS;
-	
-	cyd->channel = calloc(sizeof(*cyd->channel), cyd->n_channels);
 	
 #ifndef USENATIVEAPIS
 
@@ -155,12 +149,13 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	cyd_reset_wavetable(cyd);
 #endif
 	
-	cyd_reset(cyd);
+	cyd_reserve_channels(cyd, channels);
 }
 
 
 void cyd_reserve_channels(CydEngine *cyd, int channels)
 {
+	debug("Reserving %d Cyd channels", channels);
 	cyd_lock(cyd, 1);
 
 	cyd->n_channels = channels;
@@ -171,7 +166,7 @@ void cyd_reserve_channels(CydEngine *cyd, int channels)
 	if (cyd->channel)
 		free(cyd->channel);
 	
-	cyd->channel = calloc(sizeof(*cyd->channel), cyd->n_channels);
+	cyd->channel = calloc(sizeof(*cyd->channel), CYD_MAX_CHANNELS);
 	
 	cyd_reset(cyd);
 	
