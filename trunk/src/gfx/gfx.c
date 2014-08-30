@@ -320,13 +320,6 @@ TileDescriptor *gfx_build_tiledescriptor(GfxSurface *tiles, const int cellwidth,
 }
 
 
-static void plot(SDL_Surface *dest, int x0, int y0, const Uint32 color)
-{
-	Uint32 *ptr = dest->pixels + x0 * 4 + y0 * dest->pitch;
-	*ptr = color;
-}
-
-
 #define SWAP(x,y) {int t = x; x = y; y=t;}
 
 static inline int delta(int e, int x, int y)
@@ -336,118 +329,14 @@ static inline int delta(int e, int x, int y)
 }
 
 
-void gfx_line(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint32 color)
+void gfx_line(GfxDomain *dest, int x0, int y0, int x1, int y1, Uint32 color)
 {
-	// Liang-Barsky
-	
-	// TODO: remove float math overkill
-	
-	float p, q;
-	float u1 = 0.0, u2 = 1.0;
-	float r;
+#ifdef USESDL_GPU
+#else
+	SDL_SetRenderDrawColor(dest->renderer, (color >> 16) & 255, (color >> 8) & 255, color & 255, 255);
+	SDL_RenderDrawLine(dest->renderer, x0, y0, x1, y1);
+#endif
 
-	float dx = x1 - x0;
-	float dy = y1 - y0;
-
-	float ptab[] = {-dx, dx, -dy, dy};
-	float qtab[] = {x0, dest->w - 1 - x0, y0, dest->h - 1 - y0};
-
-	for (int i = 0; i < 4; ++i)
-	{
-		p = ptab[i];
-		q = qtab[i];
-
-		if (p == 0 && q < 0)
-		{
-			return;
-		}
-
-		r = q / p;
-
-		if (p < 0)
-		{
-			u1 = my_max(u1, r);
-		}
-
-		if (p > 0)
-		{
-			u2 = my_min(u2, r);
-		}
-
-		if (u1 > u2)
-		{
-			return;
-		}
-	}
-	
-	if (u2 < 1)
-	{
-		x1 = x0 + u2 * dx;
-		y1 = y0 + u2 * dy;
-	}
-	
-	if (u1 > 0)
-	{
-		x0 = x0 + u1 * dx;
-		y0 = y0 + u1 * dy;
-	}
-		
-	gfx_line_unclipped(dest, x0, y0, x1, y1, color);
-}
-
-
-void gfx_line_unclipped(SDL_Surface *dest, int x0, int y0, int x1, int y1, Uint32 color)
-{
-	assert(x0 >= 0 && x0 <= dest->w && y0 >= 0 && y0 <= dest->h);
-	
-	my_lock(dest);
-	int Dx = x1 - x0; 
-	int Dy = y1 - y0;
-	const int steep = (abs(Dy) >= abs(Dx));
-	if (steep) {
-	   SWAP(x0, y0);
-	   SWAP(x1, y1);
-	   // recompute Dx, Dy after swap
-	   Dx = x1 - x0;
-	   Dy = y1 - y0;
-	}
-	int xstep = 1;
-	if (Dx < 0) {
-	   xstep = -1;
-	   Dx = -Dx;
-	}
-	int ystep = 1;
-	if (Dy < 0) {
-	   ystep = -1;		
-	   Dy = -Dy; 
-	}
-	int TwoDy = 2*Dy; 
-	int TwoDyTwoDx = TwoDy - 2*Dx; // 2*Dy - 2*Dx
-	int E = TwoDy - Dx; //2*Dy - Dx
-	int y = y0;
-	int xDraw, yDraw;	
-	for (int x = x0; ; x += xstep) {		
-	   if (steep) {			
-		   xDraw = y;
-		   yDraw = x;
-	   } else {			
-		   xDraw = x;
-		   yDraw = y;
-	   }
-	   // plot
-	   plot(dest, xDraw, yDraw, color);
-	   
-	   if (x == x1) break;
-	   
-	   // next
-	   if (E > 0) {
-		   E += TwoDyTwoDx; //E += 2*Dy - 2*Dx;
-		   y = y + ystep;
-	   } else {
-		   E += TwoDy; //E += 2*Dy;
-	   }
-	}
-	my_unlock(dest);
 }
 
 
