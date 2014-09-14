@@ -267,14 +267,35 @@ static int has_pixels(TileDescriptor *desc)
 	
 	int result = 0;
 	
-	for (int y = 0 ; y < desc->rect.h ; ++y)
+	for (int y = 0 ; y < desc->rect.h && y + desc->rect.y < desc->surface->surface->h ; ++y)
 	{
 		Uint8 *p = (Uint8 *)desc->surface->surface->pixels + ((int)desc->rect.y + y) * desc->surface->surface->pitch + (int)desc->rect.x * desc->surface->surface->format->BytesPerPixel;
 		
-		for (int x = 0 ; x < desc->rect.w ; ++x)
+		for (int x = 0 ; x < desc->rect.w && x + desc->rect.x < desc->surface->surface->w ; ++x)
 		{
-			//printf("%08x", *(Uint32*)p);
-			if ((*((Uint32*)p)&0xffffff) != key)
+			Uint32 c = 0;
+			
+			switch (desc->surface->surface->format->BytesPerPixel)
+			{	
+				case 1:
+					c = *((Uint8*)p);
+					break;
+				
+				case 2:
+					c = *((Uint16*)p);
+					break;
+					
+				case 3:
+					c = *((Uint8*)p) | (*((Uint16*)&p[1]) << 8);
+					break;
+			
+				default:
+				case 4:
+					c = *((Uint32*)p);
+					break;
+			}
+			
+			if ((c & 0xffffff) != key)
 			{
 				++result;
 			}
