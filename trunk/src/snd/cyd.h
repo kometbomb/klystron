@@ -158,6 +158,7 @@ typedef struct CydEngine_t
 # endif
 #endif
 	Uint32 samples_played;
+	int oversample;
 } CydEngine;
 
 enum
@@ -174,6 +175,7 @@ enum { CYD_YM_ENV_ATT = 1, CYD_YM_ENV_ALT = 2};
 /////////////////777
 
 void cyd_init(CydEngine *cyd, Uint16 sample_rate, int initial_channels);
+void cyd_set_oversampling(CydEngine *cyd, int oversampling);
 void cyd_reserve_channels(CydEngine *cyd, int channels);
 void cyd_deinit(CydEngine *cyd);
 void cyd_reset(CydEngine *cyd);

@@ -120,6 +120,7 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 	memset(cyd, 0, sizeof(*cyd));
 	cyd->sample_rate = sample_rate;
 	cyd->lookup_table = malloc(sizeof(*cyd->lookup_table) * LUT_SIZE);
+	cyd->oversample = MAX_OVERSAMPLE;
 #ifndef CYD_DISABLE_BUZZ
 	cyd->lookup_table_ym = malloc(sizeof(*cyd->lookup_table) * YM_LUT_SIZE);
 #endif
@@ -150,6 +151,12 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 #endif
 	
 	cyd_reserve_channels(cyd, channels);
+}
+
+
+void cyd_set_oversampling(CydEngine *cyd, int oversampling)
+{
+	cyd->oversample = oversampling;
 }
 
 
@@ -474,7 +481,7 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 	const Uint32 mod = (chn->flags & CYD_CHN_ENABLE_FM) ? cydfm_modulate(cyd, &chn->fm, 0) : 0;
 #endif
 	
-	for (int i = 0 ; i < (1 << OVERSAMPLE) ; ++i)
+	for (int i = 0 ; i < (1 << cyd->oversample) ; ++i)
 	{
 #ifdef CYD_DISABLE_FM
 		Uint32 accumulator = chn->accumulator;
@@ -490,7 +497,7 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 #endif
 	}
 	
-	return (ovr >> OVERSAMPLE) - (WAVE_AMP / 2);
+	return (ovr >> cyd->oversample) - (WAVE_AMP / 2);
 }
 
 
@@ -830,7 +837,7 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 
 void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
 {
-	chn->frequency = (Uint64)(ACC_LENGTH >> OVERSAMPLE)/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
+	chn->frequency = (Uint64)(ACC_LENGTH >> (cyd->oversample))/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
 
 #ifndef CYD_DISABLE_LFSR	
 	chn->lfsr_period = (Uint64)cyd->sample_rate * 16 / frequency;

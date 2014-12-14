@@ -4,7 +4,7 @@
 
 static inline Uint32 cyd_pulse(Uint32 acc, Uint32 pw) 
 {
-	return (((acc >> ((ACC_BITS - 17))) >= (pw << OVERSAMPLE) ? (WAVE_AMP - 1) : 0));
+	return (((acc >> ((ACC_BITS - 17))) >= (pw << 4) ? (WAVE_AMP - 1) : 0));
 }
 
 
