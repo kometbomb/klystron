@@ -80,7 +80,9 @@ build: Makefile
 	@echo '#endif' >> ./src/version.h
 	make all CFG=$(CFG)
 
-all: bin.$(CFG)/libksndstatic.a bin.$(CFG)/ksnd.dll bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a bin.$(CFG)/lib${TARGET}_gui.a tools
+all: bin.$(CFG)/libksndstatic.a bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a bin.$(CFG)/lib${TARGET}_gui.a tools
+
+ksnd.dll: bin.$(CFG)/ksnd.dll
 
 ifdef COMSPEC
 tools: tools/bin/makebundle.exe tools/bin/editor.exe
