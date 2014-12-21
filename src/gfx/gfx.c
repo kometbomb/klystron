@@ -557,7 +557,21 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 	if (resize_window) 
 		SDL_SetWindowSize(domain->window, domain->screen_w * domain->scale, domain->screen_h * domain->scale);
 	SDL_RenderSetViewport(domain->renderer, NULL);
-	SDL_SetWindowFullscreen(domain->window, domain->fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
+	
+	if (domain->fullscreen)
+	{
+		debug("Setting fullscreen");
+		if (SDL_SetWindowFullscreen(domain->window, SDL_WINDOW_FULLSCREEN_DESKTOP) != 0)
+		{
+			warning("Fullscreen failed: %s", SDL_GetError());
+			
+			if (SDL_SetWindowFullscreen(domain->window, SDL_WINDOW_FULLSCREEN_DESKTOP) != 0)
+				warning("Fake fullscreen failed: %s", SDL_GetError());
+		}
+	}
+	else
+		SDL_SetWindowFullscreen(domain->window, 0);
+		
 #endif
 	gfx_domain_set_framerate(domain);
 }
