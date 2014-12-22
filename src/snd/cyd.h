@@ -157,7 +157,7 @@ typedef struct CydEngine_t
 	WAVEHDR waveout_hdr[CYD_NUM_WO_BUFFERS]; 
 # endif
 #endif
-	Uint32 samples_played;
+	Uint64 samples_played;
 	int oversample;
 } CydEngine;
 
