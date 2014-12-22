@@ -1568,7 +1568,7 @@ void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position)
 }
 
 
-int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, MusPattern **pattern, MusChannel *channel, int *cyd_env, int *mus_note, Uint32 *time_played)
+int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, MusPattern **pattern, MusChannel *channel, int *cyd_env, int *mus_note, Uint64 *time_played)
 {
 	cyd_lock(mus->cyd, 1);
 	
