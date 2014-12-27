@@ -72,12 +72,14 @@ const char * get_shortcut_string(const KeyShortcut *sc)
 	if (sc->mod & KMOD_SHIFT)
 		strncat(buffer, "shift-", sizeof(buffer));
 	
-	char keyname[4] = { 0 };
+	char keyname[50] = { 0 };
 	
-	if (sc->key >= SDLK_KP_0 && sc->key <= SDLK_KP_EQUALS)
+	if (sc->key >= SDLK_KP_DIVIDE && sc->key <= SDLK_KP_EQUALSAS400)
 	{
-		strncpy(keyname, SDL_GetKeyName(sc->key), 3);
-		keyname[2] = keyname[1];
+		strncpy(keyname, SDL_GetKeyName(sc->key), 50);
+		keyname[2] = ' ';
+		keyname[3] = keyname[7];
+		keyname[4] = '\0';
 		keyname[0] = 'K';
 		keyname[1] = 'P';
 	}
