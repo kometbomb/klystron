@@ -786,7 +786,11 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 			if (cyd->callback && cyd->callback_counter-- == 0)
 			{
 				cyd->callback_counter = cyd->callback_period-1;
-				cyd->callback(cyd->callback_parameter);
+				if (!cyd->callback(cyd->callback_parameter))
+				{
+					cyd_lock(cyd, 0);
+					return;
+				}
 			}
 
 			Sint32 left, right;
