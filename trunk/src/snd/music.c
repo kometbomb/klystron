@@ -1616,7 +1616,7 @@ int mus_poll_status(MusEngine *mus, int *song_position, int *pattern_position, M
 	
 	if (time_played)
 	{
-		*time_played = mus->cyd->samples_played / mus->cyd->sample_rate;
+		*time_played = mus->cyd->samples_played * 1000 / mus->cyd->sample_rate;
 	}
 	
 	cyd_lock(mus->cyd, 0);
