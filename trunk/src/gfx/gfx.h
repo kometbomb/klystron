@@ -65,6 +65,8 @@ struct GfxDomain_t
 #else
 	SDL_Window *window;
 	SDL_Renderer *renderer;
+	SDL_Texture *scale_texture;
+	bool render_to_texture;
 #endif
 	int screen_w, screen_h;
 	int scale, fullscreen, fps;

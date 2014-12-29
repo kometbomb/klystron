@@ -552,10 +552,25 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 #ifdef USESDL_GPU
 	GPU_SetWindowResolution(domain->screen_w * domain->scale, domain->screen_h * domain->scale);
 	GPU_SetVirtualResolution(domain->screen, domain->screen_w, domain->screen_h);
-#else	
-	SDL_RenderSetScale(domain->renderer, domain->scale, domain->scale);
+#else
+	
 	if (resize_window) 
 		SDL_SetWindowSize(domain->window, domain->screen_w * domain->scale, domain->screen_h * domain->scale);
+	
+	if (domain->render_to_texture)
+	{
+		if (domain->scale_texture)
+			SDL_DestroyTexture(domain->scale_texture);
+		
+		domain->scale_texture = SDL_CreateTexture(domain->renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, domain->screen_w, domain->screen_h);
+		
+		SDL_SetRenderTarget(domain->renderer, domain->scale_texture);
+	}
+	else
+	{
+		SDL_RenderSetScale(domain->renderer, domain->scale, domain->scale);
+	}
+	
 	SDL_RenderSetViewport(domain->renderer, NULL);
 	
 	if (domain->fullscreen)
@@ -583,6 +598,18 @@ void gfx_domain_flip(GfxDomain *domain)
     GPU_Flip(domain->screen);
 #else
 	SDL_RenderPresent(domain->renderer);
+	
+	if (domain->render_to_texture)
+	{
+		SDL_SetRenderTarget(domain->renderer, NULL);
+		SDL_RenderSetViewport(domain->renderer, NULL);
+		SDL_RenderCopy(domain->renderer, domain->scale_texture, NULL, NULL);
+
+		SDL_RenderPresent(domain->renderer);
+		
+		SDL_SetRenderTarget(domain->renderer, domain->scale_texture);
+		SDL_RenderSetViewport(domain->renderer, NULL);
+	}
 #endif
 
 #ifdef DEBUG
@@ -598,6 +625,9 @@ void gfx_domain_free(GfxDomain *domain)
 #else
 	SDL_DestroyRenderer(domain->renderer);
 	SDL_DestroyWindow(domain->window);
+	
+	if (domain->scale_texture)
+		SDL_DestroyTexture(domain->scale_texture);
 #endif
 
 	free(domain);
@@ -618,7 +648,22 @@ GfxDomain * gfx_create_domain(const char *title, Uint32 window_flags, int window
 	d->screen = GPU_Init(window_w, window_h, GPU_DEFAULT_INIT_FLAGS);
 #else	
 	d->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, window_w, window_h, window_flags);
-	d->renderer = SDL_CreateRenderer(d->window, -1, SDL_RENDERER_PRESENTVSYNC|SDL_RENDERER_ACCELERATED);
+	d->renderer = SDL_CreateRenderer(d->window, -1, SDL_RENDERER_PRESENTVSYNC|SDL_RENDERER_ACCELERATED|SDL_RENDERER_TARGETTEXTURE);
+	
+	SDL_RendererInfo info;
+	SDL_GetRendererInfo(d->renderer, &info);
+	
+	if (!(info.flags & SDL_RENDERER_TARGETTEXTURE))
+	{
+		warning("Renderer doesn't support rendering to texture");
+		d->render_to_texture = false;
+	}
+	else
+	{
+		d->render_to_texture = true;
+	}
+	
+	d->scale_texture = NULL;
 #endif
 	
 #ifdef DEBUG
@@ -627,10 +672,12 @@ GfxDomain * gfx_create_domain(const char *title, Uint32 window_flags, int window
 
 #ifndef USESDL_GPU
 	
-	SDL_RendererInfo info;
-	SDL_GetRendererInfo(d->renderer, &info);
-	
-	debug("Renderer: %s (%s)", info.name, (info.flags & SDL_RENDERER_ACCELERATED) ? "Accelerated" : "Not accelerated");
+	{
+		SDL_RendererInfo info;
+		SDL_GetRendererInfo(d->renderer, &info);
+		
+		debug("Renderer: %s (%s)", info.name, (info.flags & SDL_RENDERER_ACCELERATED) ? "Accelerated" : "Not accelerated");
+	}
 	
 #endif
 	
