@@ -2146,6 +2146,8 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 			
 			if (version >= 24)
 				my_RWread(ctx, &song->pattern[i].color, 1, sizeof(song->pattern[i].color));
+			else
+				song->pattern[i].color = 0;
 			
 			if (version < 8)
 			{
