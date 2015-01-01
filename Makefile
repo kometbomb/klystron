@@ -118,10 +118,13 @@ bin.$(CFG)/libksndstatic.a: objs.$(CFG)/lib_ksnd.o ${snd_OBJ} | inform
 	@$(ECHO) "Linking "$(TARGET)"..."
 	@mkdir -p bin.$(CFG)
 	@ar rcs $@ $^
+ifdef COMSPEC
+	@$(ECHO) "Building ksndstatic.lib..."
 	@-lib /OUT:bin.$(CFG)/ksndstatic.lib $^
+endif
 	
 bin.$(CFG)/ksnd.dll: objs.$(CFG)/lib_ksnd.o ${snd_OBJ} src/lib/ksnd.def | inform
-	@$(ECHO) "Linking "$(notdir $<)"..."
+	@$(ECHO) "Linking ksnd.dll..."
 	@mkdir -p bin.$(CFG)
 	@$(CC) -shared -o $@ objs.$(CFG)/lib_ksnd.o ${snd_OBJ} $(CFLAGS) $(INCLUDEFLAGS) -DDLLEXPORT
 	@$(ECHO) "Building libksnd.a..."
