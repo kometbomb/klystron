@@ -121,10 +121,13 @@ bin.$(CFG)/libksndstatic.a: objs.$(CFG)/lib_ksnd.o ${snd_OBJ} | inform
 	@-lib /OUT:bin.$(CFG)/ksndstatic.lib $^
 	
 bin.$(CFG)/ksnd.dll: objs.$(CFG)/lib_ksnd.o ${snd_OBJ} src/lib/ksnd.def | inform
-	@$(ECHO) "Linking "$(TARGET)"..."
+	@$(ECHO) "Linking "$(notdir $<)"..."
 	@mkdir -p bin.$(CFG)
 	@$(CC) -shared -o $@ objs.$(CFG)/lib_ksnd.o ${snd_OBJ} $(CFLAGS) $(INCLUDEFLAGS) -DDLLEXPORT
+	@$(ECHO) "Building libksnd.a..."
+	@dlltool --def src/lib/ksnd.def --dllname ksnd.dll --output-lib bin.$(CFG)/libksnd.a
 ifdef COMSPEC
+	@$(ECHO) "Building ksnd.lib..."
 	@-lib /DEF:src/lib/ksnd.def /OUT:bin.$(CFG)/ksnd.lib
 endif
 	
