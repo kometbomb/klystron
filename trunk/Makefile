@@ -80,9 +80,9 @@ build: Makefile
 	@echo '#endif' >> ./src/version.h
 	make all CFG=$(CFG)
 
-all: bin.$(CFG)/libksndstatic.a bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a bin.$(CFG)/lib${TARGET}_gui.a tools
+all: bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a bin.$(CFG)/lib${TARGET}_gui.a tools
 
-ksnd.dll: bin.$(CFG)/ksnd.dll
+ksnd: bin.$(CFG)/libksndstatic.a bin.$(CFG)/ksnd.dll
 
 ifdef COMSPEC
 tools: tools/bin/makebundle.exe tools/bin/editor.exe
@@ -123,9 +123,8 @@ bin.$(CFG)/libksndstatic.a: objs.$(CFG)/lib_ksnd.o ${snd_OBJ} | inform
 bin.$(CFG)/ksnd.dll: objs.$(CFG)/lib_ksnd.o ${snd_OBJ} src/lib/ksnd.def | inform
 	@$(ECHO) "Linking "$(TARGET)"..."
 	@mkdir -p bin.$(CFG)
+	@$(CC) -shared -o $@ objs.$(CFG)/lib_ksnd.o ${snd_OBJ} $(CFLAGS) $(INCLUDEFLAGS) -DDLLEXPORT
 ifdef COMSPEC
-	@dlltool -d src/lib/ksnd.def -e objs.$(CFG)/exports.o -l bin.$(CFG)/libksnd.a -D ksnd.dll
-	@$(CC) -shared -o $@ objs.$(CFG)/exports.o objs.$(CFG)/lib_ksnd.o ${snd_OBJ} $(CFLAGS) $(INCLUDEFLAGS) -DDLLEXPORT
 	@-lib /DEF:src/lib/ksnd.def /OUT:bin.$(CFG)/ksnd.lib
 endif
 	

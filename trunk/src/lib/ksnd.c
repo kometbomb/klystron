@@ -151,6 +151,12 @@ KLYSAPI KPlayer* KSND_CreatePlayerUnregistered(int sample_rate)
 }
 
 
+KLYSAPI void KSND_SetPlayerQuality(KPlayer *player, int oversample)
+{
+	cyd_set_oversampling(&player->cyd, oversample);
+}
+
+
 KLYSAPI void KSND_FreePlayer(KPlayer *player)
 {
 	KSND_Stop(player);

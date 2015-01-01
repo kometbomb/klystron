@@ -5,6 +5,7 @@ KSND_FreeSong
 KSND_GetSongLength
 KSND_CreatePlayer
 KSND_CreatePlayerUnregistered
+KSND_SetPlayerQuality
 KSND_FreePlayer
 KSND_PlaySong
 KSND_FillBuffer

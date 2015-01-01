@@ -43,6 +43,7 @@ KLYSAPI extern const KSongInfo * KSND_GetSongInfo(KSong *song, KSongInfo *data);
 
 KLYSAPI extern KPlayer* KSND_CreatePlayer(int sample_rate);
 KLYSAPI extern KPlayer* KSND_CreatePlayerUnregistered(int sample_rate);
+KLYSAPI extern void KSND_SetPlayerQuality(KPlayer *player, int oversample);
 KLYSAPI extern void KSND_FreePlayer(KPlayer *player);
 KLYSAPI extern void KSND_PlaySong(KPlayer *player, KSong *song, int start_position);
 KLYSAPI extern void KSND_FillBuffer(KPlayer *player, short int *buffer, int buffer_length);
