@@ -18,6 +18,7 @@ typedef struct
 	char *song_title;
 	char *instrument_name[128];
 	int n_instruments;
+	int n_channels;
 } KSongInfo;
 
 

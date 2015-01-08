@@ -45,6 +45,11 @@ enum
 	GFX_COL_MASK = 8
 };
 
+enum
+{
+	GFX_DOMAIN_DISABLE_RENDER_TO_TEXTURE = 1
+};
+
 typedef enum
 {
 	GFX_SCALE_FAST,
