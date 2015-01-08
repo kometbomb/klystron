@@ -571,8 +571,10 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 	else
 		SDL_SetWindowFullscreen(domain->window, 0);
 	
-	if (domain->render_to_texture)
+	if (domain->render_to_texture && !(domain->flags & GFX_DOMAIN_DISABLE_RENDER_TO_TEXTURE) /* && domain->scale > 1*/)
 	{
+		debug("Rendering to texture enabled");
+	
 		if (domain->scale_texture)
 			SDL_DestroyTexture(domain->scale_texture);
 		
@@ -582,6 +584,9 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 	}
 	else
 	{
+		debug("Rendering to texture disabled");
+	
+		SDL_SetRenderTarget(domain->renderer, NULL);
 		SDL_RenderSetScale(domain->renderer, domain->scale, domain->scale);
 	}
 	
@@ -598,7 +603,7 @@ void gfx_domain_flip(GfxDomain *domain)
 #else
 	SDL_RenderPresent(domain->renderer);
 	
-	if (domain->render_to_texture)
+	if (domain->render_to_texture && !(domain->flags & GFX_DOMAIN_DISABLE_RENDER_TO_TEXTURE) /*&& domain->scale > 1*/)
 	{
 		SDL_SetRenderTarget(domain->renderer, NULL);
 		SDL_RenderSetViewport(domain->renderer, NULL);
