@@ -608,11 +608,7 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 		if (domain->scale_texture)
 			SDL_DestroyTexture(domain->scale_texture);
 		
-		SDL_SetHint("SDL_HINT_RENDER_SCALE_QUALITY", "1");
-		
 		domain->scale_texture = SDL_CreateTexture(domain->renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, domain->screen_w, domain->screen_h);
-		
-		SDL_SetHint("SDL_HINT_RENDER_SCALE_QUALITY", "0");
 		
 		SDL_SetRenderTarget(domain->renderer, domain->scale_texture);
 	}
