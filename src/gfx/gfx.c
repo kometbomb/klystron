@@ -546,6 +546,36 @@ static void gfx_domain_set_framerate(GfxDomain *d)
 }
 
 
+static void create_scanlines_texture(GfxDomain *domain)
+{
+	if (domain->scanlines_texture)
+		SDL_DestroyTexture(domain->scanlines_texture);
+	
+	SDL_Surface *temp = SDL_CreateRGBSurface(0, 8, domain->screen_h * domain->scale, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000);
+	
+	// alpha = 1.0
+	SDL_FillRect(temp, NULL, 0x00ffffff);
+	
+	debug("%d", domain->scale);
+	
+	const int depth = 32 * domain->scale;
+	
+	for (int y = 0 ; y < domain->screen_h * domain->scale ; ++y)
+	{
+		SDL_Rect r = {0, y, 8, 1};
+		Uint8 c = fabs(sin((float)y * M_PI / domain->scale)) * depth + (255 - depth);
+		
+		SDL_FillRect(temp, &r, (c << 8) | (c << 16) | c);
+	}
+	
+	domain->scanlines_texture = SDL_CreateTextureFromSurface(domain->renderer, temp);
+	
+	SDL_SetTextureBlendMode(domain->scanlines_texture, SDL_BLENDMODE_MOD);
+	
+	SDL_FreeSurface(temp);
+}
+
+
 void gfx_domain_update(GfxDomain *domain, bool resize_window)
 {
 	debug("Setting screen mode (scale = %d%s)", domain->scale, domain->fullscreen ? ", fullscreen" : "");
@@ -578,7 +608,11 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 		if (domain->scale_texture)
 			SDL_DestroyTexture(domain->scale_texture);
 		
+		SDL_SetHint("SDL_HINT_RENDER_SCALE_QUALITY", "1");
+		
 		domain->scale_texture = SDL_CreateTexture(domain->renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, domain->screen_w, domain->screen_h);
+		
+		SDL_SetHint("SDL_HINT_RENDER_SCALE_QUALITY", "0");
 		
 		SDL_SetRenderTarget(domain->renderer, domain->scale_texture);
 	}
@@ -589,6 +623,9 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 		SDL_SetRenderTarget(domain->renderer, NULL);
 		SDL_RenderSetScale(domain->renderer, domain->scale, domain->scale);
 	}
+	
+	if (domain->scale_type == GFX_SCALE_SCANLINES && domain->scale > 1)
+		create_scanlines_texture(domain);
 	
 	SDL_RenderSetViewport(domain->renderer, NULL);
 #endif
@@ -601,19 +638,34 @@ void gfx_domain_flip(GfxDomain *domain)
 #ifdef USESDL_GPU
     GPU_Flip(domain->screen);
 #else
-	SDL_RenderPresent(domain->renderer);
-	
 	if (domain->render_to_texture && !(domain->flags & GFX_DOMAIN_DISABLE_RENDER_TO_TEXTURE) /*&& domain->scale > 1*/)
 	{
+		SDL_RenderPresent(domain->renderer);
+		
 		SDL_SetRenderTarget(domain->renderer, NULL);
 		SDL_RenderSetViewport(domain->renderer, NULL);
 		SDL_RenderCopy(domain->renderer, domain->scale_texture, NULL, NULL);
+		
+		if (domain->scale_type == GFX_SCALE_SCANLINES && domain->scale > 1)
+		{
+			SDL_RenderCopy(domain->renderer, domain->scanlines_texture, NULL, NULL);
+		}
 
 		SDL_RenderPresent(domain->renderer);
 		
 		SDL_SetRenderTarget(domain->renderer, domain->scale_texture);
 		SDL_RenderSetViewport(domain->renderer, NULL);
 	}
+	else
+	{
+		if (domain->scale_type == GFX_SCALE_SCANLINES && domain->scale > 1)
+		{
+			SDL_RenderCopy(domain->renderer, domain->scanlines_texture, NULL, NULL);
+		}
+		
+		SDL_RenderPresent(domain->renderer);
+	}
+	
 #endif
 
 #ifdef DEBUG
@@ -632,6 +684,9 @@ void gfx_domain_free(GfxDomain *domain)
 	
 	if (domain->scale_texture)
 		SDL_DestroyTexture(domain->scale_texture);
+	
+	if (domain->scanlines_texture)
+		SDL_DestroyTexture(domain->scanlines_texture);
 #endif
 
 	free(domain);
@@ -644,7 +699,7 @@ GfxDomain * gfx_create_domain(const char *title, Uint32 window_flags, int window
 	d->screen_w = window_w / scale;
 	d->screen_h = window_h / scale;
 	d->scale = scale;
-	d->scale_type = GFX_SCALE_FAST;
+	d->scale_type = GFX_SCALE_NEAREST;
 	d->fullscreen = 0;
 	d->fps = 50;
 	d->flags = 0;
@@ -668,6 +723,7 @@ GfxDomain * gfx_create_domain(const char *title, Uint32 window_flags, int window
 	}
 	
 	d->scale_texture = NULL;
+	d->scanlines_texture = NULL;
 #endif
 	
 #ifdef DEBUG

@@ -52,8 +52,8 @@ enum
 
 typedef enum
 {
-	GFX_SCALE_FAST,
-	GFX_SCALE_SMOOTH
+	GFX_SCALE_NEAREST,
+	GFX_SCALE_SCANLINES
 } GfxScaleType;
 
 #ifdef WIN32
@@ -70,7 +70,7 @@ struct GfxDomain_t
 #else
 	SDL_Window *window;
 	SDL_Renderer *renderer;
-	SDL_Texture *scale_texture;
+	SDL_Texture *scale_texture, *scanlines_texture;
 	bool render_to_texture;
 #endif
 	int screen_w, screen_h;
