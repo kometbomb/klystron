@@ -536,13 +536,14 @@ static void gfx_domain_set_framerate(GfxDomain *d)
 {
 #ifdef WIN32
 	QueryPerformanceFrequency((LARGE_INTEGER*)&d->clock_resolution);
-	QueryPerformanceCounter((LARGE_INTEGER*)&d->last_ticks);
-	d->frame_time = d->clock_resolution / d->fps;
+	QueryPerformanceCounter((LARGE_INTEGER*)&d->start_time);
 #else
 	d->clock_resolution = 1000;
-	d->last_ticks = SDL_GetTicks();
-	d->frame_time = 1000 / d->fps;
+	d->start_time = SDL_GetTicks();
 #endif	
+
+	d->dt = d->clock_resolution / d->fps;
+	d->accumulator = 0;
 }
 
 
@@ -744,6 +745,7 @@ GfxDomain * gfx_create_domain(const char *title, Uint32 window_flags, int window
 	return d;
 }
 
+
 int gfx_domain_is_next_frame(GfxDomain *domain)
 {
 #ifdef WIN32
@@ -753,14 +755,16 @@ int gfx_domain_is_next_frame(GfxDomain *domain)
 	Uint32 ticks = SDL_GetTicks();
 #endif	
 	
-	FramerateTimer delta = ticks - domain->last_ticks;
-
-	if (delta < domain->frame_time)
-		return 0;
-		
-	FramerateTimer frames = delta * domain->fps / domain->clock_resolution;
-		
-	domain->last_ticks += frames * domain->frame_time;
+	FramerateTimer frameTime = ticks - domain->start_time;
+    domain->start_time = ticks;
+	domain->accumulator += frameTime;
+	int frames = 0;
+          
+    while ( domain->accumulator > domain->dt )
+    {
+        domain->accumulator -= domain->dt;
+		++frames;
+    }
 	
 	return frames;
 }
