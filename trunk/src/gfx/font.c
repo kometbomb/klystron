@@ -45,17 +45,27 @@ static int tile_width(TileDescriptor *desc)
 	
 	for (int y = 0 ; y < desc->rect.h ; ++y)
 	{
-		Uint8 *p = (Uint8 *)desc->surface->surface->pixels + ((int)desc->rect.y + y) * desc->surface->surface->pitch + (int)desc->rect.x * desc->surface->surface->format->BytesPerPixel;
+		Uint8 *pa = (Uint8 *)desc->surface->surface->pixels + ((int)desc->rect.y + y) * desc->surface->surface->pitch + (int)desc->rect.x * desc->surface->surface->format->BytesPerPixel;
 		
 		for (int x = 0 ; x < desc->rect.w ; ++x)
 		{
-			//printf("%08x", *(Uint32*)p);
-			if ((*((Uint32*)p)&0xffffff) != key)
+			int p = 0;
+			
+			switch (desc->surface->surface->format->BytesPerPixel) 
+			{
+				default:
+				case 1: p = ((*((Uint8*)pa))) != key; break;
+				case 2: p = ((*((Uint16*)pa))&0xffff) != key; break;
+				case 3: p = ((*((Uint32*)pa))&0xffffff) != key; break;
+				case 4: p = ((*((Uint32*)pa))&0xffffff) != key; break;
+			}
+			
+			if (p)
 			{
 				result = my_max(result, x);
 			}
 			
-			p+=desc->surface->surface->format->BytesPerPixel;
+			pa += desc->surface->surface->format->BytesPerPixel;
 		}
 	}
 	

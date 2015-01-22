@@ -76,7 +76,7 @@ struct GfxDomain_t
 	int screen_w, screen_h;
 	int scale, fullscreen, fps;
 	GfxScaleType scale_type;
-	FramerateTimer last_ticks, frame_time, clock_resolution;
+	FramerateTimer start_time, dt, clock_resolution, accumulator;
 	int flags;
 	Uint8 texmod_r, texmod_g, texmod_b;
 #ifdef DEBUG
