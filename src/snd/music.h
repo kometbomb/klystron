@@ -237,6 +237,8 @@ enum
 	MUS_FX_SET_EXT_ARP = 0x1000,
 	MUS_FX_PORTA_UP = 0x0100,
 	MUS_FX_PORTA_DN = 0x0200,
+	MUS_FX_PORTA_UP_LOG = 0x0500,
+	MUS_FX_PORTA_DN_LOG = 0x0600,
 	MUS_FX_SLIDE = 0x0300,
 	MUS_FX_VIBRATO = 0x0400,
 	MUS_FX_FADE_VOLUME = 0x0a00,
@@ -362,5 +364,6 @@ int mus_load_song_RW(RWops *rw, MusSong *song, CydWavetableEntry *wavetable_entr
 void mus_free_song(MusSong *song);
 void mus_set_fx(MusEngine *mus, MusSong *song);
 Uint32 mus_ext_sync(MusEngine *mus);
+Uint32 mus_get_playtime_at(MusSong *song, int position);
 
 #endif
