@@ -259,3 +259,9 @@ KLYSAPI void KSND_SetLooping(KPlayer *player, int looping)
 	else
 		player->mus.flags &= ~MUS_NO_REPEAT;
 }
+
+
+KLYSAPI int KSND_GetPlayTime(KSong *song, int position)
+{
+	return mus_get_playtime_at(&song->song, position);
+}
