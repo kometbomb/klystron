@@ -304,6 +304,28 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 		}
 		break;
 		
+		case MUS_FX_PORTA_UP_LOG:
+		{
+			Uint16 prev = chn->note;
+			chn->note += my_max(1, ((Uint32)frequency_table[MIDDLE_C] * (Uint32)(inst & 0xff) / (Uint32)get_freq(chn->note)));
+			
+			if (prev > chn->note) chn->note = 0xffff;
+			
+			mus_set_slide(mus, chan, chn->note);
+		}
+		break;
+		
+		case MUS_FX_PORTA_DN_LOG:
+		{
+			Uint16 prev = chn->note;
+			chn->note -= my_max(1, ((Uint32)frequency_table[MIDDLE_C] * (Uint32)(inst & 0xff) / (Uint32)get_freq(chn->note)));
+			
+			if (prev < chn->note) chn->note = 0x0;
+			
+			mus_set_slide(mus, chan, chn->note);
+		}
+		break;
+		
 		case MUS_FX_PW_DN:
 		{
 			track_status->pw -= inst & 0xff;
@@ -2337,4 +2359,59 @@ int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entr
 	}
 	
 	return 0;
+}
+
+
+Uint32 mus_get_playtime_at(MusSong *song, int position)
+{
+	Uint32 ticks = 0;
+	int pos = 0;
+	int seq_pos[MUS_MAX_CHANNELS] = {0};
+	int spd1 = song->song_speed, spd2 = song->song_speed2, rate = song->song_rate;
+	
+	while (pos < position)
+	{
+		for (int t = 0 ; t < song->num_channels ; ++t)
+		{
+			if (seq_pos[t] < song->num_sequences[t])
+			{
+				if (song->sequence[t][seq_pos[t]].position + song->pattern[song->sequence[t][seq_pos[t]].pattern].num_steps <= pos)
+					seq_pos[t]++;
+					
+				if (seq_pos[t] < song->num_sequences[t])
+				{
+					int seq_start_pos = song->sequence[t][seq_pos[t]].position;				
+					MusPattern *pat = &song->pattern[song->sequence[t][seq_pos[t]].pattern];
+					
+					if (pos - seq_start_pos < pat->num_steps)
+					{
+						Uint16 command = pat->step[pos - seq_start_pos].command;
+						
+						if ((command & 0xff00) == MUS_FX_SET_SPEED)
+						{
+							spd1 = command & 0xf;
+							spd2 = (command & 0xf0) >> 4;
+							
+							if (!spd2)
+								spd2 = spd1;
+						}
+						else if ((command & 0xff00) == MUS_FX_SET_RATE)
+						{
+							rate = command & 0xff;
+						}
+						else if ((command & 0xff00) == MUS_FX_SKIP_PATTERN)
+						{
+							pos = seq_start_pos + pat->num_steps - 1;
+						}
+					}
+				}
+			}
+		}
+		
+		ticks += ((1000 * (spd1 + spd2) / 2) / rate);
+		
+		++pos;
+	}
+	
+	return ticks;
 }
