@@ -182,13 +182,15 @@ KLYSAPI void KSND_PlaySong(KPlayer *player, KSong *song, int start_position)
 }
 
 
-KLYSAPI void KSND_FillBuffer(KPlayer *player, short int *buffer, int buffer_length)
+KLYSAPI int KSND_FillBuffer(KPlayer *player, short int *buffer, int buffer_length)
 {
 #ifdef NOSDL_MIXER
 	cyd_output_buffer_stereo(&player->cyd, (void*)buffer, buffer_length);
 #else
 	cyd_output_buffer_stereo(0, buffer, buffer_length, &player->cyd);
 #endif
+
+	return player->cyd.samples_output;
 }
 
 
@@ -247,4 +249,13 @@ KLYSAPI const KSongInfo * KSND_GetSongInfo(KSong *song, KSongInfo *data)
 		data->instrument_name[i] = song->song.instrument[i].name;
 		
 	return data;
+}
+
+
+KLYSAPI void KSND_SetLooping(KPlayer *player, int looping)
+{
+	if (looping)
+		player->mus.flags |= MUS_NO_REPEAT;
+	else
+		player->mus.flags &= ~MUS_NO_REPEAT;
 }
