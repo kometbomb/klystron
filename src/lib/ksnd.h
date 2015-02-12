@@ -100,7 +100,7 @@ KLYSAPI extern const KSongInfo * KSND_GetSongInfo(KSong *song, KSongInfo *data);
  * from the beginning to pattern row @a position. 
  *
  * Use this in conjunction with KSND_GetPlayPosition() to find out the current playback 
- * time in milliseconds.
+ * time. Or, use with KSND_GetSongLength() to get the song duration.
  *
  * @param song song whose play time is polled
  * @param position 
