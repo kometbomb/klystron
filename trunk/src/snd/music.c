@@ -2366,7 +2366,8 @@ Uint32 mus_get_playtime_at(MusSong *song, int position)
 {
 	Uint32 ticks = 0;
 	int pos = 0;
-	int seq_pos[MUS_MAX_CHANNELS] = {0};
+	int seq_pos[MUS_MAX_CHANNELS] = {0}, pattern_pos[MUS_MAX_CHANNELS] = {0};
+	MusPattern *pattern[MUS_MAX_CHANNELS] = {0};
 	int spd1 = song->song_speed, spd2 = song->song_speed2, rate = song->song_rate;
 	
 	while (pos < position)
@@ -2375,40 +2376,51 @@ Uint32 mus_get_playtime_at(MusSong *song, int position)
 		{
 			if (seq_pos[t] < song->num_sequences[t])
 			{
-				if (song->sequence[t][seq_pos[t]].position + song->pattern[song->sequence[t][seq_pos[t]].pattern].num_steps <= pos)
-					seq_pos[t]++;
-					
-				if (seq_pos[t] < song->num_sequences[t])
+				if (song->sequence[t][seq_pos[t]].position == pos)
 				{
-					int seq_start_pos = song->sequence[t][seq_pos[t]].position;				
-					MusPattern *pat = &song->pattern[song->sequence[t][seq_pos[t]].pattern];
-					
-					if (pos - seq_start_pos < pat->num_steps)
+					if (seq_pos[t] < song->num_sequences[t])
 					{
-						Uint16 command = pat->step[pos - seq_start_pos].command;
+						pattern_pos[t] = 0;
 						
-						if ((command & 0xff00) == MUS_FX_SET_SPEED)
-						{
-							spd1 = command & 0xf;
-							spd2 = (command & 0xf0) >> 4;
-							
-							if (!spd2)
-								spd2 = spd1;
-						}
-						else if ((command & 0xff00) == MUS_FX_SET_RATE)
-						{
-							rate = command & 0xff;
-						}
-						else if ((command & 0xff00) == MUS_FX_SKIP_PATTERN)
-						{
-							pos = seq_start_pos + pat->num_steps - 1;
-						}
+						pattern[t] = &song->pattern[song->sequence[t][seq_pos[t]].pattern];
+						
+						seq_pos[t]++;
 					}
 				}
+				
+				if (pattern[t] && pattern_pos[t] < pattern[t]->num_steps)
+				{
+					Uint16 command = pattern[t]->step[pattern_pos[t]].command;
+					
+					if ((command & 0xff00) == MUS_FX_SET_SPEED)
+					{
+						spd1 = command & 0xf;
+						spd2 = (command & 0xf0) >> 4;
+						
+						if (!spd2)
+							spd2 = spd1;
+					}
+					else if ((command & 0xff00) == MUS_FX_SET_RATE)
+					{
+						rate = command & 0xff;
+						
+						if (rate < 1)
+							rate = 1;
+					}
+					else if ((command & 0xff00) == MUS_FX_SKIP_PATTERN)
+					{
+						pos += pattern[t]->num_steps - 1 - pattern_pos[t];
+					}
+				}
+				
 			}
+			
+			pattern_pos[t]++;
 		}
 		
-		ticks += ((1000 * (spd1 + spd2) / 2) / rate);
+		int spd = pos & 1 ? spd2 : spd1;
+		
+		ticks += (1000 * spd) / rate;
 		
 		++pos;
 	}
