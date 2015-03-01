@@ -905,7 +905,7 @@ void cyd_enable_gate(CydEngine *cyd, CydChannel *chn, Uint8 enable)
 			chn->flags = cyd_cycle_adsr(cyd, chn->flags, chn->ym_env_shape, &chn->adsr);
 #ifndef CYD_DISABLE_FM	
 			chn->fm.adsr.envelope_state = ATTACK;
-			chn->fm.adsr.envelope = 0x0;
+			chn->fm.adsr.envelope = chn->fm.attack_start << 19;
 			chn->fm.adsr.env_speed = envspd(cyd, chn->fm.adsr.a);
 			cyd_cycle_adsr(cyd, 0, 0, &chn->fm.adsr);
 #endif
