@@ -1144,6 +1144,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	fm->adsr.r = ins->fm_adsr.r;
 	fm->adsr.volume = ins->fm_modulation;
 	fm->feedback = ins->fm_feedback;
+	fm->attack_start = ins->fm_attack_start;
 #endif
 	
 	//cyd_set_frequency(mus->cyd, cydchn, chn->frequency);
@@ -1794,6 +1795,7 @@ int mus_load_instrument_RW(Uint8 version, RWops *ctx, MusInstrument *inst, CydWa
 	VER_READ(version, 23, 0xff, &inst->fm_feedback, 0);
 	VER_READ(version, 23, 0xff, &inst->fm_harmonic, 0);
 	VER_READ(version, 23, 0xff, &inst->fm_adsr, 0);
+	VER_READ(version, 25, 0xff, &inst->fm_attack_start, 0);
 	VER_READ(version, 23, 0xff, &inst->fm_wave, 0);
 
 #ifndef CYD_DISABLE_WAVETABLE	

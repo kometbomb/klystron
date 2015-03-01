@@ -17,6 +17,7 @@ typedef struct
 	CydWaveState wave;
 	Uint32 fb1, fb2, env_output;
 	Uint32 current_modulation;
+	Uint8 attack_start;
 } CydFm;
 
 #include "cyd.h"
