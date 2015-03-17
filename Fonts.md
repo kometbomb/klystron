@@ -1,0 +1,26 @@
+Klystron fonts are a collection of files insidea a bundle.
+
+| res.txt | Font resolution |
+|:--------|:----------------|
+| font.bmp | Character gfx arranged in a grid |
+| charmap.txt | List of characters in font.bmp |
+
+## res.txt ##
+
+The file should contain two or four integers as follows:
+
+```
+8 12 0 0
+```
+
+This specifies an 8x12 font where all characters are of same width. The last two numbers are used when the font has variable width characters.
+
+```
+8 12 1 4
+```
+
+The above would define an 8x12 font with variable width characters in font.bmp. The character width is calculated simply by looking for transparent pixels, the font still has to be aligned on an 8x12 pixel grid. The space character is 4 pixels wide and there will be one pixel margin between each character.
+
+## charmap.txt ##
+
+The file should contain all characters in font.bmp in the same order.

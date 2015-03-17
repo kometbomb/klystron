@@ -1,0 +1,37 @@
+First, you need to _export_ the level from the editor (Ctrl+F9). This is a special packed format intended only for loading in the game.
+
+```
+int lev_load(Background *bg, int *n_layers, FILE* data, int (*interpret_event)(void *, const LevEvent *), void* pdata);
+```
+
+`lev_load()` will read data from **data**, unpack it into **bg** (but no more than **n\_layers**) and the number of loaded layers will be written back to **n\_layers**. For every event, the `interpret_event` callback will be called with **pdata** and the level event as parameters and it is the responsibility of the callback to store and otherwise process the events. The level loader routine doesn't care about events.
+
+The callback should return zero if something went wrong, which will quit the loading.
+
+# An example #
+
+```
+typedef struct
+{
+  Background bg[3];
+  int n_layers;
+} Game;
+
+void interpret(void *data, const LevEvent *event)
+{
+  Game *game = data;
+
+  if (event->param[0] == 7) // Let's say 7 means "stuff"
+    add_stuff(game, event->x, event->y);
+
+  return 1; // All ok
+}
+
+void load(FILE *f, Game *game)
+{
+  game->n_layers = 3; // A maximum of 3 layers
+  lev_load(game->bg, &n_layers, f, interpret, game);
+
+  debug("We got %d layers", n_layers);
+}
+```

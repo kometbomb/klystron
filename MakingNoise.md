@@ -1,0 +1,83 @@
+
+
+**Note:** this tutorial assumes you are using SDL.
+
+# Playing music #
+
+## Initializing ##
+
+At first, we need to open the audio device using SDL\_mixer. The output rate should be 44.1 KHz but it can be more or less. However, it is not guaranteed the filter works similarly across different frequencies.
+
+Cyd output is signed 16-bit, so one 16-bit signed channel is enough. Cyd will mix its internal channels into one output channel. The audio device can be stereo or mono, if it's mono, Cyd will mix the stereo output down to mono output. It is also possible to compile the source to only have mono output (for more performance).
+
+```
+Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 2048);
+Mix_AllocateChannels(1);
+```
+
+Next, we need a Cyd for the MusEngine and that should have MUS\_MAX\_CHANNELS channels allocated (since a song might have that many channels). You can use less channels if you know a song doesn't use more than that.
+
+```
+CydEngine cyd;
+MusEngine mus;
+cyd_init(&cyd, 44100, MUS_MAX_CHANNELS);
+mus_init_engine(&mus, &cyd);
+```
+
+Let's load a song. You can either use mus\_load\_song() or mus\_load\_song\_file() to load the song. The latter can be used to read a song from any FILE**stream, including the klystron bundle. We need to supply an array where wavetable data is loaded. That is, pass `cyd.wavetable_entries` and they will be loaded (and released automatically) by Cyd.**
+
+```
+MusSong song;
+mus_load_song("AwesomeTune.sng", &song, cyd.wavetable_entries);
+```
+
+Now all that is left is to tell SDL\_mixer to use Cyd to output sound. We also need to tell Cyd to update the music state and MusEngine to start playing.
+
+```
+cyd_register(&cyd);	
+cyd_set_callback(&cyd, mus_advance_tick, &mus, song.song_rate);
+```
+
+cyd\_set\_callback() can be used to set the playback rate even when playing.
+
+mus\_set\_fx() has to be used to set the effects from the song file.
+
+## Playing and stopping music ##
+
+To start playing a loaded song on initialized Cyd and MusEngine starting from position 0:
+
+```
+mus_set_song(&mus, &song, 0);
+```
+
+As long as Cyd and MusEngine are properly initialized, you can use mus\_set\_song() to play different songs. A game might play short jingles depending on what is happening on the screen.
+
+To stop playing a song, call mus\_set\_song() with a NULL pointer to a song.
+
+```
+mus_set_song(&mused.mus, NULL, 0);
+```
+
+mus\_free\_song() should be used to free the song after you are done using it.
+
+# Sound effects #
+
+Sound effects are musical instruments that you need to trigger yourself. That means, you need to set up Cyd and MusEngine as described above and after that you can use mus\_trigger\_instrument() to trigger sound effects. The sound effects (or instruments) have to be loaded in memory before playing.
+
+```
+MusInstrument explosion;
+mus_load_instrument("Explosion.ins", &explosion);
+mus_trigger_instrument(&mus, -1, MusInstrument *ins, Uint8 note);
+```
+
+Note that we are triggering the sound effect on any channel (-1) that is currently free. You can alternatively play the sound effect in any set channel. This can be used to stop sounds that are playing (an explosion should stop an enemy sound since the enemy is now destroyed).
+
+The value mus\_trigger\_instrument() returns is the channel in which the sound is now playing. mus\_release() can be used to stop the sound in that channel.
+
+It is useful to lock the played note of an instrument to a note so that it doesn't matter at which note you trigger the sound effect (unless it is important to change the effect pitch).
+
+# Playing music and sound effects simultaneously #
+
+It is possible to play sound effects while a song is playing. This will however stop currently played notes and effects. It is recommendable to use two Cyds and MusEngines, one for the music and one for the sound effects. This also allows different replay rates for the sound effects and the music.
+
+cyd\_register() will simply add the Cyd after the previous SDL\_mixer effects, thus they will both be audible and will not interfere with each other. The other Cyd output will pass through the second Cyd without any changes. It is not possible to use two MusEngines to drive one Cyd, however.

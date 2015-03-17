@@ -1,0 +1,23 @@
+# Main components #
+
+The engine source code is divided into three distinct areas. The user interface is left to be handled using SDL (which should be more than suitable).
+
+## gfx ##
+
+  * Drawing
+    * Sprites
+    * Background
+    * Text
+    * Primitives
+  * Collision checking
+  * Upscaling
+
+## snd ##
+
+  * Software synthesis ("Cyd")
+  * Music player routine
+
+## util ##
+
+  * File management ("bundles")
+  * Miscellany
