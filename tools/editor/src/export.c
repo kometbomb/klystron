@@ -23,6 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <stdlib.h>
 #include "export.h"
 #include "gfx/levelbase.h"
 #include "gui/toolutil.h"
@@ -36,7 +37,7 @@ extern GfxSurface *gfx;
 
 void level_export(Level *level)
 {
-	FILE *f = open_dialog("wb", "Export level", "exp", domain, gfx->surface, &font, &font, NULL);
+	FILE *f = open_dialog("wb", "Export level", "exp", domain, gfx, &font, &font, NULL);
 	for (int i = 0 ;  i < level->n_layers ; ++i)
 	{
 		if (level->layer[i].w > 0 && level->layer[i].h > 0)

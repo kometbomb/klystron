@@ -90,7 +90,7 @@ config_t cfg;
 
 void load_dialog()
 {
-	FILE *f = open_dialog("rb", "Load level", "lev", domain, gfx->surface, &font, &font, NULL);
+	FILE *f = open_dialog("rb", "Load level", "lev", domain, gfx, &font, &font, NULL);
 	if (f)
 	{
 	
@@ -124,7 +124,7 @@ void load_level(const char *path)
 
 void load_defs(const char *fn)
 {
-	FILE *f = fn ? fopen(fn, "r") : open_dialog("r", "Load project defs", "cfg", domain, gfx->surface, &font, &font, NULL);
+	FILE *f = fn ? fopen(fn, "r") : open_dialog("r", "Load project defs", "cfg", domain, gfx, &font, &font, NULL);
 	if (f)
 	{
 		int r = config_read(&cfg, f);
@@ -224,7 +224,7 @@ void load_defs(const char *fn)
 
 int save_dialog()
 {
-	FILE *f = open_dialog("wb", "Save level", "lev", domain, gfx->surface, &font, &font, NULL);
+	FILE *f = open_dialog("wb", "Save level", "lev", domain, gfx, &font, &font, NULL);
 	if (f)
 	{
 		level.n_layers = MAX_LAYERS;
@@ -240,7 +240,7 @@ int save_dialog()
 	}
 }
 
-void draw_rect(SDL_Surface *s, int x1, int y1, int x2, int y2, Uint32 color)
+void draw_rect(GfxDomain *s, int x1, int y1, int x2, int y2, Uint32 color)
 {
 	
 	if (x1 > x2) { int temp = x2; x2 = x1; x1 = temp; }
@@ -248,27 +248,27 @@ void draw_rect(SDL_Surface *s, int x1, int y1, int x2, int y2, Uint32 color)
 
 	{
 		SDL_Rect rect = {x1, y1, x2-x1, 1};
-		SDL_FillRect(s, &rect, color);
+		gfx_rect(s, &rect, color);
 	}
 	
 	{
 		SDL_Rect rect = {x1, y2, x2-x1, 1};
-		SDL_FillRect(s, &rect, color);
+		gfx_rect(s, &rect, color);
 	}
 	
 	{
 		SDL_Rect rect = {x1, y1, 1, y2-y1};
-		SDL_FillRect(s, &rect, color);
+		gfx_rect(s, &rect, color);
 	}
 	
 	{
 		SDL_Rect rect = {x2, y1, 1, y2-y1};
-		SDL_FillRect(s, &rect, color);
+		gfx_rect(s, &rect, color);
 	}
 }
 
 
-void vector(SDL_Surface *screen, int x0, int y0, int x1, int y1, Uint32 color)
+void vector(GfxDomain *screen, int x0, int y0, int x1, int y1, Uint32 color)
 {
 	gfx_line(screen, x0, y0, x1, y1, color);
 	
@@ -284,7 +284,7 @@ void vector(SDL_Surface *screen, int x0, int y0, int x1, int y1, Uint32 color)
 }
 
 
-void draw(SDL_Surface *screen, int mouse_x, int mouse_y, int draw_all)
+void draw(GfxDomain *screen, int mouse_x, int mouse_y, int draw_all)
 {
 	if (draw_all)
 	{
@@ -362,7 +362,7 @@ void draw(SDL_Surface *screen, int mouse_x, int mouse_y, int draw_all)
 	}
 	
 	if (current_layer < MAGICK_LAYER) 
-		draw_rect(screen, screen->w / 2 - pf_width / 2, screen->h / 2 - pf_height / 2, screen->w / 2 + pf_width / 2, screen->h / 2 + pf_height / 2, 0xa0a040);
+		draw_rect(screen, screen->screen_w / 2 - pf_width / 2, screen->screen_h / 2 - pf_height / 2, screen->screen_w / 2 + pf_width / 2, screen->screen_h / 2 + pf_height / 2, 0xa0a040);
 }
 
 
@@ -498,6 +498,13 @@ int has_pixels(TileDescriptor *desc)
 	
 	int result = 0;
 	
+#if SDL_VERSION_ATLEAST(1,3,0)
+	Uint32 key;
+	SDL_GetColorKey(desc->surface->surface, &key);
+#else	
+	const Uint32 key = desc->surface->surface->format->colorkey;
+#endif
+	
 	for (int y = 0 ; y < desc->rect.h ; ++y)
 	{
 		Uint8 *p = (Uint8 *)desc->surface->surface->pixels + ((int)desc->rect.y + y) * desc->surface->surface->pitch + (int)desc->rect.x * desc->surface->surface->format->BytesPerPixel;
@@ -505,7 +512,7 @@ int has_pixels(TileDescriptor *desc)
 		for (int x = 0 ; x < desc->rect.w ; ++x)
 		{
 			//printf("%08x", *(Uint32*)p);
-			if ((*((Uint32*)p)&0xffffff) != desc->surface->surface->format->colorkey)
+			if ((*((Uint32*)p)&0xffffff) != key)
 			{
 				++result;
 			}
@@ -724,18 +731,15 @@ int main(int argc, char **argv)
 	SDL_Init(SDL_INIT_VIDEO|SDL_INIT_NOPARACHUTE);
 	atexit(SDL_Quit);
 	
-	domain = gfx_create_domain();
+	domain = gfx_create_domain("Editor", 0, 640, 480, 1);
 	domain->screen_w = 640;
 	domain->screen_h = 480;
 	domain->fps = 20;
 	domain->scale = 1;
-	gfx_domain_update(domain);
+	gfx_domain_update(domain, true);
 	
-	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
-	SDL_EnableUNICODE(1);
-	
-	gfx = gfx_load_surface("../klystrack/temp/bevel.bmp", GFX_KEYED);
-	font_load_file(&font, "../klystrack/temp/8x8.fnt");
+	gfx = gfx_load_surface(domain, "../klystrack/temp/bevel.bmp", GFX_KEYED);
+	font_load_file(domain, &font, "../klystrack/temp/8x8.fnt");
 	
 	config_init(&cfg);
 	
@@ -752,9 +756,9 @@ int main(int argc, char **argv)
 	domain->screen_w = screen_width;
 	domain->screen_h = screen_height;
 	domain->scale = screen_scale;
-	gfx_domain_update(domain);
+	gfx_domain_update(domain, true);
 	
-	GfxSurface *tiles = gfx_load_surface(tileset, GFX_KEYED);
+	GfxSurface *tiles = gfx_load_surface(domain, tileset, GFX_KEYED);
 	
 	if (!tiles)
 	{
@@ -837,7 +841,7 @@ int main(int argc, char **argv)
 						selected_event = drag_event = -1;
 						if (e.button.button == (SDL_BUTTON_LEFT))
 						{
-							Uint8 * keys = SDL_GetKeyState(NULL);
+							const Uint8 * keys = SDL_GetKeyboardState(NULL);
 							if (keys[SDLK_LSHIFT]||keys[SDLK_RSHIFT])
 							{
 								drag_x = e.button.x / domain->scale;
@@ -855,7 +859,7 @@ int main(int argc, char **argv)
 					}
 					else
 					{
-						Uint8 * keys = SDL_GetKeyState(NULL);
+						const Uint8 * keys = SDL_GetKeyboardState(NULL);
 						if (selected_event != -1 && (keys[SDLK_LCTRL]||keys[SDLK_RCTRL]))
 						{
 							level.event[selected_event].param[(keys[SDLK_LSHIFT]||keys[SDLK_RSHIFT])?EV_TRGPARENT:EV_NEXT] = get_event(e.button.x / domain->scale, e.button.y / domain->scale);
@@ -1169,14 +1173,14 @@ int main(int argc, char **argv)
 		if (got_event)
 		{
 			
-			Uint8 * keys = SDL_GetKeyState(NULL);
+			const Uint8 * keys = SDL_GetKeyboardState(NULL);
 			int x,y;
 			SDL_GetMouseState(&x, &y);
 			
 			int show_all_layers = keys[SDLK_a];
 			
-			SDL_FillRect(gfx_domain_get_surface(domain), NULL, bg_color);
-			draw(gfx_domain_get_surface(domain), x / domain->scale, y / domain->scale, show_all_layers);
+			gfx_rect(domain, NULL, bg_color);
+			draw(domain, x / domain->scale, y / domain->scale, show_all_layers);
 			
 			static const char *layer_names[] =
 			{
@@ -1186,7 +1190,7 @@ int main(int argc, char **argv)
 			
 			
 			char text[100], si[10];
-			SDL_Rect textpos = {gfx_domain_get_surface(domain)->w - 400,0, 1000, 1000};
+			SDL_Rect textpos = {domain->screen_w - 400,0, 1000, 1000};
 			
 			if (edit_mode == EM_LEVEL)
 			{
@@ -1195,7 +1199,7 @@ int main(int argc, char **argv)
 					sprintf(si, "%d", current_layer);
 					sprintf(text, "[L %s] prx(%s) pos(%d,%d) size(%dx%d,%dx%d)\n", show_all_layers?"All":(current_layer>=MAGICK_LAYER?layer_names[current_layer-MAGICK_LAYER]:si), level.layer[current_layer].flags&BG_PARALLAX?"ON":"OFF", scroll_x/CELLSIZE, scroll_y/CELLSIZE, level.layer[current_layer].w, level.layer[current_layer].prx_mlt_x, level.layer[current_layer].h, level.layer[current_layer].prx_mlt_y);
 					
-					font_write(&font, gfx_domain_get_surface(domain), &textpos, text);
+					font_write(&font, domain, &textpos, text);
 					textpos.y += font.h;
 				}
 			}
@@ -1204,13 +1208,13 @@ int main(int argc, char **argv)
 				if (selected_event == -1)
 				{
 					sprintf(text, "[EV] pos(%d,%d)\n", scroll_x/CELLSIZE, scroll_y/CELLSIZE);
-					font_write(&font, gfx_domain_get_surface(domain), &textpos, text);
+					font_write(&font, domain, &textpos, text);
 					textpos.y += font.h;
 				}
 				else
 				{
 					sprintf(text, "[EV:%02x(%d,%d %d,%d)] pos(%d,%d)\n", selected_event, level.event[selected_event].x, level.event[selected_event].y, level.event[selected_event].w, level.event[selected_event].h, scroll_x/CELLSIZE, scroll_y/CELLSIZE);
-					font_write(&font, gfx_domain_get_surface(domain), &textpos, text);
+					font_write(&font, domain, &textpos, text);
 					textpos.y += font.h;
 					
 					for (int i = 0 ; i < EV_PARAMS ; ++i)
@@ -1239,7 +1243,7 @@ int main(int argc, char **argv)
 								snprintf(text, 100, "%-9s: %4d", ev_desc[level.event[selected_event].param[0]].param[i].name, level.event[selected_event].param[i]);
 						}
 					
-						font_write_args(&font, gfx_domain_get_surface(domain), &textpos, "%c%s", s, text);
+						font_write_args(&font, domain, &textpos, "%c%s", s, text);
 						textpos.y += font.h;
 					}
 				}
@@ -1256,7 +1260,7 @@ int main(int argc, char **argv)
 		
 		if (done) 
 		{
-			int r = confirm_ync(domain, gfx->surface, &font, "Save level?");
+			int r = confirm_ync(domain, gfx, &font, "Save level?");
 			
 			if (r == 0) done = 0;
 			if (r == -1) goto out;
