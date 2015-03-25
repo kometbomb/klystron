@@ -31,6 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "gfx/font.h"
 
 FILE *open_dialog(const char *mode, const char *title, const char *filter, GfxDomain *domain, GfxSurface *gfx, const Font *largefont, const Font *smallfont, const char *deffilename);
+char * open_dialog_fn(const char *mode, const char *title, const char *filter, GfxDomain *domain, GfxSurface *gfx, const Font *largefont, const Font *smallfont, const char *deffilename, char *filename, int filename_size);
 int confirm(GfxDomain *domain, GfxSurface *gfx, const Font *font, const char *msg);
 int confirm_ync(GfxDomain *domain, GfxSurface *gfx, const Font *font, const char *msg);
 char * expand_tilde(const char * path);

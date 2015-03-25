@@ -35,16 +35,27 @@ OTHER DEALINGS IN THE SOFTWARE.
 #endif
 
 
+char * open_dialog_fn(const char *mode, const char *title, const char *filter, GfxDomain *domain, GfxSurface *gfx, const Font *largefont, const Font *smallfont, const char *deffilename, char *filename, int filename_size)
+{
+	if (deffilename)
+		strncpy(filename, deffilename, filename_size - 1);
+	else
+		strcpy(filename, "");
+	
+	if (filebox(title, mode[0] == 'w' ? FB_SAVE : FB_OPEN, filename, filename_size - 1, filter, domain, gfx, largefont, smallfont) == FB_OK)
+	{
+		return filename;
+	}
+	else
+		return NULL;
+}
+
+
 FILE *open_dialog(const char *mode, const char *title, const char *filter, GfxDomain *domain, GfxSurface *gfx, const Font *largefont, const Font *smallfont, const char *deffilename)
 {
 	char filename[5000];
 	
-	if (deffilename)
-		strncpy(filename, deffilename, sizeof(filename));
-	else
-		strcpy(filename, "");
-	
-	if (filebox(title, mode[0] == 'w' ? FB_SAVE : FB_OPEN, filename, sizeof(filename) - 1, filter, domain, gfx, largefont, smallfont) == FB_OK)
+	if (open_dialog_fn(mode, title, filter, domain, gfx, largefont, smallfont, deffilename, filename, sizeof(filename)))
 	{
 		FILE * f = fopen(filename, mode);
 		if (!f) msgbox(domain, gfx, largefont, "Could not open file", MB_OK);
