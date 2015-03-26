@@ -657,18 +657,18 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 		if (data.picked_file)
 		{
 			set_repeat_timer(NULL);
+			
 			if (data.picked_file->type == FB_FILE)
 			{
 				if (mode == FB_OPEN || (mode == FB_SAVE && msgbox(domain, gfx, largefont, "Overwrite?", MB_YES|MB_NO) == MB_YES))
 				{
-					set_repeat_timer(NULL);
 					strncpy(buffer, data.picked_file->name, buffer_size);
 					strncpy(last_picked_file, data.picked_file->name, sizeof(last_picked_file));
 					free_files();
 					SDL_StopTextInput();
 					return FB_OK;
 				}
-				
+			
 				// note that after the populate_files() picked_file will point to some other file!
 				// thus we need to check this before the FB_DIRECTORY handling below
 			}
@@ -676,7 +676,6 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 			{
 				
 			}
-			
 		}
 	
 		data.picked_file = NULL;
@@ -821,6 +820,8 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 					{
 						goto exit_ok;
 					}
+					else
+						data.selected = false;
 				}
 				else
 				{
@@ -863,6 +864,7 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 					{
 						if (msgbox(domain, gfx, largefont, "Overwrite?", MB_YES|MB_NO) == MB_NO)
 						{
+							data.selected = false;
 							break;
 						}
 					}
