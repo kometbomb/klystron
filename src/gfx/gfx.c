@@ -676,14 +676,14 @@ void gfx_domain_free(GfxDomain *domain)
 #ifdef USESDL_GPU
     GPU_Quit();
 #else
-	SDL_DestroyRenderer(domain->renderer);
-	SDL_DestroyWindow(domain->window);
-	
 	if (domain->scale_texture)
 		SDL_DestroyTexture(domain->scale_texture);
 	
 	if (domain->scanlines_texture)
 		SDL_DestroyTexture(domain->scanlines_texture);
+
+	SDL_DestroyRenderer(domain->renderer);
+	SDL_DestroyWindow(domain->window);
 #endif
 
 	free(domain);
