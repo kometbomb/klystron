@@ -115,8 +115,8 @@ static const char * get_shortcut_key(const Menu *item)
 		if (((item->action == MENU_CHECK || item->action == MENU_CHECK_NOSET) && (void*)shortcuts[i].action == item->p3) ||
 			(shortcuts[i].action == item->action &&
 			(void*)shortcuts[i].p1 == item->p1 &&
-			(void*)shortcuts[i].p3 == item->p2 &&
-			(void*)shortcuts[i].p2 == item->p3))
+			(void*)shortcuts[i].p2 == item->p2 &&
+			(void*)shortcuts[i].p3 == item->p3))
 		{
 			return get_shortcut_string(&shortcuts[i]);
 		}
