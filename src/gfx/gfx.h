@@ -74,6 +74,7 @@ struct GfxDomain_t
 	bool render_to_texture;
 #endif
 	int screen_w, screen_h;
+	int window_w, window_h;
 	int scale, fullscreen, fps;
 	GfxScaleType scale_type;
 	FramerateTimer start_time, dt, clock_resolution, accumulator;
@@ -107,6 +108,7 @@ void gfx_blit(GfxSurface *src, SDL_Rect *srcrect, GfxDomain *domain, SDL_Rect *d
 void gfx_rect(GfxDomain *domain, SDL_Rect *dest, Uint32 rgb);
 void gfx_surface_set_color(GfxSurface *surf, Uint32 color);
 void gfx_update_texture(GfxDomain *domain, GfxSurface *surface);
+void gfx_convert_mouse_coordinates(GfxDomain *domain, int *x, int *y);
 
 GfxDomain * gfx_create_domain(const char *title, Uint32 window_flags, int window_w, int window_h, int scale);
 void gfx_domain_update(GfxDomain *domain, bool resize_window);

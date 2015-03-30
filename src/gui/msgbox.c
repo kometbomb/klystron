@@ -151,15 +151,12 @@ int msgbox(GfxDomain *domain, GfxSurface *gfx, const Font *font, const char *msg
 				break;
 				
 				case SDL_MOUSEMOTION:
-					e.motion.xrel /= domain->scale;
-					e.motion.yrel /= domain->scale;
-					e.button.x /= domain->scale;
-					e.button.y /= domain->scale;
+					gfx_convert_mouse_coordinates(domain, &e.motion.x, &e.motion.y);
+					gfx_convert_mouse_coordinates(domain, &e.motion.xrel, &e.motion.yrel);
 				break;
 				
 				case SDL_MOUSEBUTTONDOWN:
-					e.button.x /= domain->scale;
-					e.button.y /= domain->scale;
+					gfx_convert_mouse_coordinates(domain, &e.button.x, &e.button.y);
 				break;
 				
 				case SDL_MOUSEBUTTONUP:

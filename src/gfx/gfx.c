@@ -587,7 +587,7 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 	
 	if (resize_window) 
 		SDL_SetWindowSize(domain->window, domain->screen_w * domain->scale, domain->screen_h * domain->scale);
-		
+	
 	if (domain->fullscreen)
 	{
 		debug("Setting fullscreen");
@@ -625,6 +625,8 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 		create_scanlines_texture(domain);
 	
 	SDL_RenderSetViewport(domain->renderer, NULL);
+	
+	SDL_GetWindowSize(domain->window, &domain->window_w, &domain->window_h);
 #endif
 	gfx_domain_set_framerate(domain);
 }
@@ -913,3 +915,12 @@ void gfx_surface_set_color(GfxSurface *surf, Uint32 color)
 #endif
 }
 
+
+void gfx_convert_mouse_coordinates(GfxDomain *domain, int *x, int *y)
+{
+	if (domain->window_w)
+		*x = *x * domain->screen_w / domain->window_w;
+	
+	if (domain->window_h)
+		*y = *y * domain->screen_h / domain->window_h;
+}

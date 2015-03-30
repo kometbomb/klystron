@@ -773,18 +773,15 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 				case SDL_MOUSEMOTION:
 					if (domain)
 					{
-						e.motion.xrel /= domain->scale;
-						e.motion.yrel /= domain->scale;
-						e.button.x /= domain->scale;
-						e.button.y /= domain->scale;
+						gfx_convert_mouse_coordinates(domain, &e.motion.x, &e.motion.y);
+						gfx_convert_mouse_coordinates(domain, &e.motion.xrel, &e.motion.yrel);
 					}
 				break;
 				
 				case SDL_MOUSEBUTTONDOWN:
 					if (domain)
 					{
-						e.button.x /= domain->scale;
-						e.button.y /= domain->scale;
+						gfx_convert_mouse_coordinates(domain, &e.button.x, &e.button.y);
 					}
 				break;
 				
