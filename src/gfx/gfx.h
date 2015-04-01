@@ -74,7 +74,7 @@ struct GfxDomain_t
 	bool render_to_texture;
 #endif
 	int screen_w, screen_h;
-	int window_w, window_h;
+	int window_w, window_h, window_min_w, window_min_h;
 	int scale, fullscreen, fps;
 	GfxScaleType scale_type;
 	FramerateTimer start_time, dt, clock_resolution, accumulator;

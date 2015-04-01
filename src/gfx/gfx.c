@@ -625,8 +625,10 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 		create_scanlines_texture(domain);
 	
 	SDL_RenderSetViewport(domain->renderer, NULL);
+	SDL_RenderSetLogicalSize(domain->renderer, domain->screen_w, domain->screen_h);
 	
 	SDL_GetWindowSize(domain->window, &domain->window_w, &domain->window_h);
+	SDL_SetWindowMinimumSize(domain->window, domain->window_min_w * domain->scale, domain->window_min_h * domain->scale);
 #endif
 	gfx_domain_set_framerate(domain);
 }
@@ -702,6 +704,9 @@ GfxDomain * gfx_create_domain(const char *title, Uint32 window_flags, int window
 	d->fullscreen = 0;
 	d->fps = 50;
 	d->flags = 0;
+	d->window_min_w = d->screen_w;
+	d->window_min_h = d->screen_h;
+	
 #ifdef USESDL_GPU
 	d->screen = GPU_Init(window_w, window_h, GPU_DEFAULT_INIT_FLAGS);
 #else	
