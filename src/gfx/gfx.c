@@ -605,13 +605,20 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 	if (domain->render_to_texture && !(domain->flags & GFX_DOMAIN_DISABLE_RENDER_TO_TEXTURE) /* && domain->scale > 1*/)
 	{
 		debug("Rendering to texture enabled");
+		
+		SDL_SetRenderTarget(domain->renderer, NULL);
 	
 		if (domain->scale_texture)
 			SDL_DestroyTexture(domain->scale_texture);
 		
 		domain->scale_texture = SDL_CreateTexture(domain->renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, domain->screen_w, domain->screen_h);
 		
-		SDL_SetRenderTarget(domain->renderer, domain->scale_texture);
+		if (!domain->scale_texture)
+		{
+			warning("Could not create texture: %s", SDL_GetError());
+		}
+		else
+			SDL_SetRenderTarget(domain->renderer, domain->scale_texture);
 	}
 	else
 	{
@@ -627,8 +634,12 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 	SDL_RenderSetViewport(domain->renderer, NULL);
 	SDL_RenderSetLogicalSize(domain->renderer, domain->screen_w, domain->screen_h);
 	
-	SDL_GetWindowSize(domain->window, &domain->window_w, &domain->window_h);
 	SDL_SetWindowMinimumSize(domain->window, domain->window_min_w * domain->scale, domain->window_min_h * domain->scale);
+	
+	SDL_GetWindowSize(domain->window, &domain->window_w, &domain->window_h);
+	
+	debug("Screen size is %dx%d", domain->screen_w, domain->screen_h);
+	debug("Window size is %dx%d", domain->window_w, domain->window_h);
 #endif
 	gfx_domain_set_framerate(domain);
 }
