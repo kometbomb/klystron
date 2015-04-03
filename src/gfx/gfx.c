@@ -616,12 +616,10 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 		if (!domain->scale_texture)
 		{
 			warning("Could not create texture: %s", SDL_GetError());
-			//SDL_RenderSetLogicalSize(domain->renderer, domain->screen_w * domain->scale, domain->screen_h * domain->scale);
 		}
 		else
 		{
 			SDL_SetRenderTarget(domain->renderer, domain->scale_texture);
-			//SDL_RenderSetLogicalSize(domain->renderer, domain->screen_w, domain->screen_h);
 		}
 	}
 	else
