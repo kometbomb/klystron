@@ -616,9 +616,13 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 		if (!domain->scale_texture)
 		{
 			warning("Could not create texture: %s", SDL_GetError());
+			//SDL_RenderSetLogicalSize(domain->renderer, domain->screen_w * domain->scale, domain->screen_h * domain->scale);
 		}
 		else
+		{
 			SDL_SetRenderTarget(domain->renderer, domain->scale_texture);
+			//SDL_RenderSetLogicalSize(domain->renderer, domain->screen_w, domain->screen_h);
+		}
 	}
 	else
 	{
@@ -632,10 +636,8 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 		create_scanlines_texture(domain);
 	
 	SDL_RenderSetViewport(domain->renderer, NULL);
-	SDL_RenderSetLogicalSize(domain->renderer, domain->screen_w, domain->screen_h);
 	
 	SDL_SetWindowMinimumSize(domain->window, domain->window_min_w * domain->scale, domain->window_min_h * domain->scale);
-	
 	SDL_GetWindowSize(domain->window, &domain->window_w, &domain->window_h);
 	
 	debug("Screen size is %dx%d", domain->screen_w, domain->screen_h);
