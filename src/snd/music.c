@@ -2063,7 +2063,7 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 			{
 				memset(&song->fx, 0, sizeof(song->fx[0]) * n_fx);
 				
-				debug("Loading fx at offset %x (%d/%d)", (Uint32)my_RWtell(ctx), sizeof(song->fx[0]) * n_fx, sizeof(song->fx[0]));
+				debug("Loading fx at offset %x (%d/%d)", (Uint32)my_RWtell(ctx), (int)sizeof(song->fx[0]) * n_fx, (int)sizeof(song->fx[0]));
 				
 				for (int fx = 0 ; fx < n_fx ; ++fx)
 					mus_load_fx(ctx, &song->fx[fx], version);
