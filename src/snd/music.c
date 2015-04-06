@@ -1905,7 +1905,7 @@ void mus_set_fx(MusEngine *mus, MusSong *song)
 }
 
 
-static void mus_load_fx(RWops *ctx, CydFxSerialized *fx, int version)
+static void inner_load_fx(RWops *ctx, CydFxSerialized *fx, int version)
 {
 	Uint8 padding;
 	
@@ -1954,6 +1954,63 @@ static void mus_load_fx(RWops *ctx, CydFxSerialized *fx, int version)
 	}
 	
 	FIX_ENDIAN(fx->flags);
+}
+
+
+int mus_load_fx_RW(RWops *ctx, CydFxSerialized *fx)
+{
+	char id[9];
+	id[8] = '\0';
+
+	my_RWread(ctx, id, 8, sizeof(id[0]));
+	
+	if (strcmp(id, MUS_FX_SIG) == 0)
+	{
+		Uint8 version = 0;
+		my_RWread(ctx, &version, 1, sizeof(version));
+		
+		debug("FX version = %u", version);
+		
+		inner_load_fx(ctx, fx, version);
+		
+		return 1;
+	}
+	else
+		return 0;
+}
+
+
+int mus_load_fx_file(FILE *f, CydFxSerialized *fx)
+{
+	RWops *rw = RWFromFP(f, 0);
+	
+	if (rw)
+	{
+		int r = mus_load_fx_RW(rw, fx);
+		
+		my_RWclose(rw);
+		
+		return r;
+	}
+	
+	return 0;
+}
+
+
+int mus_load_fx(const char *path, CydFxSerialized *fx)
+{
+	RWops *rw = RWFromFile(path, "rb");
+	
+	if (rw)
+	{
+		int r = mus_load_fx_RW(rw, fx);
+		
+		my_RWclose(rw);
+		
+		return r;
+	}
+	
+	return 0;
 }
 
 
@@ -2066,7 +2123,7 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 				debug("Loading fx at offset %x (%d/%d)", (Uint32)my_RWtell(ctx), (int)sizeof(song->fx[0]) * n_fx, (int)sizeof(song->fx[0]));
 				
 				for (int fx = 0 ; fx < n_fx ; ++fx)
-					mus_load_fx(ctx, &song->fx[fx], version);
+					inner_load_fx(ctx, &song->fx[fx], version);
 			}
 			else
 			{

@@ -327,6 +327,7 @@ enum
 
 #define MUS_INST_SIG "cyd!inst"
 #define MUS_SONG_SIG "cyd!song"
+#define MUS_FX_SIG "cyd!efex"
 
 #ifdef USESDL_RWOPS
 #include "SDL_rwops.h"
@@ -365,6 +366,9 @@ void mus_get_default_instrument(MusInstrument *inst);
 int mus_load_song(const char *path, MusSong *song, CydWavetableEntry *wavetable_entries);
 int mus_load_song_file(FILE *f, MusSong *song, CydWavetableEntry *wavetable_entries);
 int mus_load_song_RW(RWops *rw, MusSong *song, CydWavetableEntry *wavetable_entries);
+int mus_load_fx_RW(RWops *ctx, CydFxSerialized *fx);
+int mus_load_fx_file(FILE *f, CydFxSerialized *fx);
+int mus_load_fx(const char *path, CydFxSerialized *fx);
 void mus_free_song(MusSong *song);
 void mus_set_fx(MusEngine *mus, MusSong *song);
 Uint32 mus_ext_sync(MusEngine *mus);
