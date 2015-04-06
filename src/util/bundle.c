@@ -198,7 +198,6 @@ SDL_RWops *SDL_RWFromBundle(Bundle *bundle, const char *filename)
 	
 	if (!b->file)
 	{
-		warning("SDL_RWFromBundle file %s not found", filename);
 		free(b);
 		return NULL;
 	}

@@ -346,6 +346,8 @@ static int font_load_inner(GfxDomain *domain, Font *font, Bundle *fb)
 	}
 	else
 	{
+		warning("Bitmap not found in font file");
+		
 		bnd_free(fb);
 		
 		return 0;
