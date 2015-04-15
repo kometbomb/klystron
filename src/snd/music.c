@@ -1833,6 +1833,17 @@ int mus_load_instrument_RW(Uint8 version, RWops *ctx, MusInstrument *inst, CydWa
 		
 	FIX_ENDIAN(inst->fm_flags);
 	
+	if (version < 26)
+	{
+		inst->adsr.a *= ENVELOPE_SCALE;
+		inst->adsr.d *= ENVELOPE_SCALE;
+		inst->adsr.r *= ENVELOPE_SCALE;
+		
+		inst->fm_adsr.a *= ENVELOPE_SCALE;
+		inst->fm_adsr.d *= ENVELOPE_SCALE;
+		inst->fm_adsr.r *= ENVELOPE_SCALE;
+	}
+	
 	return 1;
 }
 
@@ -1871,8 +1882,8 @@ void mus_get_default_instrument(MusInstrument *inst)
 	inst->flags = MUS_INST_DRUM|MUS_INST_SET_PW|MUS_INST_SET_CUTOFF;
 	inst->pw = 0x600;
 	inst->cydflags = CYD_CHN_ENABLE_TRIANGLE;
-	inst->adsr.a = 1;
-	inst->adsr.d = 12;
+	inst->adsr.a = 1 * ENVELOPE_SCALE;
+	inst->adsr.d = 12 * ENVELOPE_SCALE;
 	inst->volume = MAX_VOLUME;
 	inst->base_note = MIDDLE_C;
 	inst->finetune = 0;
