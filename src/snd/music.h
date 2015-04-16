@@ -37,6 +37,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #define MUS_SONG_TITLE_LEN 64
 #define MUS_INSTRUMENT_NAME_LEN 32
+#define MUS_WAVETABLE_NAME_LEN MUS_INSTRUMENT_NAME_LEN
 
 typedef struct
 {
@@ -151,6 +152,8 @@ typedef struct
 	Uint8 master_volume;
 	Uint8 default_volume[MUS_MAX_CHANNELS];
 	Sint8 default_panning[MUS_MAX_CHANNELS];
+	char **wavetable_names;
+	int num_wavetables;
 } MusSong;
 
 

@@ -2327,7 +2327,26 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 			{
 				load_wavetable_entry(version, &wavetable_entries[i], ctx);
 			}
+			
+			song->wavetable_names = malloc(max_wt * sizeof(char*));
+			
+			if (version >= 26)
+			{
+				for (int i = 0 ; i < max_wt ; ++i)
+				{
+					Uint8 len = 0;
+					song->wavetable_names[i] = malloc(MUS_WAVETABLE_NAME_LEN + 1);
+					memset(song->wavetable_names[i], 0, MUS_WAVETABLE_NAME_LEN + 1);
+					
+					my_RWread(ctx, &len, 1, 1);
+					my_RWread(ctx, song->wavetable_names[i], len, sizeof(char));
+				}
+			}
+			
+			song->num_wavetables = max_wt;
 		}
+		else
+			song->num_wavetables = 0;
 		
 		return 1;
 	}
@@ -2355,7 +2374,7 @@ int mus_load_song(const char *path, MusSong *song, CydWavetableEntry *wavetable_
 void mus_free_song(MusSong *song)
 {
 	free(song->instrument);
-
+	
 	for (int i = 0 ; i < MUS_MAX_CHANNELS; ++i)
 	{
 		free(song->sequence[i]);
@@ -2365,6 +2384,13 @@ void mus_free_song(MusSong *song)
 	{
 		free(song->pattern[i].step);
 	}
+	
+	for (int i = 0 ; i < song->num_wavetables; ++i)
+	{
+		free(song->wavetable_names[i]);
+	}
+	
+	free(song->wavetable_names);
 	
 	free(song->pattern);
 }
