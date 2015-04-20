@@ -95,7 +95,6 @@ char * expand_tilde(const char * path)
 	
 #ifndef WIN32	
 	const char *rest = strchr(path, '/');
-	char *name = NULL;
 #else
 	const char *rest = strchr(path, '/');
 	if (!rest) rest = strchr(path, '\\');
@@ -105,43 +104,24 @@ char * expand_tilde(const char * path)
 	
 	if (rest != NULL)
 	{
-#ifndef WIN32	
-		size_t l = (rest - (path + 1)) / sizeof(*name);
-		if (l)
-		{
-			name = calloc(sizeof(*name), l + 1);
-			strncpy(name, path + 1, l);
-		}
-#endif
 		rest_len = strlen(rest);
 	}
 	
 	const char *homedir = NULL;
 	
 #ifndef WIN32		
-	if (name) 
-	{
-		struct passwd *pwd = getpwnam(name);
-		free(name);
-		
-		if (!pwd)
-		{
-			warning("User %s not found", name);
-			return NULL;
-		}
-		
-		homedir = pwd->pw_dir;
-	}
-	else
-	{
-		homedir = getenv("HOME");
-	}
+	struct passwd *pw = getpwuid(getuid());
+
+	if (pw)
+		homedir = pw->pw_dir;
 #else
 	homedir = getenv("USERPROFILE");
 #endif
 	
 	char * final = malloc(strlen(homedir) + rest_len + 2);
+	
 	strcpy(final, homedir);
+	
 	if (rest) strcat(final, rest);
 	
 	return final;
