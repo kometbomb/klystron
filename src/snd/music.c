@@ -817,6 +817,23 @@ static void mus_exec_track_command(MusEngine *mus, int chan, int first_tick)
 	
 	switch (vol & 0xf0)
 	{
+		case MUS_NOTE_VOLUME_PAN_LEFT:
+			do_command(mus, chan, mus->song_counter, MUS_FX_PAN_LEFT | ((Uint16)(vol & 0xf)), 0);
+			break;
+			
+		case MUS_NOTE_VOLUME_PAN_RIGHT:
+			do_command(mus, chan, mus->song_counter, MUS_FX_PAN_RIGHT | ((Uint16)(vol & 0xf)), 0);
+			break;
+			
+		case MUS_NOTE_VOLUME_SET_PAN:
+			{
+			Uint16 val = vol & 0xf;
+			Uint16 panning = (val <= 8 ? val * CYD_PAN_CENTER / 8 : (val - 8) * (CYD_PAN_RIGHT - CYD_PAN_CENTER) / 8 + CYD_PAN_CENTER);
+			do_command(mus, chan, mus->song_counter, MUS_FX_SET_PANNING | panning, 0);
+			debug("Panned to %x", panning);
+			}
+			break;
+			
 		case MUS_NOTE_VOLUME_FADE_UP:
 			do_command(mus, chan, mus->song_counter, MUS_FX_FADE_VOLUME | ((Uint16)(vol & 0xf) << 4), 0);
 			break;
