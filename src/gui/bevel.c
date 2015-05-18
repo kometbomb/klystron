@@ -143,7 +143,7 @@ void bevelex(GfxDomain *screen, const SDL_Rect *area, GfxSurface *gfx, int offse
 
 void button(GfxDomain *screen, const SDL_Rect *area, GfxSurface *gfx, int offset, int decal)
 {
-	bevel(screen, area, gfx, offset);
+	bevelex(screen, area, gfx, offset, BEV_F_STRETCH_ALL);
 	
 	if (decal >= 0)
 	{
@@ -156,7 +156,7 @@ void button(GfxDomain *screen, const SDL_Rect *area, GfxSurface *gfx, int offset
 
 void button_text(GfxDomain *screen, const SDL_Rect *area, GfxSurface *gfx, int offset, const Font *font, const char *label)
 {
-	bevel(screen, area, gfx, offset);
+	bevelex(screen, area, gfx, offset, BEV_F_STRETCH_ALL);
 	
 	SDL_Rect dest = { area->x + area->w / 2 - font_text_width(font, label) / 2, area->y + area->h / 2 - font->h / 2, 1000, 1000 };
 	font_write(font, screen, &dest, label);
