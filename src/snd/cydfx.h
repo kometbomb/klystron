@@ -55,8 +55,7 @@ typedef struct
 	} chr;
 	struct 
 	{
-		Uint8 spread; // 1
-		struct { Uint16 delay; Sint16 gain; } tap[CYDRVB_TAPS]; // 4 * 8
+		struct { Uint16 delay; Sint16 gain; Uint8 panning; Uint8 flags; } tap[CYDRVB_TAPS]; 
 	} rvb;
 	struct // so we won't fuck up old versions of this struct when freading
 	{

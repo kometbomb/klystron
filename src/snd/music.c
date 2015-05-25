@@ -1957,17 +1957,65 @@ static void inner_load_fx(RWops *ctx, CydFxSerialized *fx, int version)
 	my_RWread(ctx, &fx->chr.min_delay, 1, 1);
 	my_RWread(ctx, &fx->chr.max_delay, 1, 1);
 	my_RWread(ctx, &fx->chr.sep, 1, 1);
-	my_RWread(ctx, &fx->rvb.spread, 1, 1);
+	
+	Uint8 spread = 0;
+	
+	if (version < 27)
+		my_RWread(ctx, &spread, 1, 1);
 	
 	if (version < 21)
 		my_RWread(ctx, &padding, 1, 1);
 	
-	for (int i = 0 ; i < CYDRVB_TAPS ; ++i)	
+	int taps = CYDRVB_TAPS;
+	
+	if (version < 27)
+		taps = 8;
+	
+	for (int i = 0 ; i < taps ; ++i)	
 	{
 		my_RWread(ctx, &fx->rvb.tap[i].delay, 2, 1);
 		my_RWread(ctx, &fx->rvb.tap[i].gain, 2, 1);
+		
+		if (version >= 27)
+		{
+			my_RWread(ctx, &fx->rvb.tap[i].panning, 1, 1);
+			my_RWread(ctx, &fx->rvb.tap[i].flags, 1, 1);
+		}
+		else
+		{
+			fx->rvb.tap[i].flags = 1;
+			
+			if (spread > 0)
+				fx->rvb.tap[i].panning = CYD_PAN_LEFT;
+			else
+				fx->rvb.tap[i].panning = CYD_PAN_CENTER;
+		}
+		
 		FIX_ENDIAN(fx->rvb.tap[i].gain);
 		FIX_ENDIAN(fx->rvb.tap[i].delay);
+	}
+	
+	if (version < 27)
+	{
+		if (spread == 0)
+		{
+			for (int i = 8 ; i < CYDRVB_TAPS ; ++i)
+			{
+				fx->rvb.tap[i].flags = 0;
+				fx->rvb.tap[i].delay = 1000;
+				fx->rvb.tap[i].gain = CYDRVB_LOW_LIMIT;
+			}
+		}
+		else
+		{
+			for (int i = 8 ; i < CYDRVB_TAPS ; ++i)
+			{
+				fx->rvb.tap[i].flags = 1;
+				fx->rvb.tap[i].panning = CYD_PAN_RIGHT;
+				fx->rvb.tap[i].delay = fx->rvb.tap[i - 8].delay + 10;
+				fx->rvb.tap[i].gain = fx->rvb.tap[i - 8].gain;
+			}
+		}
 	}
 
 	my_RWread(ctx, &fx->crushex.downsample, 1, 1); 
@@ -2160,9 +2208,7 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 					song->fx[fx].flags = CYDFX_ENABLE_REVERB;
 					if (song->flags & MUS_ENABLE_CRUSH) song->fx[fx].flags |= CYDFX_ENABLE_CRUSH;
 					
-					song->fx[fx].rvb.spread = 0;
-				
-					for (int i = 0 ; i < CYDRVB_TAPS ; ++i)	
+					for (int i = 0 ; i < 8 ; ++i)	
 					{
 						Sint32 g, d;
 						my_RWread(ctx, &g, 1, sizeof(g));
@@ -2170,6 +2216,8 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 							
 						song->fx[fx].rvb.tap[i].gain = g;
 						song->fx[fx].rvb.tap[i].delay = d;
+						song->fx[fx].rvb.tap[i].panning = CYD_PAN_CENTER;
+						song->fx[fx].rvb.tap[i].flags = 1;
 						
 						FIX_ENDIAN(song->fx[fx].rvb.tap[i].gain);
 						FIX_ENDIAN(song->fx[fx].rvb.tap[i].delay);
