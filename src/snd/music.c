@@ -2012,7 +2012,7 @@ static void inner_load_fx(RWops *ctx, CydFxSerialized *fx, int version)
 			{
 				fx->rvb.tap[i].flags = 1;
 				fx->rvb.tap[i].panning = CYD_PAN_RIGHT;
-				fx->rvb.tap[i].delay = fx->rvb.tap[i - 8].delay + 10;
+				fx->rvb.tap[i].delay = fx->rvb.tap[i - 8].delay + (fx->rvb.tap[i - 8].delay * spread) / 2000;
 				fx->rvb.tap[i].gain = fx->rvb.tap[i - 8].gain;
 			}
 		}
