@@ -111,13 +111,12 @@ void cydfx_set(CydFx *fx, const CydFxSerialized *ser)
 #ifndef CYD_DISABLE_FX
 	fx->flags = ser->flags;
 
-#ifdef STEREOOUTPUT
-	cydrvb_set_stereo_spread(&fx->rvb, ser->rvb.spread);
-#endif
-	
 	for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
 	{
-		cydrvb_set_tap(&fx->rvb, i, ser->rvb.tap[i].delay, ser->rvb.tap[i].gain);
+		if (ser->rvb.tap[i].flags & 1)
+			cydrvb_set_tap(&fx->rvb, i, ser->rvb.tap[i].delay, ser->rvb.tap[i].gain, ser->rvb.tap[i].panning);
+		else
+			cydrvb_set_tap(&fx->rvb, i, 0, 0, 0);
 	}
 	
 	cydchr_set(&fx->chr, ser->chr.rate, ser->chr.min_delay, ser->chr.max_delay, ser->chr.sep);

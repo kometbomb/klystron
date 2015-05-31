@@ -31,27 +31,25 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 // Max delay length in milliseconds
 #define CYDRVB_SIZE 2000
-#define CYDRVB_TAPS 8
+#define CYDRVB_TAPS 16
 #define CYDRVB_0dB 2048
 #define CYDRVB_LOW_LIMIT (int)(100.0 * log(1.0 / (double)CYDRVB_0dB))
 
 typedef struct
 {
-#ifdef STEREOOUTPUT	
-	int position_l, position_r;
-#else
 	int position;
+#ifdef STEREOOUTPUT
+	int gain_r, gain_l;
+#else
+	int gain;
 #endif
-	int gain, delay;
+	int delay;
 } CydTap;
 
 typedef struct
 {
 	Sint32 *buffer;
 	int size, rate;
-#ifdef STEREOOUTPUT	
-	int spread;
-#endif
 	int position;
 	CydTap tap[CYDRVB_TAPS];
 } CydReverb;
@@ -62,12 +60,11 @@ void cydrvb_deinit(CydReverb *rvb);
 #ifdef STEREOOUTPUT
 void cydrvb_cycle(CydReverb *rvb, Sint32 left, Sint32 right);
 void cydrvb_output(CydReverb *rvb, Sint32 *left, Sint32 *right);
-void cydrvb_set_stereo_spread(CydReverb *rvb, int spread);
 #else
 void cydrvb_cycle(CydReverb *rvb, Sint32 input);
 Sint32 cydrvb_output(CydReverb *rvb);
 #endif
 
-void cydrvb_set_tap(CydReverb *rvb, int idx, int delay_ms, int gain_db);
+void cydrvb_set_tap(CydReverb *rvb, int idx, int delay_ms, int gain_db, int panning);
 
 #endif

@@ -23,6 +23,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include "cyddefs.h"
 #include "cydrvb.h"
 #include "macros.h"
 #include <math.h>
@@ -38,14 +39,13 @@ void cydrvb_init(CydReverb *rvb, int rate)
 	rvb->size = bufsize;
 	rvb->rate = rate;
 #ifdef STEREOOUTPUT
-	rvb->spread = 0;
 	rvb->buffer = calloc(sizeof(*rvb->buffer) * 2, bufsize);
 #else
 	rvb->buffer = calloc(sizeof(*rvb->buffer), bufsize);
 #endif
 	
 	for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
-		cydrvb_set_tap(rvb, i, i * 100 + 50, (i + 1) * -30);
+		cydrvb_set_tap(rvb, i, i * 100 + 50, (i + 1) * -30, CYD_PAN_CENTER);
 }
 
 
@@ -61,13 +61,9 @@ void cydrvb_cycle(CydReverb *rvb, Sint32 left, Sint32 right)
 {
 	for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
 	{
-		++rvb->tap[i].position_l;
-		if (rvb->tap[i].position_l >= rvb->size)
-			rvb->tap[i].position_l = 0;
-			
-		++rvb->tap[i].position_r;
-		if (rvb->tap[i].position_r >= rvb->size)
-			rvb->tap[i].position_r = 0;
+		++rvb->tap[i].position;
+		if (rvb->tap[i].position >= rvb->size)
+			rvb->tap[i].position = 0;
 	}
 	
 	++rvb->position;
@@ -105,10 +101,10 @@ void cydrvb_output(CydReverb *rvb, Sint32 *left, Sint32 *right)
 	
 	for (int i = 0 ; i < CYDRVB_TAPS ; ++i)
 	{
-		if (rvb->tap[i].gain != 0)
+		if (rvb->tap[i].gain_l != 0 || rvb->tap[i].gain_r != 0)
 		{
-			*left += rvb->tap[i].gain * rvb->buffer[rvb->tap[i].position_l * 2] / CYDRVB_0dB;
-			*right += rvb->tap[i].gain * rvb->buffer[rvb->tap[i].position_r * 2 + 1] / CYDRVB_0dB;
+			*left += rvb->tap[i].gain_l * (Sint32)rvb->buffer[rvb->tap[i].position * 2] / CYDRVB_0dB;
+			*right += rvb->tap[i].gain_r * (Sint32)rvb->buffer[rvb->tap[i].position * 2 + 1] / CYDRVB_0dB;
 		}
 	}
 }
@@ -132,27 +128,27 @@ Sint32 cydrvb_output(CydReverb *rvb)
 #endif
 
 
-void cydrvb_set_tap(CydReverb *rvb, int idx, int delay_ms, int gain_db)
+void cydrvb_set_tap(CydReverb *rvb, int idx, int delay_ms, int gain_db, int panning)
 {
 	rvb->tap[idx].delay = delay_ms;
-#ifdef STEREOOUTPUT
-	rvb->tap[idx].position_l = (rvb->position - (delay_ms * rvb->rate / 1000) + rvb->size) % rvb->size;
-	rvb->tap[idx].position_r = (rvb->position - ((rvb->spread * delay_ms * rvb->rate) / 2000 / 1000 + (delay_ms * rvb->rate / 1000)) + rvb->size) % rvb->size;
-#else
 	rvb->tap[idx].position = (rvb->position - (delay_ms * rvb->rate / 1000) + rvb->size) % rvb->size;
-#endif
 	
 	if (gain_db <= CYDRVB_LOW_LIMIT)
-		rvb->tap[idx].gain = 0;
+	{
+		rvb->tap[idx].gain_l = 0;
+		rvb->tap[idx].gain_r = 0;
+	}
 	else
-		rvb->tap[idx].gain = pow(10.0, (double)gain_db * 0.01) * CYDRVB_0dB;
-}
-
+	{
 #ifdef STEREOOUTPUT
-
-void cydrvb_set_stereo_spread(CydReverb *rvb, int spread)
-{
-	rvb->spread = spread;
-}
-
+		panning = my_min(CYD_PAN_RIGHT, my_max(CYD_PAN_LEFT, panning));
+		float a = M_PI / 2 * (float)(panning - CYD_PAN_LEFT) / (CYD_PAN_RIGHT - CYD_PAN_LEFT);
+		int gain = pow(10.0, (double)gain_db * 0.01) * CYDRVB_0dB;
+		rvb->tap[idx].gain_l = gain * cos(a);
+		rvb->tap[idx].gain_r = gain * sin(a);
+#else
+		int gain = pow(10.0, (double)gain_db * 0.01) * CYDRVB_0dB;
+		rvb->tap[idx].gain = gain;
 #endif
+	}
+}

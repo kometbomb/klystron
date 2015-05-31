@@ -817,6 +817,23 @@ static void mus_exec_track_command(MusEngine *mus, int chan, int first_tick)
 	
 	switch (vol & 0xf0)
 	{
+		case MUS_NOTE_VOLUME_PAN_LEFT:
+			do_command(mus, chan, mus->song_counter, MUS_FX_PAN_LEFT | ((Uint16)(vol & 0xf)), 0);
+			break;
+			
+		case MUS_NOTE_VOLUME_PAN_RIGHT:
+			do_command(mus, chan, mus->song_counter, MUS_FX_PAN_RIGHT | ((Uint16)(vol & 0xf)), 0);
+			break;
+			
+		case MUS_NOTE_VOLUME_SET_PAN:
+			{
+			Uint16 val = vol & 0xf;
+			Uint16 panning = (val <= 8 ? val * CYD_PAN_CENTER / 8 : (val - 8) * (CYD_PAN_RIGHT - CYD_PAN_CENTER) / 8 + CYD_PAN_CENTER);
+			do_command(mus, chan, mus->song_counter, MUS_FX_SET_PANNING | panning, 0);
+			debug("Panned to %x", panning);
+			}
+			break;
+			
 		case MUS_NOTE_VOLUME_FADE_UP:
 			do_command(mus, chan, mus->song_counter, MUS_FX_FADE_VOLUME | ((Uint16)(vol & 0xf) << 4), 0);
 			break;
@@ -1833,6 +1850,17 @@ int mus_load_instrument_RW(Uint8 version, RWops *ctx, MusInstrument *inst, CydWa
 		
 	FIX_ENDIAN(inst->fm_flags);
 	
+	if (version < 26)
+	{
+		inst->adsr.a *= ENVELOPE_SCALE;
+		inst->adsr.d *= ENVELOPE_SCALE;
+		inst->adsr.r *= ENVELOPE_SCALE;
+		
+		inst->fm_adsr.a *= ENVELOPE_SCALE;
+		inst->fm_adsr.d *= ENVELOPE_SCALE;
+		inst->fm_adsr.r *= ENVELOPE_SCALE;
+	}
+	
 	return 1;
 }
 
@@ -1871,8 +1899,8 @@ void mus_get_default_instrument(MusInstrument *inst)
 	inst->flags = MUS_INST_DRUM|MUS_INST_SET_PW|MUS_INST_SET_CUTOFF;
 	inst->pw = 0x600;
 	inst->cydflags = CYD_CHN_ENABLE_TRIANGLE;
-	inst->adsr.a = 1;
-	inst->adsr.d = 12;
+	inst->adsr.a = 1 * ENVELOPE_SCALE;
+	inst->adsr.d = 12 * ENVELOPE_SCALE;
 	inst->volume = MAX_VOLUME;
 	inst->base_note = MIDDLE_C;
 	inst->finetune = 0;
@@ -1929,17 +1957,65 @@ static void inner_load_fx(RWops *ctx, CydFxSerialized *fx, int version)
 	my_RWread(ctx, &fx->chr.min_delay, 1, 1);
 	my_RWread(ctx, &fx->chr.max_delay, 1, 1);
 	my_RWread(ctx, &fx->chr.sep, 1, 1);
-	my_RWread(ctx, &fx->rvb.spread, 1, 1);
+	
+	Uint8 spread = 0;
+	
+	if (version < 27)
+		my_RWread(ctx, &spread, 1, 1);
 	
 	if (version < 21)
 		my_RWread(ctx, &padding, 1, 1);
 	
-	for (int i = 0 ; i < CYDRVB_TAPS ; ++i)	
+	int taps = CYDRVB_TAPS;
+	
+	if (version < 27)
+		taps = 8;
+	
+	for (int i = 0 ; i < taps ; ++i)	
 	{
 		my_RWread(ctx, &fx->rvb.tap[i].delay, 2, 1);
 		my_RWread(ctx, &fx->rvb.tap[i].gain, 2, 1);
+		
+		if (version >= 27)
+		{
+			my_RWread(ctx, &fx->rvb.tap[i].panning, 1, 1);
+			my_RWread(ctx, &fx->rvb.tap[i].flags, 1, 1);
+		}
+		else
+		{
+			fx->rvb.tap[i].flags = 1;
+			
+			if (spread > 0)
+				fx->rvb.tap[i].panning = CYD_PAN_LEFT;
+			else
+				fx->rvb.tap[i].panning = CYD_PAN_CENTER;
+		}
+		
 		FIX_ENDIAN(fx->rvb.tap[i].gain);
 		FIX_ENDIAN(fx->rvb.tap[i].delay);
+	}
+	
+	if (version < 27)
+	{
+		if (spread == 0)
+		{
+			for (int i = 8 ; i < CYDRVB_TAPS ; ++i)
+			{
+				fx->rvb.tap[i].flags = 0;
+				fx->rvb.tap[i].delay = 1000;
+				fx->rvb.tap[i].gain = CYDRVB_LOW_LIMIT;
+			}
+		}
+		else
+		{
+			for (int i = 8 ; i < CYDRVB_TAPS ; ++i)
+			{
+				fx->rvb.tap[i].flags = 1;
+				fx->rvb.tap[i].panning = CYD_PAN_RIGHT;
+				fx->rvb.tap[i].delay = fx->rvb.tap[i - 8].delay + (fx->rvb.tap[i - 8].delay * spread) / 2000;
+				fx->rvb.tap[i].gain = fx->rvb.tap[i - 8].gain;
+			}
+		}
 	}
 
 	my_RWread(ctx, &fx->crushex.downsample, 1, 1); 
@@ -2132,9 +2208,7 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 					song->fx[fx].flags = CYDFX_ENABLE_REVERB;
 					if (song->flags & MUS_ENABLE_CRUSH) song->fx[fx].flags |= CYDFX_ENABLE_CRUSH;
 					
-					song->fx[fx].rvb.spread = 0;
-				
-					for (int i = 0 ; i < CYDRVB_TAPS ; ++i)	
+					for (int i = 0 ; i < 8 ; ++i)	
 					{
 						Sint32 g, d;
 						my_RWread(ctx, &g, 1, sizeof(g));
@@ -2142,6 +2216,8 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 							
 						song->fx[fx].rvb.tap[i].gain = g;
 						song->fx[fx].rvb.tap[i].delay = d;
+						song->fx[fx].rvb.tap[i].panning = CYD_PAN_CENTER;
+						song->fx[fx].rvb.tap[i].flags = 1;
 						
 						FIX_ENDIAN(song->fx[fx].rvb.tap[i].gain);
 						FIX_ENDIAN(song->fx[fx].rvb.tap[i].delay);
@@ -2316,7 +2392,26 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 			{
 				load_wavetable_entry(version, &wavetable_entries[i], ctx);
 			}
+			
+			song->wavetable_names = malloc(max_wt * sizeof(char*));
+			
+			if (version >= 26)
+			{
+				for (int i = 0 ; i < max_wt ; ++i)
+				{
+					Uint8 len = 0;
+					song->wavetable_names[i] = malloc(MUS_WAVETABLE_NAME_LEN + 1);
+					memset(song->wavetable_names[i], 0, MUS_WAVETABLE_NAME_LEN + 1);
+					
+					my_RWread(ctx, &len, 1, 1);
+					my_RWread(ctx, song->wavetable_names[i], len, sizeof(char));
+				}
+			}
+			
+			song->num_wavetables = max_wt;
 		}
+		else
+			song->num_wavetables = 0;
 		
 		return 1;
 	}
@@ -2344,7 +2439,7 @@ int mus_load_song(const char *path, MusSong *song, CydWavetableEntry *wavetable_
 void mus_free_song(MusSong *song)
 {
 	free(song->instrument);
-
+	
 	for (int i = 0 ; i < MUS_MAX_CHANNELS; ++i)
 	{
 		free(song->sequence[i]);
@@ -2354,6 +2449,13 @@ void mus_free_song(MusSong *song)
 	{
 		free(song->pattern[i].step);
 	}
+	
+	for (int i = 0 ; i < song->num_wavetables; ++i)
+	{
+		free(song->wavetable_names[i]);
+	}
+	
+	free(song->wavetable_names);
 	
 	free(song->pattern);
 }
