@@ -2407,6 +2407,14 @@ int mus_load_song_RW(RWops *ctx, MusSong *song, CydWavetableEntry *wavetable_ent
 					my_RWread(ctx, song->wavetable_names[i], len, sizeof(char));
 				}
 			}
+			else
+			{
+				for (int i = 0 ; i < max_wt ; ++i)
+				{
+					song->wavetable_names[i] = malloc(MUS_WAVETABLE_NAME_LEN + 1);
+					memset(song->wavetable_names[i], 0, MUS_WAVETABLE_NAME_LEN + 1);
+				}
+			}
 			
 			song->num_wavetables = max_wt;
 		}
