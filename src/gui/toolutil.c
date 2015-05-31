@@ -31,6 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #ifndef WIN32
 #include <sys/types.h>
+#include <unistd.h>
 #include <pwd.h>
 #endif
 
