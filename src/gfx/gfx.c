@@ -134,6 +134,12 @@ GfxSurface* gfx_load_surface_RW(GfxDomain *domain, SDL_RWops *rw, const int flag
 		
 		if (r == 255 && g == 0 && b == 255)
 			SDL_SetColorKey(loaded, SDL_TRUE, c);
+		
+#ifdef USESDL_GPU		
+		SDL_Surface *conv = SDL_ConvertSurfaceFormat(loaded, SDL_PIXELFORMAT_ARGB8888, 0);
+		SDL_FreeSurface(loaded);
+		loaded = conv;
+#endif
 	}
 		
 	gs->surface = loaded;
