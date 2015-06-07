@@ -353,6 +353,8 @@ static inline int delta(int e, int x, int y)
 void gfx_line(GfxDomain *dest, int x0, int y0, int x1, int y1, Uint32 color)
 {
 #ifdef USESDL_GPU
+	SDL_Color c = {(color >> 16) & 255, (color >> 8) & 255, color & 255, 255};
+	GPU_Line(dest->screen, x0, y0, x1, y1, c);
 #else
 	SDL_SetRenderDrawColor(dest->renderer, (color >> 16) & 255, (color >> 8) & 255, color & 255, 255);
 	SDL_RenderDrawLine(dest->renderer, x0, y0, x1, y1);
@@ -547,6 +549,7 @@ static void gfx_domain_set_framerate(GfxDomain *d)
 }
 
 
+#ifndef USESDL_GPU
 static void create_scanlines_texture(GfxDomain *domain)
 {
 	if (domain->scanlines_texture)
@@ -575,6 +578,7 @@ static void create_scanlines_texture(GfxDomain *domain)
 	
 	SDL_FreeSurface(temp);
 }
+#endif
 
 
 void gfx_domain_update(GfxDomain *domain, bool resize_window)
@@ -583,6 +587,10 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 #ifdef USESDL_GPU
 	GPU_SetWindowResolution(domain->screen_w * domain->scale, domain->screen_h * domain->scale);
 	GPU_SetVirtualResolution(domain->screen, domain->screen_w, domain->screen_h);
+	
+	domain->window_w = domain->screen_w * domain->scale;
+	domain->window_h = domain->screen_h * domain->scale;
+	
 #else
 	
 	if (resize_window) 
@@ -637,10 +645,11 @@ void gfx_domain_update(GfxDomain *domain, bool resize_window)
 	
 	SDL_SetWindowMinimumSize(domain->window, domain->window_min_w * domain->scale, domain->window_min_h * domain->scale);
 	SDL_GetWindowSize(domain->window, &domain->window_w, &domain->window_h);
-	
+#endif
+
 	debug("Screen size is %dx%d", domain->screen_w, domain->screen_h);
 	debug("Window size is %dx%d", domain->window_w, domain->window_h);
-#endif
+
 	gfx_domain_set_framerate(domain);
 }
 
@@ -803,8 +812,10 @@ void gfx_update_texture(GfxDomain *domain, GfxSurface *surface)
 		surface->texture = GPU_CreateImage(surface->surface->w, surface->surface->h, GPU_FORMAT_RGBA);
 
 	GPU_UpdateImage(surface->texture, surface->surface, NULL);
-	/*GPU_SetImageFilter(surface->texture, GPU_FILTER_NEAREST);
-	GPU_SetSnapMode(surface->texture, GPU_SNAP_POSITION_AND_DIMENSIONS);*/
+	GPU_SetImageFilter(surface->texture, GPU_FILTER_NEAREST);
+	GPU_SetSnapMode(surface->texture, GPU_SNAP_POSITION_AND_DIMENSIONS);
+	GPU_SetBlending(surface->texture, 1);
+	GPU_SetBlendMode(surface->texture, GPU_BLEND_NORMAL);
 #else
 	if (surface->texture)
 		SDL_DestroyTexture(surface->texture);
@@ -858,8 +869,14 @@ void gfx_clear(GfxDomain *domain, Uint32 color)
 void gfx_blit(GfxSurface *_src, SDL_Rect *_src_rect, GfxDomain *domain, SDL_Rect *_dest_rect)
 {
 #ifdef USESDL_GPU
-	GPU_Rect rect = GPU_MakeRect(_src_rect->x, _src_rect->y, _src_rect->w, _src_rect->h);
-	GPU_BlitScale(_src->texture, &rect, domain->screen, _dest_rect->x + _dest_rect->w / 2, _dest_rect->y + _dest_rect->h / 2, (float)_dest_rect->w / _src_rect->w, (float)_dest_rect->h / _src_rect->h);
+	GPU_Rect rect;
+	
+	if (_src_rect)
+		rect = GPU_MakeRect(_src_rect->x, _src_rect->y, _src_rect->w, _src_rect->h);
+	else
+		rect = GPU_MakeRect(0, 0, _src->surface->w, _src->surface->h);
+		
+	GPU_BlitScale(_src->texture, &rect, domain->screen, _dest_rect->x + (float)_dest_rect->w / 2, _dest_rect->y + (float)_dest_rect->h / 2, (float)_dest_rect->w / rect.w, (float)_dest_rect->h / rect.h);
 #else
 	SDL_RenderCopy(domain->renderer, _src->texture,  _src_rect, _dest_rect);
 #endif
