@@ -948,7 +948,7 @@ void gfx_domain_get_clip(GfxDomain *domain, SDL_Rect *rect)
 void gfx_surface_set_color(GfxSurface *surf, Uint32 color)
 {
 #ifdef USESDL_GPU
-	//GPU_SetTargetRGB(surf->texture, (color >> 16) & 255, (color >> 8) & 255, color & 255);
+	GPU_SetRGB(surf->texture, (color >> 16) & 255, (color >> 8) & 255, color & 255);
 #else
 	SDL_SetTextureColorMod(surf->texture, (color >> 16) & 255, (color >> 8) & 255, color & 255);
 #endif
