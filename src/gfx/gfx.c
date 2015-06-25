@@ -95,10 +95,10 @@ int * gfx_build_collision_mask(SDL_Surface *s)
 	
 GfxSurface* gfx_load_surface(GfxDomain *domain, const char* filename, const int flags)
 {
-	FILE *f = fopen(filename, "rb");
-	if (f)
+	SDL_RWops * rw = SDL_RWFromFile(filename, "rb");
+	
+	if (rw)
 	{
-		SDL_RWops * rw = SDL_RWFromFP(f, 1);
 		GfxSurface * s = gfx_load_surface_RW(domain, rw, flags);
 		return s;
 	}
