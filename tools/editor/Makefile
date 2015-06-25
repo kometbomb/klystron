@@ -37,7 +37,7 @@ CXXFLAGS = $(MACHINE) -ftree-vectorize
 
 ifdef COMSPEC
 	CXXFLAGS += -mthreads
-	INCLUDEFLAGS := -I ../Common -I src -I /MinGW/include/SDL2 -I /code/googlecode/klystron/src 
+	INCLUDEFLAGS := -I ../Common -I src -I /MinGW/include/SDL2 -I ../../src 
 else
 	INCLUDEFLAGS := `sdl-config --cflags` -U_FORTIFY_SOURCE -I ../../src 
 endif

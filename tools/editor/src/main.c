@@ -738,8 +738,8 @@ int main(int argc, char **argv)
 	domain->scale = 1;
 	gfx_domain_update(domain, true);
 	
-	gfx = gfx_load_surface(domain, "../klystrack/temp/bevel.bmp", GFX_KEYED);
-	font_load_file(domain, &font, "../klystrack/temp/8x8.fnt");
+	gfx = gfx_load_surface(domain, "bevel.bmp", GFX_KEYED);
+	font_load_file(domain, &font, "8x8.fnt");
 	
 	config_init(&cfg);
 	
@@ -842,7 +842,7 @@ int main(int argc, char **argv)
 						if (e.button.button == (SDL_BUTTON_LEFT))
 						{
 							const Uint8 * keys = SDL_GetKeyboardState(NULL);
-							if (keys[SDLK_LSHIFT]||keys[SDLK_RSHIFT])
+							if (keys[SDL_SCANCODE_LSHIFT]||keys[SDL_SCANCODE_RSHIFT])
 							{
 								drag_x = e.button.x / domain->scale;
 								drag_y = e.button.y / domain->scale;
@@ -860,9 +860,9 @@ int main(int argc, char **argv)
 					else
 					{
 						const Uint8 * keys = SDL_GetKeyboardState(NULL);
-						if (selected_event != -1 && (keys[SDLK_LCTRL]||keys[SDLK_RCTRL]))
+						if (selected_event != -1 && (keys[SDL_SCANCODE_LCTRL]||keys[SDL_SCANCODE_RCTRL]))
 						{
-							level.event[selected_event].param[(keys[SDLK_LSHIFT]||keys[SDLK_RSHIFT])?EV_TRGPARENT:EV_NEXT] = get_event(e.button.x / domain->scale, e.button.y / domain->scale);
+							level.event[selected_event].param[(keys[SDL_SCANCODE_LSHIFT]||keys[SDL_SCANCODE_RSHIFT])?EV_TRGPARENT:EV_NEXT] = get_event(e.button.x / domain->scale, e.button.y / domain->scale);
 						}
 						else
 						{
@@ -1004,6 +1004,8 @@ int main(int argc, char **argv)
 								
 								case SDLK_RALT:
 								case SDLK_LALT:
+									if (e.key.repeat)
+										break;
 									saved_layer = current_layer;
 									current_layer = MAGICK_LAYER;
 								break;
@@ -1177,7 +1179,7 @@ int main(int argc, char **argv)
 			int x,y;
 			SDL_GetMouseState(&x, &y);
 			
-			int show_all_layers = keys[SDLK_a];
+			int show_all_layers = keys[SDL_SCANCODE_A];
 			
 			gfx_rect(domain, NULL, bg_color);
 			draw(domain, x / domain->scale, y / domain->scale, show_all_layers);
