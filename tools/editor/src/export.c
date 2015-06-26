@@ -29,11 +29,53 @@ OTHER DEALINGS IN THE SOFTWARE.
 #include "gui/toolutil.h"
  
 #define export(ptr, f) { fwrite(ptr, 1, sizeof(*ptr) ,f); }
-#define export_opcode(opcode, repeat, f) { LevOpCode op = { opcode, repeat }; export(&op, f); }
 
 extern Font font;
 extern GfxDomain *domain;
 extern GfxSurface *gfx;
+
+void export_opcode(int opcode, int repeat, FILE *f)
+{
+	LevOpCode op = { opcode, repeat }; 
+	export(&op.opcode, f);
+	export(&op.repeat, f);
+}
+
+
+void export_layer(LevLayer *layer, FILE *f)
+{
+	export(&layer->flags, f);
+	export(&layer->w, f);
+	export(&layer->h, f);
+	export(&layer->prx_mlt_x, f);
+	export(&layer->prx_mlt_y, f);
+	export(&layer->off_x, f);
+	export(&layer->off_y, f);
+}
+
+
+void export_tile(LevTile *tile, FILE *f)
+{
+	export(&tile->type, f);
+}
+
+
+void export_rep(LevRepTile *tile, FILE *f)
+{
+	export(&tile->repeat, f);
+	export(&tile->type, f);
+}
+
+
+void export_event(LevEvent *event, FILE *f)
+{
+	export(&event->x, f);
+	export(&event->y, f);
+	export(&event->w, f); 
+	export(&event->h, f);
+	export(&event->param, f);
+}
+
 
 void level_export(Level *level)
 {
@@ -51,7 +93,7 @@ void level_export(Level *level)
 			header.prx_mlt_y = level->layer[i].prx_mlt_y;
 			header.off_x = level->layer[i].off_x;
 			header.off_y = level->layer[i].off_y;
-			export(&header, f);
+			export_layer(&header, f);
 			//export_opcode(LOP_TILE, level->layer[i].w * level->layer[i].h, f);
 			
 			int * lut = calloc(level->layer[i].h*level->layer[i].w+1, sizeof(int));
@@ -109,7 +151,7 @@ void level_export(Level *level)
 						case LOP_TILE:
 						{
 							LevTile tile = { dptr->tile };
-							export(&tile, f);
+							export_tile(&tile, f);
 							++dptr;
 							--c;
 						}
@@ -123,7 +165,7 @@ void level_export(Level *level)
 							int count = 0;
 							while (dptr->tile == tile.type && c > 0) { ++dptr; --c; ++count; };
 							tile.repeat = count;
-							export(&tile, f);
+							export_rep(&tile, f);
 						}
 						break;
 					}
@@ -139,7 +181,7 @@ void level_export(Level *level)
 		export_opcode(LOP_EVENT, level->n_events, f);
 		for (int i = 0 ;  i < level->n_events ; ++i)
 		{
-			export(&level->event[i], f);
+			export_event(&level->event[i], f);
 		}
 	}
 	export_opcode(LOP_END, 0, f);
