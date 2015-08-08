@@ -99,7 +99,7 @@ void gfx_blit_3x_resample(SDL_Surface *dest, SDL_Surface *src);
 void gfx_blit_4x(SDL_Surface *dest, SDL_Surface *src);
 void gfx_raster(SDL_Surface *dest, const SDL_Rect *rect, const Uint32 *colors, int len);
 void gfx_generate_raster(Uint32 *dest, const Uint32 from, const Uint32 to, int len);
-TileDescriptor *gfx_build_tiledescriptor(GfxSurface *tiles, const int cellwidth, const int cellheight) ;
+TileDescriptor *gfx_build_tiledescriptor(GfxSurface *tiles, const int cellwidth, const int cellheight, int *out_n_tiles);
 void gfx_line(GfxDomain *dest, int x0, int y0, int x1, int y1, Uint32 color);
 void gfx_circle_inverted(SDL_Surface *dest, const int xc, const int yc, const int r, const Uint32 color);
 void gfx_circle(SDL_Surface *dest, const int xc, const int yc, const int r, const Uint32 color);

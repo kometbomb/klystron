@@ -316,9 +316,12 @@ static int has_pixels(TileDescriptor *desc)
 }
 
 
-TileDescriptor *gfx_build_tiledescriptor(GfxSurface *tiles, const int cellwidth, const int cellheight) 
+TileDescriptor *gfx_build_tiledescriptor(GfxSurface *tiles, const int cellwidth, const int cellheight, int *out_n_tiles) 
 {
 	TileDescriptor *descriptor = calloc(sizeof(*descriptor), (tiles->surface->w/cellwidth)*(tiles->surface->h/cellheight));
+	
+	int n_tiles = 0;
+	
 	for (int i = 0 ; i < (tiles->surface->w/cellwidth)*(tiles->surface->h/cellheight) ; ++i) 
 	{
 		descriptor[i].rect.x = i*cellwidth;
@@ -341,7 +344,12 @@ TileDescriptor *gfx_build_tiledescriptor(GfxSurface *tiles, const int cellwidth,
 		else if (pixels > 0)
 			descriptor[i].flags = TILE_COL_PIXEL;
 		else descriptor[i].flags = TILE_COL_DISABLE;
+		
+		n_tiles++;
 	}
+	
+	if (out_n_tiles)
+		*out_n_tiles = n_tiles;
 	
 	return descriptor;
 }
