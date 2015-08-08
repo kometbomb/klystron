@@ -101,7 +101,7 @@ static const TileDescriptor * findchar_slow(const Font *font, char c)
 
 void font_create(Font *font, GfxSurface *tiles, const int w, const int h, const int char_spacing, const int space_width, char *charmap)
 {
-	font->tiledescriptor = gfx_build_tiledescriptor(tiles,w,h);
+	font->tiledescriptor = gfx_build_tiledescriptor(tiles, w, h, NULL);
 	font->charmap = strdup(charmap);
 	font->w = w;
 	font->h = h;
