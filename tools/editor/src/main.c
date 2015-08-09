@@ -1,28 +1,3 @@
-/*
-Copyright (c) 2009-2010 Tero Lindeman (kometbomb)
-
-Permission is hereby granted, free of charge, to any person
-obtaining a copy of this software and associated documentation
-files (the "Software"), to deal in the Software without
-restriction, including without limitation the rights to use,
-copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the
-Software is furnished to do so, subject to the following
-conditions:
-
-The above copyright notice and this permission notice shall be
-included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-*/
-
 #include "editor.h"
 #include "export.h"
 #include "gfx/gfx.h"
@@ -714,6 +689,35 @@ void delete_event()
 }
 
 
+void shift_layer(int dx, int dy)
+{
+	int w = level.layer[current_layer].w;
+	int h = level.layer[current_layer].h;
+	
+	BgCell *temp = malloc(sizeof(BgCell)*w*h);
+	
+	for (int y = 0 ; y < h ; ++y)
+		for (int x = 0 ; x < w ; ++x)
+		{
+			memcpy(&temp[(x + dx + w) % w + ((y + dy + h) % h) * w], &level.layer[current_layer].data[x+y*w], sizeof(BgCell));
+		}
+		
+	memcpy(level.layer[current_layer].data, temp, w * h * sizeof(BgCell));
+	
+	free(temp);
+}
+
+
+void shift_events(int dx,int dy)
+{
+	for (int i = 0 ; i < level.n_events ; ++i)
+	{
+		level.event[i].x += dx;
+		level.event[i].y += dy;
+	}
+}
+
+
 void resize_event(int dx,int dy)
 {
 	if (selected_event == -1) return;
@@ -766,7 +770,7 @@ int main(int argc, char **argv)
 		return 2;
 	}
 	
-	descriptor = gfx_build_tiledescriptor(tiles, CELLSIZE, CELLSIZE);
+	descriptor = gfx_build_tiledescriptor(tiles, CELLSIZE, CELLSIZE, NULL);
 	
 	for (int i = 0 ; i < MAX_LAYERS+2 ; ++i)
 	{
@@ -876,7 +880,70 @@ int main(int argc, char **argv)
 				
 				case SDL_KEYDOWN:
 				
-					if (e.key.keysym.mod & KMOD_CTRL)
+					if ((e.key.keysym.mod & KMOD_SHIFT) && (e.key.keysym.mod & KMOD_CTRL))
+					{
+						if (edit_mode == EM_EVENTS)
+						{
+							switch (e.key.keysym.sym)
+							{
+								default:break;
+								case SDLK_UP:
+								
+								shift_events(0,-1);
+								
+								break;
+								
+								case SDLK_DOWN:
+								
+								shift_events(0,1);
+								
+								break;
+								
+								case SDLK_LEFT:
+								
+								shift_events(-1,0);
+								
+								break;
+								
+								case SDLK_RIGHT:
+								
+								shift_events(1,0);
+								
+								break;
+							}
+						} 
+						else
+						{
+							switch (e.key.keysym.sym)
+							{
+								default:break;
+								case SDLK_UP:
+								
+								shift_layer(0,-1);
+								
+								break;
+								
+								case SDLK_DOWN:
+								
+								shift_layer(0,1);
+								
+								break;
+								
+								case SDLK_LEFT:
+								
+								shift_layer(-1,0);
+								
+								break;
+								
+								case SDLK_RIGHT:
+								
+								shift_layer(1,0);
+								
+								break;
+							}
+						}
+					}
+					else if (e.key.keysym.mod & KMOD_CTRL)
 					{
 						if (e.key.keysym.sym == SDLK_F9)
 							level_export(&level);
@@ -953,7 +1020,7 @@ int main(int argc, char **argv)
 							}
 						}
 					}
-					else
+					else 
 					{
 						if (edit_mode == EM_LEVEL)
 						{
