@@ -90,7 +90,7 @@ static Sint8 sine_table[VIB_TAB_SIZE];
 
 #endif
 
-static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note, int panning);
+static int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint16 note, int panning);
 
 #ifndef USESDL_RWOPS
 
@@ -442,7 +442,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					{
 						Uint8 prev_vol_tr = track_status->volume;
 						Uint8 prev_vol_cyd = cydchn->adsr.volume;
-						mus_trigger_instrument_internal(mus, chan, chn->instrument, chn->last_note >> 8, -1);
+						mus_trigger_instrument_internal(mus, chan, chn->instrument, chn->last_note, -1);
 						track_status->volume = prev_vol_tr;
 						cydchn->adsr.volume = prev_vol_cyd;
 					}
@@ -1011,7 +1011,7 @@ static void do_pwm(MusEngine* mus, int chan)
 
 
 //***** USE THIS INSIDE MUS_ADVANCE_TICK TO AVOID MUTEX DEADLOCK
-int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note, int panning)
+int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins, Uint16 note, int panning)
 {
 	if (chan == -1)
 	{
@@ -1051,15 +1051,15 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 	
 	if (ins->flags & MUS_INST_LOCK_NOTE)
 	{
-		note = (Uint16)ins->base_note;
+		note = ((Uint16)ins->base_note) << 8;
 	}
 	else
 	{
-		note += (Uint16)((int)ins->base_note-MIDDLE_C);
+		note += (Uint16)((int)ins->base_note-MIDDLE_C) << 8;
 	}
 	
-	mus_set_note(mus, chan, ((Uint16)note << 8) + ins->finetune, 1, ins->flags & MUS_INST_QUARTER_FREQ ? 4 : 1);
-	chn->last_note = chn->target_note = (((Uint16)note << 8) + ins->finetune);
+	mus_set_note(mus, chan, ((Uint16)note) + ins->finetune, 1, ins->flags & MUS_INST_QUARTER_FREQ ? 4 : 1);
+	chn->last_note = chn->target_note = (((Uint16)note) + ins->finetune);
 	chn->current_tick = 0;
 	
 	track->vibrato_position = 0;
@@ -1171,7 +1171,7 @@ int mus_trigger_instrument_internal(MusEngine* mus, int chan, MusInstrument *ins
 }
 
 
-int mus_trigger_instrument(MusEngine* mus, int chan, MusInstrument *ins, Uint8 note, int panning)
+int mus_trigger_instrument(MusEngine* mus, int chan, MusInstrument *ins, Uint16 note, int panning)
 {
 	cyd_lock(mus->cyd, 1);
 
@@ -1427,7 +1427,7 @@ int mus_advance_tick(void* udata)
 									else
 									{
 										Uint16 oldnote = muschn->note;
-										mus_trigger_instrument_internal(mus, i, pinst, note, -1);
+										mus_trigger_instrument_internal(mus, i, pinst, note << 8, -1);
 										muschn->note = oldnote;
 									}
 									track_status->slide_speed = speed;
@@ -1441,7 +1441,7 @@ int mus_advance_tick(void* udata)
 								{
 									Uint8 prev_vol_track = track_status->volume;
 									Uint8 prev_vol_cyd = cydchn->adsr.volume;
-									mus_trigger_instrument_internal(mus, i, pinst, note, -1);
+									mus_trigger_instrument_internal(mus, i, pinst, note << 8, -1);
 									muschn->target_note = (((Uint16)note + pinst->base_note - MIDDLE_C) << 8) + pinst->finetune;
 									
 									if (inst == MUS_NOTE_NO_INSTRUMENT)
