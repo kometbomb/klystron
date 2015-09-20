@@ -116,7 +116,7 @@ void cydfx_set(CydFx *fx, const CydFxSerialized *ser)
 		if (ser->rvb.tap[i].flags & 1)
 			cydrvb_set_tap(&fx->rvb, i, ser->rvb.tap[i].delay, ser->rvb.tap[i].gain, ser->rvb.tap[i].panning);
 		else
-			cydrvb_set_tap(&fx->rvb, i, 0, 0, 0);
+			cydrvb_set_tap(&fx->rvb, i, 0, CYDRVB_LOW_LIMIT, 0);
 	}
 	
 	cydchr_set(&fx->chr, ser->chr.rate, ser->chr.min_delay, ser->chr.max_delay, ser->chr.sep);
