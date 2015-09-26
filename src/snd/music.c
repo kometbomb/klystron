@@ -1175,30 +1175,7 @@ int mus_trigger_instrument(MusEngine* mus, int chan, MusInstrument *ins, Uint16 
 {
 	cyd_lock(mus->cyd, 1);
 
-	if (mus->cyd->callback_counter > mus->cyd->callback_period/2)
-	{
-		if (chan == -1)
-		{
-			for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
-			{
-				if (!(mus->cyd->channel[i].flags & CYD_CHN_ENABLE_GATE) && !(mus->song_track[i].delayed.instrument))
-					chan = i;
-			}
-			
-			if (chan == -1)
-				chan = rand() %  mus->cyd->n_channels;
-		}
-	
-		mus->song_track[chan].delayed.note = note;
-		mus->song_track[chan].delayed.instrument = ins;
-		mus->song_track[chan].delayed.channel = chan;
-		mus->song_track[chan].delayed.panning = panning;
-	}
-	else
-	{
-		chan = mus_trigger_instrument_internal(mus, chan, ins, note, panning);
-		mus->song_track[chan].delayed.instrument = NULL;
-	}
+	chan = mus_trigger_instrument_internal(mus, chan, ins, note, panning);
 	
 	cyd_lock(mus->cyd, 0);
 	
@@ -1210,20 +1187,12 @@ static void mus_advance_channel(MusEngine* mus, int chan)
 {
 	MusChannel *chn = &mus->channel[chan];
 	MusTrackStatus *track_status = &mus->song_track[chan];
-	
-	if (track_status->delayed.instrument != NULL)
-	{
-		mus_trigger_instrument_internal(mus, track_status->delayed.channel, track_status->delayed.instrument, track_status->delayed.note, track_status->delayed.panning);
-		track_status->delayed.instrument = NULL;
-	}
-	
-
+		
 	if (!(mus->cyd->channel[chan].flags & CYD_CHN_ENABLE_GATE))
 	{
 		chn->flags &= ~MUS_CHN_PLAYING;
 		return;
 	}
-
 	
 	MusInstrument *ins = chn->instrument;
 	
@@ -1529,7 +1498,7 @@ int mus_advance_tick(void* udata)
 		
 		for (int i = 0 ; i < mus->cyd->n_channels ; ++i)
 		{
-			if (mus->channel[i].flags & MUS_CHN_PLAYING || mus->song_track[i].delayed.instrument) 
+			if (mus->channel[i].flags & MUS_CHN_PLAYING) 
 			{
 				mus_advance_channel(mus, i);
 			}
@@ -1586,7 +1555,6 @@ void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position)
 		mus->song_track[i].pattern_step = 0;
 		mus->song_track[i].sequence_position = 0;
 		mus->song_track[i].last_ctrl = 0;
-		mus->song_track[i].delayed.instrument = NULL;
 		mus->song_track[i].note_offset = 0;
 		mus->song_track[i].extarp1 = mus->song_track[i].extarp2 = 0;
 		
@@ -2473,8 +2441,6 @@ void mus_release(MusEngine *mus, int chan)
 {	
 	cyd_lock(mus->cyd, 1);
 	cyd_enable_gate(mus->cyd, &mus->cyd->channel[chan], 0);
-	
-	mus->song_track[chan].delayed.instrument = NULL;
 	
 	cyd_lock(mus->cyd, 0);
 }

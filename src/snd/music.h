@@ -159,15 +159,6 @@ typedef struct
 
 typedef struct
 {
-	int channel;
-	MusInstrument *instrument;
-	Uint16 note;
-	int panning;
-} MusDelayedTrigger;
-
-typedef struct
-{
-	MusDelayedTrigger delayed;
 	MusPattern *pattern;
 	Uint8 last_ctrl;
 	Uint16 pw, pattern_step, sequence_position, slide_speed;
