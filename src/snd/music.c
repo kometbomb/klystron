@@ -2596,3 +2596,14 @@ Uint32 mus_get_playtime_at(MusSong *song, int position)
 	
 	return ticks;
 }
+
+
+void mus_set_channel_volume(MusEngine* mus, int chan, int volume)
+{
+	MusChannel *chn = &mus->channel[chan];
+	CydChannel *cydchn = &mus->cyd->channel[chan];
+	MusTrackStatus *track_status = &mus->song_track[chan];
+	
+	chn->volume = my_min(volume, MAX_VOLUME);
+	update_volumes(mus, track_status, chn, cydchn, track_status->volume);
+}	

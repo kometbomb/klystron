@@ -356,6 +356,7 @@ typedef struct RWops
 
 int mus_advance_tick(void* udata);
 int mus_trigger_instrument(MusEngine* mus, int chan, MusInstrument *ins, Uint16 note, int panning);
+void mus_set_channel_volume(MusEngine* mus, int chan, int volume);
 void mus_release(MusEngine* mus, int chan);
 void mus_init_engine(MusEngine *mus, CydEngine *cyd);
 void mus_set_song(MusEngine *mus, MusSong *song, Uint16 position);
