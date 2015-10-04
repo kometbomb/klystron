@@ -985,7 +985,11 @@ static void fill_buffer(CydEngine *cyd)
 {
 	//waveOutUnprepareHeader(cyd->hWaveOut, &cyd->waveout_hdr[cyd->waveout_hdr_idx],sizeof(WAVEHDR));
 
+#ifdef NOSDL_MIXER
+	cyd_output_buffer_stereo(cyd, cyd->waveout_hdr[cyd->waveout_hdr_idx].lpData, cyd->waveout_hdr[cyd->waveout_hdr_idx].dwBufferLength);
+#else
 	cyd_output_buffer_stereo(0, cyd->waveout_hdr[cyd->waveout_hdr_idx].lpData, cyd->waveout_hdr[cyd->waveout_hdr_idx].dwBufferLength, cyd);
+#endif
 	
 	//waveOutPrepareHeader(cyd->hWaveOut, &cyd->waveout_hdr[cyd->waveout_hdr_idx],sizeof(WAVEHDR));
 	
