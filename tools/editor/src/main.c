@@ -597,6 +597,19 @@ int get_event(int x, int y)
 		
 	x /= CELLSIZE;
 	y /= CELLSIZE;
+	
+	// check for clicks on border
+	
+	const int border = 1;
+	
+	for (int i = 0 ; i < level.n_events ; ++i)
+	{
+		if (((int)level.event[i].x <= x && (int)level.event[i].y <= y && (int)level.event[i].x+(int)level.event[i].w > x && (int)level.event[i].y+(int)level.event[i].h > y ) &&
+			!((int)level.event[i].x + border <= x && (int)level.event[i].y + border <= y && (int)level.event[i].x+(int)level.event[i].w - border > x && (int)level.event[i].y+(int)level.event[i].h - border > y ))
+			return i;
+	}
+	
+	// check for clicks inside the full area
 		
 	for (int i = 0 ; i < level.n_events ; ++i)
 	{
