@@ -731,6 +731,29 @@ void shift_events(int dx,int dy)
 }
 
 
+void double_layer()
+{
+	int w = level.layer[current_layer].w;
+	int h = level.layer[current_layer].h;
+	
+	BgCell *temp = malloc(sizeof(BgCell) * (w * 2) * (h * 2));
+	
+	for (int y = 0 ; y < h * 2 ; ++y)
+		for (int x = 0 ; x < w * 2 ; ++x)
+		{
+			memcpy(&temp[x + y * (w * 2)], &level.layer[current_layer].data[(x / 2) + (y / 2) * w], sizeof(BgCell));
+		}
+		
+	BgCell *temp2 = level.layer[current_layer].data;
+	level.layer[current_layer].data = temp;
+	
+	level.layer[current_layer].w *= 2;
+	level.layer[current_layer].h *= 2;
+	
+	free(temp2);
+}
+
+
 void resize_event(int dx,int dy)
 {
 	if (selected_event == -1) return;
@@ -1039,6 +1062,10 @@ int main(int argc, char **argv)
 						{
 							switch (e.key.keysym.sym)
 							{
+								case SDLK_h:
+									double_layer();
+								break;
+								
 								case SDLK_PAGEUP:
 								{
 									if (current_layer > 0)
