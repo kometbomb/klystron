@@ -263,18 +263,10 @@ void draw(GfxDomain *screen, int mouse_x, int mouse_y, int draw_all)
 {
 	if (draw_all)
 	{
-		int mx = 1;
-		int my = 1;
-		for (int i = 0 ; i < MAX_LAYERS ; ++i)
-		{
-			mx = my_max(level.layer[i].w * level.layer[i].prx_mlt_x, mx);
-			my = my_max(level.layer[i].h * level.layer[i].prx_mlt_y, my);
-		}
-	
 		for (int i = 0 ; i < MAX_LAYERS ; ++i)
 		{
 			if (level.layer[i].flags & BG_PARALLAX)
-				bg_draw(screen, NULL, &level.layer[i], scroll_x * level.layer[i].prx_mlt_x * level.layer[i].w / mx, scroll_y * level.layer[i].prx_mlt_y * level.layer[i].h / my);
+				bg_draw(screen, NULL, &level.layer[i], scroll_x / my_max(1, level.layer[i].prx_mlt_x), scroll_y / my_max(1, level.layer[i].prx_mlt_y));
 			else
 				bg_draw(screen, NULL, &level.layer[i], scroll_x, scroll_y);
 		}
