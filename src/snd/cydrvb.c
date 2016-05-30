@@ -135,8 +135,13 @@ void cydrvb_set_tap(CydReverb *rvb, int idx, int delay_ms, int gain_db, int pann
 	
 	if (gain_db <= CYDRVB_LOW_LIMIT)
 	{
+#ifdef STEREOOUTPUT
+
 		rvb->tap[idx].gain_l = 0;
 		rvb->tap[idx].gain_r = 0;
+#else
+                rvb->tap[idx].gain = 0;
+#endif
 	}
 	else
 	{
