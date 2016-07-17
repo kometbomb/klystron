@@ -746,6 +746,32 @@ void double_layer()
 }
 
 
+void insert_rowcol(int sx, int sy, int dx, int dy)
+{
+	debug("Inserting row/col at %d,%d", sx, sy);
+	resize_layer(level.layer[current_layer].w + dx, level.layer[current_layer].h + dy);
+	
+	for (int x = level.layer[current_layer].w - 1 ; x >= sx + dx ; --x)
+	{
+		for (int y = 0 ; y < level.layer[current_layer].h ; ++y)
+		{
+			level.layer[current_layer].data[x + y * level.layer[current_layer].w].tile = 
+				level.layer[current_layer].data[x + y * level.layer[current_layer].w - dx].tile;
+		}
+	}
+	
+	for (int x = 0 ; x < level.layer[current_layer].w ; ++x)
+	{
+		for (int y = level.layer[current_layer].h - 1 ; y >= sy + dy ; --y)
+		{
+			level.layer[current_layer].data[x + y * level.layer[current_layer].w].tile = 
+				level.layer[current_layer].data[x + (y - dy) * level.layer[current_layer].w].tile;
+		}
+	}
+	
+}
+
+
 void resize_event(int dx,int dy)
 {
 	if (selected_event == -1) return;
@@ -910,7 +936,13 @@ int main(int argc, char **argv)
 				
 					if ((e.key.keysym.mod & KMOD_SHIFT) && (e.key.keysym.mod & KMOD_CTRL))
 					{
-						if (edit_mode == EM_EVENTS)
+						if (e.key.keysym.sym == SDLK_i)
+						{
+							int x,y;
+							SDL_GetMouseState(&x, &y);
+							insert_rowcol(x / domain->scale / CELLSIZE, y / domain->scale / CELLSIZE, 1, 0);
+						}
+						else if (edit_mode == EM_EVENTS)
 						{
 							switch (e.key.keysym.sym)
 							{
@@ -979,6 +1011,12 @@ int main(int argc, char **argv)
 							save_dialog();
 						else if (e.key.keysym.sym == SDLK_o)
 							load_dialog();
+						else if (e.key.keysym.sym == SDLK_i)
+						{
+							int x,y;
+							SDL_GetMouseState(&x, &y);
+							insert_rowcol(x / domain->scale / CELLSIZE, y / domain->scale / CELLSIZE, 0, 1);
+						}
 						else if (edit_mode == EM_EVENTS)
 						{
 							switch (e.key.keysym.sym)
