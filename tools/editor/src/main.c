@@ -940,7 +940,7 @@ int main(int argc, char **argv)
 						{
 							int x,y;
 							SDL_GetMouseState(&x, &y);
-							insert_rowcol(x / domain->scale / CELLSIZE, y / domain->scale / CELLSIZE, 1, 0);
+							insert_rowcol((x / domain->scale + scroll_x) / CELLSIZE, (y / domain->scale + scroll_y) / CELLSIZE, 1, 0);
 						}
 						else if (edit_mode == EM_EVENTS)
 						{
@@ -1015,7 +1015,7 @@ int main(int argc, char **argv)
 						{
 							int x,y;
 							SDL_GetMouseState(&x, &y);
-							insert_rowcol(x / domain->scale / CELLSIZE, y / domain->scale / CELLSIZE, 0, 1);
+							insert_rowcol((x / domain->scale + scroll_x) / CELLSIZE, (y / domain->scale + scroll_y) / CELLSIZE, 0, 1);
 						}
 						else if (edit_mode == EM_EVENTS)
 						{
