@@ -14,6 +14,7 @@ typedef struct
 	Uint32 period;
 	Uint32 wave_period;
 	Uint32 accumulator;
+	const CydWavetableEntry *wave_entry;
 	CydWaveState wave;
 	Uint32 fb1, fb2, env_output;
 	Uint32 current_modulation;

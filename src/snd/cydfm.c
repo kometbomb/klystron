@@ -20,10 +20,10 @@ static Uint32 get_modulator(const CydEngine *cyd, const CydFm *fm)
 {
 	const static Uint32 fbtab[] = { 0, 64, 32, 16, 8, 4, 2, 1 };
 
-	if ((fm->flags & CYD_FM_ENABLE_WAVE) && fm->wave.entry)
+	if ((fm->flags & CYD_FM_ENABLE_WAVE) && fm->wave_entry)
 	{
 		Uint32 acc = fm->wave.acc;
-		CydWaveAcc length = (CydWaveAcc)(fm->wave.entry->loop_end - fm->wave.entry->loop_begin) * WAVETABLE_RESOLUTION;
+		CydWaveAcc length = (CydWaveAcc)(fm->wave_entry->loop_end - fm->wave_entry->loop_begin) * WAVETABLE_RESOLUTION;
 		
 		if (length == 0) return 0;
 		
@@ -32,7 +32,7 @@ static Uint32 get_modulator(const CydEngine *cyd, const CydFm *fm)
 			acc = acc + ((Uint64)(fm->fb1 + fm->fb2) / 2 * (length * 4 / fbtab[fm->feedback]) / MODULATOR_MAX);
 		}
 		
-		return (Sint64)(cyd_wave_get_sample(&fm->wave, acc % length)) * fm->env_output / 32768 + 65536;
+		return (Sint64)(cyd_wave_get_sample(&fm->wave, fm->wave_entry, acc % length)) * fm->env_output / 32768 + 65536;
 	}
 	else
 	{
@@ -55,7 +55,7 @@ void cydfm_cycle(const CydEngine *cyd, CydFm *fm)
 	
 	fm->env_output = cyd_env_output(cyd, 0, &fm->adsr, MODULATOR_MAX);
 	
-	cyd_wave_cycle(&fm->wave);
+	cyd_wave_cycle(&fm->wave, fm->wave_entry);
 	
 	fm->accumulator = (fm->accumulator + fm->period) % ACC_LENGTH;
 	
@@ -74,8 +74,8 @@ void cydfm_set_frequency(const CydEngine *cyd, CydFm *fm, Uint32 base_frequency)
 
 	fm->period = ((Uint64)(ACC_LENGTH)/16 * (Uint64)base_frequency / (Uint64)cyd->sample_rate) * (Uint64)harmonic[fm->harmonic & 15] / (Uint64)harmonic[fm->harmonic >> 4];
 	
-	if (fm->wave.entry)
-		fm->wave.frequency = ((Uint64)(WAVETABLE_RESOLUTION) * (Uint64)fm->wave.entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)base_frequency / (Uint64)get_freq(fm->wave.entry->base_note)) * (Uint64)harmonic[fm->harmonic & 15] / (Uint64)harmonic[fm->harmonic >> 4];
+	if (fm->wave_entry)
+		fm->wave.frequency = ((Uint64)(WAVETABLE_RESOLUTION) * (Uint64)fm->wave_entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)base_frequency / (Uint64)get_freq(fm->wave_entry->base_note)) * (Uint64)harmonic[fm->harmonic & 15] / (Uint64)harmonic[fm->harmonic >> 4];
 }
 
 
@@ -101,7 +101,7 @@ CydWaveAcc cydfm_modulate_wave(const CydEngine *cyd, const CydFm *fm, const CydW
 
 void cydfm_set_wave_entry(CydFm *fm, const CydWavetableEntry * entry)
 {
-	fm->wave.entry = entry;
+	fm->wave_entry = entry;
 	fm->wave.frequency = 0;
 	fm->wave.direction = 0;
 }

@@ -208,17 +208,91 @@ static void mus_set_wavetable_frequency(MusEngine *mus, int chan, Uint16 note)
 #ifndef CYD_DISABLE_WAVETABLE
 	MusChannel *chn = &mus->channel[chan];
 	CydChannel *cydchn = &mus->cyd->channel[chan];
+	MusTrackStatus *track_status = &mus->song_track[chan];
 	
-	if (chn->instrument && (chn->instrument->cydflags & CYD_CHN_ENABLE_WAVE) && (cydchn->wave.entry))
+	if (chn->instrument && (chn->instrument->cydflags & CYD_CHN_ENABLE_WAVE) && (cydchn->wave_entry))
 	{
+		for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
+		{
+			Uint16 final = note;
+			
+			if (chn->instrument->flags & MUS_INST_MULTIOSC)
+			{
+				switch (s)
+				{
+					default:
+					case 0:
+						break;
+					
+					case 1: 
+						if (track_status->extarp1 != 0)
+							final = note + ((Uint16)track_status->extarp1 << 8);
+						else
+							final = 0;
+						break;
+						
+					case 2: 
+						if (track_status->extarp2 != 0)
+							final = note + ((Uint16)track_status->extarp2 << 8);
+						else
+							final = 0;
+						break;
+				}
+			}
+		
 #ifndef CYD_DISABLE_INACCURACY
-		Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave.entry->base_note : note) & mus->pitch_mask;
+			Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : (final)) & mus->pitch_mask;
 #else
-		Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave.entry->base_note : note);
+			Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : (final));
 #endif
-		cyd_set_wavetable_frequency(mus->cyd, cydchn, wave_frequency);
+			cyd_set_wavetable_frequency(mus->cyd, cydchn, s, wave_frequency);
+		}
 	}
 #endif
+}
+
+
+static void mus_set_frequency(MusEngine *mus, int chan, Uint16 note, int divider)
+{
+	MusChannel *chn = &mus->channel[chan];
+	MusTrackStatus *track_status = &mus->song_track[chan];
+	
+	for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
+	{
+		Uint16 final = note;
+			
+		if (chn->instrument && (chn->instrument->flags & MUS_INST_MULTIOSC))
+		{
+			switch (s)
+			{
+				default:
+				case 0:
+					break;
+				
+				case 1: 
+					if (track_status->extarp1 != 0)
+						final = note + ((Uint16)track_status->extarp1 << 8);
+					else
+						final = 0;
+					break;
+					
+				case 2: 
+					if (track_status->extarp2 != 0)
+						final = note + ((Uint16)track_status->extarp2 << 8);
+					else
+						final = 0;
+					break;
+			}
+		}
+		
+#ifndef CYD_DISABLE_INACCURACY
+		Uint16 frequency = get_freq(final) & mus->pitch_mask;
+#else
+		Uint16 frequency = get_freq(final);
+#endif
+		
+		cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], s, frequency / divider);
+	}
 }
 
 
@@ -228,13 +302,7 @@ static void mus_set_note(MusEngine *mus, int chan, Uint16 note, int update_note,
 	
 	if (update_note) chn->note = note;
 	
-#ifndef CYD_DISABLE_INACCURACY
-	Uint16 frequency = get_freq(note) & mus->pitch_mask;
-#else
-	Uint16 frequency = get_freq(note);
-#endif
-		
-	cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], frequency / divider);
+	mus_set_frequency(mus, chan, note, divider);
 	
 	mus_set_wavetable_frequency(mus, chan, note);
 	
@@ -757,7 +825,7 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 				{
 					if ((inst & 255) < CYD_WAVE_MAX_ENTRIES)
 					{
-						cydchn->wave.entry = &mus->cyd->wavetable_entries[inst & 255];
+						cydchn->wave_entry = &mus->cyd->wavetable_entries[inst & 255];
 					}
 				}
 				break;

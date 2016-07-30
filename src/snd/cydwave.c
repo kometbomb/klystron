@@ -92,17 +92,17 @@ static Sint32 cyd_wave_get_sample_linear(const CydWavetableEntry *entry, CydWave
 #endif // CYD_DISABLE_WAVETABLE
 
 
-Sint32 cyd_wave_get_sample(const CydWaveState *state, CydWaveAcc acc)
+Sint32 cyd_wave_get_sample(const CydWaveState *state, const CydWavetableEntry *wave_entry, CydWaveAcc acc)
 {
 #ifndef CYD_DISABLE_WAVETABLE
 
-	if (state->entry->flags & CYD_WAVE_NO_INTERPOLATION)
+	if (wave_entry->flags & CYD_WAVE_NO_INTERPOLATION)
 	{
-		return cyd_wave_get_sample_no_interpolation(state->entry, acc, state->direction);
+		return cyd_wave_get_sample_no_interpolation(wave_entry, acc, state->direction);
 	}
 	else
 	{
-		return cyd_wave_get_sample_linear(state->entry, acc, state->direction);
+		return cyd_wave_get_sample_linear(wave_entry, acc, state->direction);
 	}
 	
 #else
@@ -111,37 +111,37 @@ Sint32 cyd_wave_get_sample(const CydWaveState *state, CydWaveAcc acc)
 }
 
 
-void cyd_wave_cycle(CydWaveState *wave)
+void cyd_wave_cycle(CydWaveState *wave, const CydWavetableEntry *wave_entry)
 {
 #ifndef CYD_DISABLE_WAVETABLE
 
-	if (wave->entry)
+	if (wave_entry)
 	{
 		if (wave->direction == 0)
 		{
 			wave->acc += wave->frequency;
 			
-			if ((wave->entry->flags & CYD_WAVE_LOOP) && wave->entry->loop_end != wave->entry->loop_begin)
+			if ((wave_entry->flags & CYD_WAVE_LOOP) && wave_entry->loop_end != wave_entry->loop_begin)
 			{
-				if (wave->acc >= (Uint64)wave->entry->loop_end * WAVETABLE_RESOLUTION)
+				if (wave->acc >= (Uint64)wave_entry->loop_end * WAVETABLE_RESOLUTION)
 				{
-					if (wave->entry->flags & CYD_WAVE_PINGPONG) 
+					if (wave_entry->flags & CYD_WAVE_PINGPONG) 
 					{
-						wave->acc = (Uint64)wave->entry->loop_end * WAVETABLE_RESOLUTION - (wave->acc - (Uint64)wave->entry->loop_end * WAVETABLE_RESOLUTION);
+						wave->acc = (Uint64)wave_entry->loop_end * WAVETABLE_RESOLUTION - (wave->acc - (Uint64)wave_entry->loop_end * WAVETABLE_RESOLUTION);
 						wave->direction = 1;
 					}
 					else
 					{
-						wave->acc = wave->acc - (Uint64)wave->entry->loop_end * WAVETABLE_RESOLUTION + (Uint64)wave->entry->loop_begin * WAVETABLE_RESOLUTION;
+						wave->acc = wave->acc - (Uint64)wave_entry->loop_end * WAVETABLE_RESOLUTION + (Uint64)wave_entry->loop_begin * WAVETABLE_RESOLUTION;
 					}
 				}
 			}
 			else
 			{
-				if (wave->acc >= (Uint64)wave->entry->samples * WAVETABLE_RESOLUTION)
+				if (wave->acc >= (Uint64)wave_entry->samples * WAVETABLE_RESOLUTION)
 				{
 					// stop playback
-					wave->entry = NULL;
+					wave_entry = NULL;
 				}
 			}
 		}
@@ -149,18 +149,18 @@ void cyd_wave_cycle(CydWaveState *wave)
 		{
 			wave->acc -= wave->frequency;
 			
-			if ((wave->entry->flags & CYD_WAVE_LOOP) && wave->entry->loop_end != wave->entry->loop_begin)
+			if ((wave_entry->flags & CYD_WAVE_LOOP) && wave_entry->loop_end != wave_entry->loop_begin)
 			{
-				if ((WaveAccSigned)wave->acc < (WaveAccSigned)wave->entry->loop_begin * WAVETABLE_RESOLUTION)
+				if ((WaveAccSigned)wave->acc < (WaveAccSigned)wave_entry->loop_begin * WAVETABLE_RESOLUTION)
 				{
-					if (wave->entry->flags & CYD_WAVE_PINGPONG) 
+					if (wave_entry->flags & CYD_WAVE_PINGPONG) 
 					{
-						wave->acc = (WaveAccSigned)wave->entry->loop_begin * WAVETABLE_RESOLUTION - ((WaveAccSigned)wave->acc - (WaveAccSigned)wave->entry->loop_begin * WAVETABLE_RESOLUTION);
+						wave->acc = (WaveAccSigned)wave_entry->loop_begin * WAVETABLE_RESOLUTION - ((WaveAccSigned)wave->acc - (WaveAccSigned)wave_entry->loop_begin * WAVETABLE_RESOLUTION);
 						wave->direction = 0;
 					}
 					else
 					{
-						wave->acc = wave->acc - (Uint64)wave->entry->loop_begin * WAVETABLE_RESOLUTION + (Uint64)wave->entry->loop_end * WAVETABLE_RESOLUTION;
+						wave->acc = wave->acc - (Uint64)wave_entry->loop_begin * WAVETABLE_RESOLUTION + (Uint64)wave_entry->loop_end * WAVETABLE_RESOLUTION;
 					}
 				}
 			}
@@ -169,7 +169,7 @@ void cyd_wave_cycle(CydWaveState *wave)
 				if ((WaveAccSigned)wave->acc < 0)
 				{
 					// stop playback
-					wave->entry = NULL;
+					wave_entry = NULL;
 				}
 			}
 		}

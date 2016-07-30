@@ -31,13 +31,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 typedef struct
 {
-	const CydWavetableEntry *entry;
 	int direction; // 0 = forward, 1 = backwards
 	CydWaveAcc acc; // probably overkill
 	Uint32 frequency;
 } CydWaveState;
 
-Sint32 cyd_wave_get_sample(const CydWaveState *state, CydWaveAcc acc);
-void cyd_wave_cycle(CydWaveState *wave);
+Sint32 cyd_wave_get_sample(const CydWaveState *state, const CydWavetableEntry *wave_entry, CydWaveAcc acc);
+void cyd_wave_cycle(CydWaveState *wave, const CydWavetableEntry *wave_entry);
 
 #endif

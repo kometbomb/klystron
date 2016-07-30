@@ -69,13 +69,17 @@ inline static void shift_lfsr(Uint32 *v, int tap_0, int tap_1)
 static void cyd_init_channel(CydEngine *cyd, CydChannel *chn)
 {
 	memset(chn, 0, sizeof(*chn));
-	chn->random = RANDOM_SEED;
 	chn->pw = 0x400;
 	cyd_set_filter_coeffs(cyd, chn, 2047, 0);
 #ifdef STEREOOUTPUT
 	cyd_set_panning(cyd, chn, CYD_PAN_CENTER);
 #endif
-	chn->reg4 = chn->reg5 = chn->reg9 = 0x1;
+
+	for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
+	{
+		chn->subosc[s].random = RANDOM_SEED;
+		chn->subosc[s].reg4 = chn->subosc[s].reg5 = chn->subosc[s].reg9 = 1;
+	}
 	
 #ifndef CYD_DISABLE_FM
 	cydfm_init(&chn->fm);
@@ -365,13 +369,16 @@ Uint32 cyd_cycle_adsr(const CydEngine *eng, Uint32 flags, Uint32 ym_env_shape, C
 #ifndef CYD_DISABLE_LFSR
 static void run_lfsrs(CydChannel *chn)
 {
-	shift_lfsr(&chn->reg4, 4, 3);
-	shift_lfsr(&chn->reg5, 5, 3);
-	
-	if (chn->lfsr_type & 8)
-		shift_lfsr(&chn->reg9, 9, 5);
-	else
-		shift_lfsr(&chn->reg9, 17, 14);
+	for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
+	{
+		shift_lfsr(&chn->subosc[s].reg4, 4, 3);
+		shift_lfsr(&chn->subosc[s].reg5, 5, 3);
+		
+		if (chn->lfsr_type & 8)
+			shift_lfsr(&chn->subosc[s].reg9, 9, 5);
+		else
+			shift_lfsr(&chn->subosc[s].reg9, 17, 14);
+	}
 }
 #endif
 
@@ -380,7 +387,13 @@ static void cyd_cycle_channel(CydEngine *cyd, CydChannel *chn)
 {
 	chn->flags = cyd_cycle_adsr(cyd, chn->flags, chn->ym_env_shape, &chn->adsr);
 	
-	if (chn->flags & CYD_CHN_ENABLE_WAVE) cyd_wave_cycle(&chn->wave);
+	if (chn->flags & CYD_CHN_ENABLE_WAVE) 
+	{
+		for (int i = 0 ; i < CYD_SUB_OSCS ; ++i)
+		{
+			cyd_wave_cycle(&chn->subosc[i].wave, chn->wave_entry);
+		}
+	}
 	
 #ifndef CYD_DISABLE_FM
 	if (chn->flags & CYD_CHN_ENABLE_FM) cydfm_cycle(cyd, &chn->fm);
@@ -393,85 +406,98 @@ static void cyd_sync_channel(CydEngine *cyd, CydChannel *chn)
 {
 	if ((chn->flags & CYD_CHN_ENABLE_SYNC) && cyd->channel[chn->sync_source].sync_bit)
 	{
-		chn->accumulator = 0;
-		chn->wave.acc = 0;
-		chn->wave.direction = 0;
-		chn->random = RANDOM_SEED;
-		chn->reg4 = chn->reg5 = chn->reg9 = 0x1;
-		chn->lfsr_ctr = 0;
+		for (int i = 0 ; i < CYD_SUB_OSCS ; ++i)
+		{
+			chn->subosc[i].wave.acc = 0;
+			chn->subosc[i].wave.direction = 0;
+			chn->subosc[i].accumulator = 0;
+			chn->subosc[i].random = RANDOM_SEED;
+			chn->subosc[i].reg4 = 1;
+			chn->subosc[i].reg5 = 1;
+			chn->subosc[i].reg9 = 1;
+			chn->subosc[i].lfsr_ctr = 0;
+		}
 	}
 }
 
 
 static void cyd_advance_oscillators(CydEngine *cyd, CydChannel *chn)
 {
-	Uint32 prev_acc = chn->accumulator;
-	chn->accumulator = (chn->accumulator + (Uint32)chn->frequency);
-	chn->sync_bit |= chn->accumulator & ACC_LENGTH;
-	chn->accumulator &= ACC_LENGTH - 1;
-	
-	if ((prev_acc & (ACC_LENGTH/32)) != (chn->accumulator & (ACC_LENGTH/32)))
+	for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
 	{
-		if (chn->flags & CYD_CHN_ENABLE_METAL)
-		{
-			shift_lfsr(&chn->random, 0xe, 8);
-			chn->random &= (1 << (0xe + 1)) - 1;
-		}
-		else
-		{
-			shift_lfsr(&chn->random, 22, 17);
-			chn->random &= (1 << (22 + 1)) - 1;
-		}
-	}
-	
-#ifndef CYD_DISABLE_LFSR		
-	if (chn->flags & CYD_CHN_ENABLE_LFSR)
-	{
-		chn->lfsr_acc = (chn->lfsr & 1) ? (WAVE_AMP - 1) : 0;
+		Uint32 prev_acc = chn->subosc[s].accumulator;
+		chn->subosc[s].accumulator = (chn->subosc[s].accumulator + (Uint32)chn->subosc[s].frequency);
 		
-		if (chn->lfsr_ctr >= chn->lfsr_period)
-		{
-			chn->lfsr_ctr = 0;
+		/* only subosc #0 can set the sync bit */
 		
-			switch (chn->lfsr_type & 3)
+		if (s == 0)
+			chn->sync_bit |= chn->subosc[s].accumulator & ACC_LENGTH;
+			
+		chn->subosc[s].accumulator &= ACC_LENGTH - 1;
+		
+		if ((prev_acc & (ACC_LENGTH/32)) != (chn->subosc[s].accumulator & (ACC_LENGTH/32)))
+		{
+			if (chn->flags & CYD_CHN_ENABLE_METAL)
 			{
-				case 0: 
-					chn->lfsr ^= !!(chn->reg5 & chn->reg9 & 1);
-					break;
-				
-				case 1:
-				case 3: 
-					chn->lfsr ^= !!(chn->reg5 & 1);
-					break;
-				
-				case 2:
-					chn->lfsr ^= !!(chn->reg5 & chn->reg4 & 1);
-					break;
-					
-				case 4: 
-					chn->lfsr ^= !!(chn->reg9 & 1);
-					break;
-					
-				case 5: 
-				case 7:
-					chn->lfsr ^= 1;
-					break;
-					
-				case 6: 
-					chn->lfsr ^= !!(chn->reg4 & 1);
-					break;
+				shift_lfsr(&chn->subosc[s].random, 0xe, 8);
+				chn->subosc[s].random &= (1 << (0xe + 1)) - 1;
+			}
+			else
+			{
+				shift_lfsr(&chn->subosc[s].random, 22, 17);
+				chn->subosc[s].random &= (1 << (22 + 1)) - 1;
 			}
 		}
-		
-		++chn->lfsr_ctr;
-		
-		run_lfsrs(chn);
-	}
+	
+#ifndef CYD_DISABLE_LFSR		
+		if (chn->flags & CYD_CHN_ENABLE_LFSR)
+		{
+			chn->subosc[s].lfsr_acc = (chn->subosc[s].lfsr & 1) ? (WAVE_AMP - 1) : 0;
+			
+			if (chn->subosc[s].lfsr_ctr >= chn->subosc[s].lfsr_period)
+			{
+				chn->subosc[s].lfsr_ctr = 0;
+			
+				switch (chn->lfsr_type & 3)
+				{
+					case 0: 
+						chn->subosc[s].lfsr ^= !!(chn->subosc[s].reg5 & chn->subosc[s].reg9 & 1);
+						break;
+					
+					case 1:
+					case 3: 
+						chn->subosc[s].lfsr ^= !!(chn->subosc[s].reg5 & 1);
+						break;
+					
+					case 2:
+						chn->subosc[s].lfsr ^= !!(chn->subosc[s].reg5 & chn->subosc[s].reg4 & 1);
+						break;
+						
+					case 4: 
+						chn->subosc[s].lfsr ^= !!(chn->subosc[s].reg9 & 1);
+						break;
+						
+					case 5: 
+					case 7:
+						chn->subosc[s].lfsr ^= 1;
+						break;
+						
+					case 6: 
+						chn->subosc[s].lfsr ^= !!(chn->subosc[s].reg4 & 1);
+						break;
+				}
+			}
+			
+			++chn->subosc[s].lfsr_ctr;
+			
+			run_lfsrs(chn);
+		}
 #endif
+	}
 }
 
 
-static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
+static Sint32 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 {
 	Sint32 ovr = 0;
 	
@@ -483,12 +509,18 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 	
 	for (int i = 0 ; i < (1 << cyd->oversample) ; ++i)
 	{
+		for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
+		{
+			if (chn->subosc[s].frequency != 0)
+			{
 #ifdef CYD_DISABLE_FM
-		Uint32 accumulator = chn->accumulator;
+				Uint32 accumulator = chn->subosc[s].accumulator;
 #else
-		Uint32 accumulator = chn->accumulator + mod;
+				Uint32 accumulator = chn->subosc[s].accumulator + mod;
 #endif	
-		ovr += cyd_osc(chn->flags, accumulator % ACC_LENGTH, chn->pw, chn->random, chn->lfsr_acc);
+				ovr += cyd_osc(chn->flags, accumulator % ACC_LENGTH, chn->pw, chn->subosc[s].random, chn->subosc[s].lfsr_acc);
+			}
+		}
 		
 		cyd_advance_oscillators(cyd, chn); // Need to move the oscillators per every oversample subcycle
 		
@@ -497,7 +529,7 @@ static Sint16 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 #endif
 	}
 	
-	return (ovr >> cyd->oversample) - (WAVE_AMP / 2);
+	return (ovr >> cyd->oversample)  - WAVE_AMP / 2;
 }
 
 
@@ -544,14 +576,20 @@ static Sint32 cyd_output(CydEngine *cyd)
 	{
 		s[i] = (Sint32)cyd_output_channel(cyd, &cyd->channel[i]);
 #ifndef CYD_DISABLE_WAVETABLE
-		if ((cyd->channel[i].flags & CYD_CHN_ENABLE_WAVE) && cyd->channel[i].wave.entry && !(cyd->channel[i].flags & CYD_CHN_WAVE_OVERRIDE_ENV))
+		if ((cyd->channel[i].flags & CYD_CHN_ENABLE_WAVE) && cyd->channel[i].wave_entry && !(cyd->channel[i].flags & CYD_CHN_WAVE_OVERRIDE_ENV))
 		{
+			for (int sub = 0 ; sub < CYD_SUB_OSCS ; ++sub)
+			{
+				if (cyd->channel[i].subosc[sub].wave.frequency != 0)
+				{
 #ifdef CYD_DISABLE_FM
-			CydWaveAcc accumulator = cyd->channel[i].wave.acc;
+					CydWaveAcc accumulator = cyd->channel[i].subosc[sub].wave.acc;
 #else
-			CydWaveAcc accumulator = (cyd->channel[i].flags & CYD_CHN_ENABLE_FM) ? cydfm_modulate_wave(cyd, &cyd->channel[i].fm, cyd->channel[i].wave.entry, cyd->channel[i].wave.acc) : cyd->channel[i].wave.acc;
+					CydWaveAcc accumulator = (cyd->channel[i].flags & CYD_CHN_ENABLE_FM) ? cydfm_modulate_wave(cyd, &cyd->channel[i].fm, cyd->channel[i].wave_entry, cyd->channel[i].subosc[sub].wave.acc) : cyd->channel[i].subosc[sub].wave.acc;
 #endif	
-			s[i] += cyd_wave_get_sample(&cyd->channel[i].wave, accumulator);
+					s[i] += cyd_wave_get_sample(&cyd->channel[i].subosc[sub].wave, cyd->channel[i].wave_entry, accumulator);
+				}
+			}
 		}
 #endif
 	}
@@ -572,14 +610,20 @@ static Sint32 cyd_output(CydEngine *cyd)
 			}
 
 #ifndef CYD_DISABLE_WAVETABLE			
-			if ((cyd->channel[i].flags & CYD_CHN_ENABLE_WAVE) && cyd->channel[i].wave.entry && (cyd->channel[i].flags & CYD_CHN_WAVE_OVERRIDE_ENV))
+			if ((cyd->channel[i].flags & CYD_CHN_ENABLE_WAVE) && cyd->channel[i].wave_entry && (cyd->channel[i].flags & CYD_CHN_WAVE_OVERRIDE_ENV))
 			{
+				for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
+				{
+					if (cyd->channel[i].subosc[s].wave.frequency != 0)
+					{
 #ifdef CYD_DISABLE_FM
-				CydWaveAcc accumulator = cyd->channel[i].wave.acc;
+						CydWaveAcc accumulator = cyd->channel[i].subosc[s].wave.acc;
 #else
-				CydWaveAcc accumulator = (cyd->channel[i].flags & CYD_CHN_ENABLE_FM) ? cydfm_modulate_wave(cyd, &cyd->channel[i].fm, cyd->channel[i].wave.entry, cyd->channel[i].wave.acc) : cyd->channel[i].wave.acc;
+						CydWaveAcc accumulator = (cyd->channel[i].flags & CYD_CHN_ENABLE_FM) ? cydfm_modulate_wave(cyd, &cyd->channel[i].fm, cyd->channel[i].wave_entry, cyd->channel[i].subosc[s].wave.acc) : cyd->channel[i].subosc[s].wave.acc;
 #endif	
-				o += cyd_wave_get_sample(&cyd->channel[i].wave, accumulator) * (Sint32)(chn->adsr.volume) / MAX_VOLUME;
+						o += cyd_wave_get_sample(&cyd->channel[i].subosc[s].wave, chn->wave_entry, accumulator) * (Sint32)(chn->adsr.volume) / MAX_VOLUME;
+					}
+				}
 			}
 #endif
 
@@ -847,25 +891,25 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 }
 
 
-void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
+void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, int subosc, Uint16 frequency)
 {
-	chn->frequency = (Uint64)(ACC_LENGTH >> (cyd->oversample))/16 * (Uint64)frequency / (Uint64)cyd->sample_rate;
+	chn->subosc[subosc].frequency = (Uint64)(ACC_LENGTH >> (cyd->oversample))/16 * (Uint64)(frequency) / (Uint64)cyd->sample_rate;
 
 #ifndef CYD_DISABLE_LFSR	
-	chn->lfsr_period = (Uint64)cyd->sample_rate * 16 / frequency;
+	chn->subosc[subosc].lfsr_period = (Uint64)cyd->sample_rate * 16 / frequency;
 #endif
-
+	
 #ifndef CYD_DISABLE_FM
 	cydfm_set_frequency(cyd, &chn->fm, frequency);
 #endif
 }
 
 
-void cyd_set_wavetable_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency)
+void cyd_set_wavetable_frequency(CydEngine *cyd, CydChannel *chn, int subosc, Uint16 frequency)
 {	
 #ifndef CYD_DISABLE_WAVETABLE
-	if (chn->wave.entry)
-		chn->wave.frequency = (Uint64)WAVETABLE_RESOLUTION * (Uint64)chn->wave.entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)frequency / (Uint64)get_freq(chn->wave.entry->base_note);
+	if (chn->wave_entry)
+		chn->subosc[subosc].wave.frequency = (Uint64)WAVETABLE_RESOLUTION * (Uint64)chn->wave_entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)frequency / (Uint64)get_freq(chn->wave_entry->base_note);
 #endif
 }
 
@@ -922,9 +966,13 @@ void cyd_enable_gate(CydEngine *cyd, CydChannel *chn, Uint8 enable)
 		
 		if (chn->flags & CYD_CHN_ENABLE_KEY_SYNC)
 		{
-			chn->accumulator = 0;
-			chn->reg4 = chn->reg5 = chn->reg9 = 0x1;
-			chn->lfsr_ctr = 0;
+			for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
+			{
+				chn->subosc[s].accumulator = 0;
+				chn->subosc[s].reg4 = chn->subosc[s].reg5 = chn->subosc[s].reg9 = 1;
+				chn->subosc[s].lfsr_ctr = 0;
+			}
+			
 #ifndef CYD_DISABLE_FM
 			chn->fm.accumulator = 0;
 			chn->fm.wave.acc = 0;
@@ -1332,19 +1380,26 @@ void cyd_set_panning(CydEngine *cyd, CydChannel *chn, Uint8 panning)
 
 void cyd_set_wave_entry(CydChannel *chn, const CydWavetableEntry * entry)
 {
-	chn->wave.entry = entry;
-	chn->wave.acc = 0;
-	chn->wave.frequency = 0;
-	chn->wave.direction = 0;
+	chn->wave_entry = entry;
+	
+	for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
+	{
+		chn->subosc[s].wave.acc = 0;
+		chn->subosc[s].wave.frequency = 0;
+		chn->subosc[s].wave.direction = 0;
+	}
 }
 
 
 void cyd_set_wavetable_offset(CydChannel *chn, Uint16 offset /* 0..0x1000 = 0-100% */)
 {
 #ifndef CYD_DISABLE_WAVETABLE
-	if (chn->wave.entry)
+	for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
 	{
-		chn->wave.acc = (Uint64)offset * WAVETABLE_RESOLUTION * chn->wave.entry->samples / 0x1000;
+		if (chn->wave_entry)
+		{
+			chn->subosc[s].wave.acc = (Uint64)offset * WAVETABLE_RESOLUTION * chn->wave_entry->samples / 0x1000;
+		}
 	}
 #endif
 }

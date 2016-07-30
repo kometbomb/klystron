@@ -38,27 +38,34 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 typedef struct
 {
+	Uint32 frequency;
+	Uint32 accumulator;
+	Uint32 random; // random lfsr
+	Uint32 lfsr, lfsr_period, lfsr_ctr, lfsr_acc; // lfsr state
+	Uint32 reg4, reg5, reg9; // "pokey" lfsr registers
+	CydWaveState wave;
+} CydOscState;
+
+typedef struct
+{
 	// ---- interface
-	volatile Uint32 flags;
-	volatile Uint16 pw; // 0-2047
+	Uint32 flags;
+	Uint16 pw; // 0-2047
 	Uint8 sync_source, ring_mod; // channel
 	Uint8 flttype;
 	CydAdsr adsr;
 	Uint8 ym_env_shape;
 #ifdef STEREOOUTPUT
-	volatile Uint8 panning; // 0-128, 64 = center
-	volatile Sint32 gain_left, gain_right;
+	Uint8 panning; // 0-128, 64 = center
+	Sint32 gain_left, gain_right;
 #endif
 	// ---- internal
 	Uint32 sync_bit;
-	volatile Uint32 frequency;
-	Uint32 accumulator;
-	Uint32 random; // random lfsr
-	Uint32 lfsr, lfsr_type, lfsr_period, lfsr_ctr, lfsr_acc; // lfsr state
+	Uint32 lfsr_type;
+	const CydWavetableEntry *wave_entry;
+	CydOscState subosc[CYD_SUB_OSCS];
 	CydFilter flt;
 	int fx_bus;
-	CydWaveState wave;
-	Uint32 reg4, reg5, reg9; // "pokey" lfsr registers
 #ifndef CYD_DISABLE_FM
 	CydFm fm;
 #endif
@@ -179,8 +186,8 @@ void cyd_set_oversampling(CydEngine *cyd, int oversampling);
 void cyd_reserve_channels(CydEngine *cyd, int channels);
 void cyd_deinit(CydEngine *cyd);
 void cyd_reset(CydEngine *cyd);
-void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency);
-void cyd_set_wavetable_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency);
+void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, int subosc, Uint16 frequency);
+void cyd_set_wavetable_frequency(CydEngine *cyd, CydChannel *chn, int subosc, Uint16 frequency);
 void cyd_reset_wavetable(CydEngine *cyd);
 void cyd_set_wavetable_offset(CydChannel *chn, Uint16 offset /* 0..0x1000 = 0-100% */);
 void cyd_set_env_frequency(CydEngine *cyd, CydChannel *chn, Uint16 frequency);

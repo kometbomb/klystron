@@ -49,8 +49,6 @@ void cydflt_cycle(CydFilter *flt, Sint32 input)
 	flt->b4 = (flt->b3 + t1) * flt->p / 2048 - flt->b4 * flt->f / 2048;
 	flt->b4 = my_min(32767, my_max(-32768, flt->b4));    //clipping
 	
-	//if (!(flt->b4 > -16384 && flt->b4 < 16383)) printf("flt->b4 = %d\n", flt->b4);;
-	
 	flt->b0 = input;
 }
 
