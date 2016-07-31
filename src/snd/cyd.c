@@ -900,7 +900,8 @@ void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, int subosc, Uint16 frequ
 #endif
 	
 #ifndef CYD_DISABLE_FM
-	cydfm_set_frequency(cyd, &chn->fm, frequency);
+	if (subosc == 0)
+		cydfm_set_frequency(cyd, &chn->fm, frequency);
 #endif
 }
 
