@@ -518,7 +518,7 @@ static Sint32 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 #else
 				Uint32 accumulator = chn->subosc[s].accumulator + mod;
 #endif	
-				ovr += cyd_osc(chn->flags, accumulator % ACC_LENGTH, chn->pw, chn->subosc[s].random, chn->subosc[s].lfsr_acc);
+				ovr += cyd_osc(chn->flags, accumulator % ACC_LENGTH, chn->pw, chn->subosc[s].random, chn->subosc[s].lfsr_acc) - WAVE_AMP / 2;
 			}
 		}
 		
@@ -529,7 +529,7 @@ static Sint32 cyd_output_channel(CydEngine *cyd, CydChannel *chn)
 #endif
 	}
 	
-	return (ovr >> cyd->oversample)  - WAVE_AMP / 2;
+	return (ovr >> cyd->oversample);
 }
 
 
@@ -893,11 +893,16 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 
 void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, int subosc, Uint16 frequency)
 {
-	chn->subosc[subosc].frequency = (Uint64)(ACC_LENGTH >> (cyd->oversample))/16 * (Uint64)(frequency) / (Uint64)cyd->sample_rate;
+	if (frequency != 0)
+	{
+		chn->subosc[subosc].frequency = (Uint64)(ACC_LENGTH >> (cyd->oversample))/16 * (Uint64)(frequency) / (Uint64)cyd->sample_rate;
 
 #ifndef CYD_DISABLE_LFSR	
-	chn->subosc[subosc].lfsr_period = (Uint64)cyd->sample_rate * 16 / frequency;
+		chn->subosc[subosc].lfsr_period = (Uint64)cyd->sample_rate * 16 / frequency;
 #endif
+	}
+	else
+		chn->subosc[subosc].frequency = 0;
 	
 #ifndef CYD_DISABLE_FM
 	if (subosc == 0)
@@ -909,8 +914,13 @@ void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, int subosc, Uint16 frequ
 void cyd_set_wavetable_frequency(CydEngine *cyd, CydChannel *chn, int subosc, Uint16 frequency)
 {	
 #ifndef CYD_DISABLE_WAVETABLE
-	if (chn->wave_entry)
-		chn->subosc[subosc].wave.frequency = (Uint64)WAVETABLE_RESOLUTION * (Uint64)chn->wave_entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)frequency / (Uint64)get_freq(chn->wave_entry->base_note);
+	if (frequency != 0)
+	{
+		if (chn->wave_entry)
+			chn->subosc[subosc].wave.frequency = (Uint64)WAVETABLE_RESOLUTION * (Uint64)chn->wave_entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)frequency / (Uint64)get_freq(chn->wave_entry->base_note);
+	}
+	else
+		chn->subosc[subosc].wave.frequency = 0;
 #endif
 }
 

@@ -214,14 +214,15 @@ static void mus_set_wavetable_frequency(MusEngine *mus, int chan, Uint16 note)
 	{
 		for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
 		{
-			Uint16 final = note;
+			Uint16 final = 0;
 			
-			if (chn->instrument->flags & MUS_INST_MULTIOSC)
+			if (s == 0 || (chn->instrument->flags & MUS_INST_MULTIOSC))
 			{
 				switch (s)
 				{
 					default:
 					case 0:
+						final = note;
 						break;
 					
 					case 1: 
@@ -240,11 +241,17 @@ static void mus_set_wavetable_frequency(MusEngine *mus, int chan, Uint16 note)
 				}
 			}
 		
+			Uint16 wave_frequency = 0;
+		
+			if (final != 0)
+			{
 #ifndef CYD_DISABLE_INACCURACY
-			Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : (final)) & mus->pitch_mask;
+				wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : (final)) & mus->pitch_mask;
 #else
-			Uint16 wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : (final));
+				wave_frequency = get_freq((chn->instrument->flags & MUS_INST_WAVE_LOCK_NOTE) ? cydchn->wave_entry->base_note : (final));
 #endif
+			}
+			
 			cyd_set_wavetable_frequency(mus->cyd, cydchn, s, wave_frequency);
 		}
 	}
@@ -259,14 +266,15 @@ static void mus_set_frequency(MusEngine *mus, int chan, Uint16 note, int divider
 	
 	for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
 	{
-		Uint16 final = note;
+		Uint16 final = 0;
 			
-		if (chn->instrument && (chn->instrument->flags & MUS_INST_MULTIOSC))
+		if (s == 0 || (chn->instrument->flags & MUS_INST_MULTIOSC))
 		{
 			switch (s)
 			{
 				default:
 				case 0:
+					final = note;
 					break;
 				
 				case 1: 
@@ -285,11 +293,16 @@ static void mus_set_frequency(MusEngine *mus, int chan, Uint16 note, int divider
 			}
 		}
 		
+		Uint16 frequency = 0;
+		
+		if (final != 0)
+		{
 #ifndef CYD_DISABLE_INACCURACY
-		Uint16 frequency = get_freq(final) & mus->pitch_mask;
+			frequency = get_freq(final) & mus->pitch_mask;
 #else
-		Uint16 frequency = get_freq(final);
+			frequency = get_freq(final);
 #endif
+		}
 		
 		cyd_set_frequency(mus->cyd, &mus->cyd->channel[chan], s, frequency / divider);
 	}
