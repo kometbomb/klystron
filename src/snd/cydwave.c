@@ -95,7 +95,6 @@ static Sint32 cyd_wave_get_sample_linear(const CydWavetableEntry *entry, CydWave
 Sint32 cyd_wave_get_sample(const CydWaveState *state, const CydWavetableEntry *wave_entry, CydWaveAcc acc)
 {
 #ifndef CYD_DISABLE_WAVETABLE
-
 	if (wave_entry->flags & CYD_WAVE_NO_INTERPOLATION)
 	{
 		return cyd_wave_get_sample_no_interpolation(wave_entry, acc, state->direction);
@@ -115,7 +114,7 @@ void cyd_wave_cycle(CydWaveState *wave, const CydWavetableEntry *wave_entry)
 {
 #ifndef CYD_DISABLE_WAVETABLE
 
-	if (wave_entry)
+	if (wave_entry && wave->playing)
 	{
 		if (wave->direction == 0)
 		{
@@ -123,7 +122,7 @@ void cyd_wave_cycle(CydWaveState *wave, const CydWavetableEntry *wave_entry)
 			
 			if ((wave_entry->flags & CYD_WAVE_LOOP) && wave_entry->loop_end != wave_entry->loop_begin)
 			{
-				if (wave->acc >= (Uint64)wave_entry->loop_end * WAVETABLE_RESOLUTION)
+				if (wave->acc / WAVETABLE_RESOLUTION >= (Uint64)wave_entry->loop_end)
 				{
 					if (wave_entry->flags & CYD_WAVE_PINGPONG) 
 					{
@@ -138,10 +137,10 @@ void cyd_wave_cycle(CydWaveState *wave, const CydWavetableEntry *wave_entry)
 			}
 			else
 			{
-				if (wave->acc >= (Uint64)wave_entry->samples * WAVETABLE_RESOLUTION)
+				if (wave->acc / WAVETABLE_RESOLUTION >= (Uint64)wave_entry->samples)
 				{
 					// stop playback
-					wave_entry = NULL;
+					wave->playing = false;
 				}
 			}
 		}
@@ -151,7 +150,7 @@ void cyd_wave_cycle(CydWaveState *wave, const CydWavetableEntry *wave_entry)
 			
 			if ((wave_entry->flags & CYD_WAVE_LOOP) && wave_entry->loop_end != wave_entry->loop_begin)
 			{
-				if ((WaveAccSigned)wave->acc < (WaveAccSigned)wave_entry->loop_begin * WAVETABLE_RESOLUTION)
+				if ((WaveAccSigned)wave->acc / WAVETABLE_RESOLUTION < (WaveAccSigned)wave_entry->loop_begin)
 				{
 					if (wave_entry->flags & CYD_WAVE_PINGPONG) 
 					{
@@ -169,7 +168,7 @@ void cyd_wave_cycle(CydWaveState *wave, const CydWavetableEntry *wave_entry)
 				if ((WaveAccSigned)wave->acc < 0)
 				{
 					// stop playback
-					wave_entry = NULL;
+					wave->playing = false;
 				}
 			}
 		}

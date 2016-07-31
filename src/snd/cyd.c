@@ -580,7 +580,7 @@ static Sint32 cyd_output(CydEngine *cyd)
 		{
 			for (int sub = 0 ; sub < CYD_SUB_OSCS ; ++sub)
 			{
-				if (cyd->channel[i].subosc[sub].wave.frequency != 0)
+				if (cyd->channel[i].subosc[sub].wave.playing && cyd->channel[i].subosc[sub].wave.frequency != 0)
 				{
 #ifdef CYD_DISABLE_FM
 					CydWaveAcc accumulator = cyd->channel[i].subosc[sub].wave.acc;
@@ -614,7 +614,7 @@ static Sint32 cyd_output(CydEngine *cyd)
 			{
 				for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
 				{
-					if (cyd->channel[i].subosc[s].wave.frequency != 0)
+					if (cyd->channel[i].subosc[s].wave.playing && cyd->channel[i].subosc[s].wave.frequency != 0)
 					{
 #ifdef CYD_DISABLE_FM
 						CydWaveAcc accumulator = cyd->channel[i].subosc[s].wave.acc;
@@ -914,13 +914,15 @@ void cyd_set_frequency(CydEngine *cyd, CydChannel *chn, int subosc, Uint16 frequ
 void cyd_set_wavetable_frequency(CydEngine *cyd, CydChannel *chn, int subosc, Uint16 frequency)
 {	
 #ifndef CYD_DISABLE_WAVETABLE
-	if (frequency != 0)
+	if (frequency != 0 && chn->wave_entry)
 	{
-		if (chn->wave_entry)
-			chn->subosc[subosc].wave.frequency = (Uint64)WAVETABLE_RESOLUTION * (Uint64)chn->wave_entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)frequency / (Uint64)get_freq(chn->wave_entry->base_note);
+		chn->subosc[subosc].wave.frequency = (Uint64)WAVETABLE_RESOLUTION * (Uint64)chn->wave_entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)frequency / (Uint64)get_freq(chn->wave_entry->base_note);
 	}
 	else
+	{
+		chn->subosc[subosc].wave.playing = false;
 		chn->subosc[subosc].wave.frequency = 0;
+	}
 #endif
 }
 
@@ -1395,6 +1397,7 @@ void cyd_set_wave_entry(CydChannel *chn, const CydWavetableEntry * entry)
 	
 	for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
 	{
+		chn->subosc[s].wave.playing = true;
 		chn->subosc[s].wave.acc = 0;
 		chn->subosc[s].wave.frequency = 0;
 		chn->subosc[s].wave.direction = 0;
@@ -1405,9 +1408,9 @@ void cyd_set_wave_entry(CydChannel *chn, const CydWavetableEntry * entry)
 void cyd_set_wavetable_offset(CydChannel *chn, Uint16 offset /* 0..0x1000 = 0-100% */)
 {
 #ifndef CYD_DISABLE_WAVETABLE
-	for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
+	if (chn->wave_entry)
 	{
-		if (chn->wave_entry)
+		for (int s = 0 ; s < CYD_SUB_OSCS ; ++s)
 		{
 			chn->subosc[s].wave.acc = (Uint64)offset * WAVETABLE_RESOLUTION * chn->wave_entry->samples / 0x1000;
 		}

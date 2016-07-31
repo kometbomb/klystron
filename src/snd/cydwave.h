@@ -28,10 +28,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 #include "cydtypes.h"
 #include "cydentry.h"
+#include <stdbool.h>
 
 typedef struct
 {
 	int direction; // 0 = forward, 1 = backwards
+	bool playing;
 	CydWaveAcc acc; // probably overkill
 	Uint32 frequency;
 } CydWaveState;
