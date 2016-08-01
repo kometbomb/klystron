@@ -696,6 +696,15 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 					cydchn->fm.feedback = inst % 8;
 				}
 				break;
+				
+				case MUS_FX_FM_SET_WAVEFORM:
+				{
+					if ((inst & 255) < CYD_WAVE_MAX_ENTRIES)
+					{
+						cydchn->fm.wave_entry = &mus->cyd->wavetable_entries[inst & 255];
+					}
+				}
+				break;
 #endif
 				
 #ifdef STEREOOUTPUT
