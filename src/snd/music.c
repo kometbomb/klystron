@@ -828,6 +828,30 @@ static void do_command(MusEngine *mus, int chan, int tick, Uint16 inst, int from
 				}
 				break;
 				
+				case MUS_FX_SET_SYNCSRC:
+				{
+					if ((inst & 0xff) != 0xff)
+					{
+						cydchn->sync_source = (inst & 0xff) % CYD_MAX_FX_CHANNELS;
+						cydchn->flags |= CYD_CHN_ENABLE_SYNC;
+					}
+					else
+						cydchn->flags &= ~CYD_CHN_ENABLE_SYNC;
+				}
+				break;
+				
+				case MUS_FX_SET_RINGSRC:
+				{
+					if ((inst & 0xff) != 0xff)
+					{
+						cydchn->ring_mod = (inst & 0xff) % CYD_MAX_FX_CHANNELS;
+						cydchn->flags |= CYD_CHN_ENABLE_RING_MODULATION;
+					}
+					else
+						cydchn->flags &= ~CYD_CHN_ENABLE_RING_MODULATION;
+				}
+				break;
+				
 #ifndef CYD_DISABLE_FX
 				case MUS_FX_SET_FXBUS:
 				{
