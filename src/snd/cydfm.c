@@ -75,7 +75,10 @@ void cydfm_set_frequency(const CydEngine *cyd, CydFm *fm, Uint32 base_frequency)
 	fm->period = ((Uint64)(ACC_LENGTH)/16 * (Uint64)base_frequency / (Uint64)cyd->sample_rate) * (Uint64)harmonic[fm->harmonic & 15] / (Uint64)harmonic[fm->harmonic >> 4];
 	
 	if (fm->wave_entry)
+	{
+		fm->wave.playing = true;
 		fm->wave.frequency = ((Uint64)(WAVETABLE_RESOLUTION) * (Uint64)fm->wave_entry->sample_rate / (Uint64)cyd->sample_rate * (Uint64)base_frequency / (Uint64)get_freq(fm->wave_entry->base_note)) * (Uint64)harmonic[fm->harmonic & 15] / (Uint64)harmonic[fm->harmonic >> 4];
+	}
 }
 
 
