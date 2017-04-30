@@ -54,6 +54,9 @@ static Sint32 cyd_wave_get_sample_linear(const CydWavetableEntry *entry, CydWave
 			int a = wave_acc / WAVETABLE_RESOLUTION;
 			int b = a + 1;
 			
+			if (a >= entry->samples || a < 0)
+				return 0;
+			
 			if ((entry->flags & CYD_WAVE_LOOP) && b >= entry->loop_end)
 			{
 				if (!(entry->flags & CYD_WAVE_PINGPONG))
@@ -71,6 +74,9 @@ static Sint32 cyd_wave_get_sample_linear(const CydWavetableEntry *entry, CydWave
 		{
 			int a = wave_acc / WAVETABLE_RESOLUTION;
 			int b = a - 1;
+			
+			if (a >= entry->samples || a < 0)
+				return 0;
 			
 			if ((entry->flags & CYD_WAVE_LOOP) && b < (Sint32)entry->loop_begin)
 			{
