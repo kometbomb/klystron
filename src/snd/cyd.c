@@ -130,7 +130,6 @@ void cyd_init(CydEngine *cyd, Uint16 sample_rate, int channels)
 #endif
 	
 #ifndef USENATIVEAPIS
-
 # ifdef USESDLMUTEXES
 	cyd->mutex = SDL_CreateMutex();
 # endif
@@ -236,6 +235,11 @@ void cyd_deinit(CydEngine *cyd)
 		free(cyd->wavetable_entries);
 		cyd->wavetable_entries = NULL;
 	}
+#endif
+
+#ifndef USENATIVEAPIS
+	if (cyd->conversion_buffer)
+		free(cyd->conversion_buffer);
 #endif
 }
 
@@ -888,6 +892,21 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 		
 		cyd_lock(cyd, 0);
 	}
+	
+#ifndef USENATIVEAPIS
+	if (cyd->conversion_buffer_size < len)
+	{
+		if (cyd->conversion_buffer)
+			free(cyd->conversion_buffer);
+		
+		cyd->conversion_buffer_size = len * cyd->convert.len_mult;
+		cyd->conversion_buffer = SDL_malloc(cyd->conversion_buffer_size);
+	}
+		
+	cyd->convert.len = len;
+	cyd->convert.buf = cyd->conversion_buffer;
+	SDL_ConvertAudio(&cyd->convert);
+#endif
 }
 
 
@@ -1156,6 +1175,20 @@ int cyd_register(CydEngine * cyd)
 			default: return 0; break;
 		}
 		
+#ifdef STEREOOUTPUT
+		int have_channels = 2;
+#else
+		int have_channels = 1;
+#endif
+		
+		int rval = SDL_BuildAudioCVT(&cyd->convert, AUDIO_S16SYS, want_channels, cyd->sample_rate, format, channels, frequency);
+		if (rval == 0)
+			debug("SDL_BuildAudioCVT: No audio conversion needed");
+		else if (rval == 1)
+			debug("SDL_BuildAudioCVT: Audio conversion set up");
+		else
+			warning("SDL_BuildAudioCVT: %s", SDL_GetError());
+
 		return 1;
 	}
 	else return 0;
@@ -1189,6 +1222,15 @@ int cyd_register(CydEngine * cyd)
 	}
 	
 	debug("Got %d Hz/format %d/%d channels", obtained.freq, obtained.format, obtained.channels);
+
+	int rval = SDL_BuildAudioCVT(&cyd->convert, AUDIO_S16SYS, desired.channels, cyd->sample_rate, obtained.format, obtained.channels, obtained.freq);
+	
+	if (rval == 0)
+		debug("SDL_BuildAudioCVT: No audio conversion needed");
+	else if (rval == 1)
+		debug("SDL_BuildAudioCVT: Audio conversion set up");
+	else
+		warning("SDL_BuildAudioCVT: %s", SDL_GetError());
 	
 	SDL_PauseAudio(0);
 	

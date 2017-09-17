@@ -166,6 +166,11 @@ typedef struct CydEngine_t
 #endif
 	Uint64 samples_played;
 	int oversample;
+#ifndef USENATIVEAPIS
+	SDL_AudioCVT convert;
+	void *conversion_buffer;
+	int conversion_buffer_size;
+#endif
 } CydEngine;
 
 enum
