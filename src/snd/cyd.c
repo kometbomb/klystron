@@ -1181,7 +1181,7 @@ int cyd_register(CydEngine * cyd)
 		int have_channels = 1;
 #endif
 		
-		int rval = SDL_BuildAudioCVT(&cyd->convert, AUDIO_S16SYS, want_channels, cyd->sample_rate, format, channels, frequency);
+		int rval = SDL_BuildAudioCVT(&cyd->convert, AUDIO_S16SYS, have_channels, cyd->sample_rate, format, channels, frequency);
 		if (rval == 0)
 			debug("SDL_BuildAudioCVT: No audio conversion needed");
 		else if (rval == 1)
