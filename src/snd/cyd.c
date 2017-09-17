@@ -894,7 +894,7 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 	}
 	
 #ifndef USENATIVEAPIS
-	if (cyd->conversion_buffer_size < len)
+	if (cyd->conversion_buffer_size < len * cyd->convert.len_mult)
 	{
 		if (cyd->conversion_buffer)
 			free(cyd->conversion_buffer);
