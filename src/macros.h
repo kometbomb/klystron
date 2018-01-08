@@ -39,8 +39,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 	if ((((Uint16)file_version) >= ((Uint16)first_version)) && (((Uint16)file_version) <= ((Uint16)last_version)))\
 	{\
 		block;\
-	} 
-	
+	}
+
 #define VER_READ(file_version, first_version, last_version, var, size) VER(file_version, first_version, last_version, SDL_RWread(ctx, var, !size ? sizeof(*var) : size, 1));
 #define _VER_READ(x, size) VER_READ(version, 0, MUS_VERSION, x, size)
 #define _VER_WRITE(x, size) fwrite(x, !size ? sizeof(*x) : size, 1, f)
@@ -85,17 +85,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 // Makes "warning: cast to pointer from integer of different size" disappear
 
 #define CASTPTR(t,x) (*(t*)&x)
-#ifdef __i386__
-#  define CASTTOPTR(t,x) (t*)x
-#else
-#  define CASTTOPTR(t,x) (t*)(Uint64)x
-#endif
-
-#if __i386__
-#define MAKEPTR(x) ((void*)(Uint32)(x))
-#else
-#define MAKEPTR(x) ((void*)(Uint64)(x))
-#endif
+#define CASTTOPTR(t,x) (t*)(uintptr_t)x
+#define MAKEPTR(x) ((void*)(uintptr_t)(x))
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
