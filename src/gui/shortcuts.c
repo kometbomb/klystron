@@ -53,30 +53,30 @@ static const char *upcase(char *str)
 {
 	for (char *c = str ; *c ; ++c)
 		*c = toupper(*c);
-		
+
 	return str;
 }
 
 
 const char * get_shortcut_string(const KeyShortcut *sc)
 {
-	static char buffer[100];
+	static char buffer[100] = { 0 };
 	strcpy(buffer, "");
-			
+
 	if (sc->mod & KMOD_CTRL)
-		strncat(buffer, "ctrl-", sizeof(buffer));
-		
+		strncat(buffer, "ctrl-", sizeof(buffer) - 1);
+
 	if (sc->mod & KMOD_ALT)
-		strncat(buffer, "alt-", sizeof(buffer));
-		
+		strncat(buffer, "alt-", sizeof(buffer) - 1);
+
 	if (sc->mod & KMOD_SHIFT)
-		strncat(buffer, "shift-", sizeof(buffer));
-	
+		strncat(buffer, "shift-", sizeof(buffer) - 1);
+
 	char keyname[50] = { 0 };
-	
+
 	if (sc->key >= SDLK_KP_DIVIDE && sc->key <= SDLK_KP_EQUALSAS400)
 	{
-		strncpy(keyname, SDL_GetKeyName(sc->key), 50);
+		strncpy(keyname, SDL_GetKeyName(sc->key), sizeof(keyname) - 1);
 		keyname[2] = ' ';
 		keyname[3] = keyname[7];
 		keyname[4] = '\0';
@@ -84,8 +84,10 @@ const char * get_shortcut_string(const KeyShortcut *sc)
 		keyname[1] = 'P';
 	}
 	else
+	{
 		strncpy(keyname, SDL_GetKeyName(sc->key), 3);
-	
+	}
+
 	strncat(buffer, keyname, sizeof(buffer) - 1);
 	return upcase(buffer);
 }
