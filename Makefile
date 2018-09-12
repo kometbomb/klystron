@@ -3,29 +3,29 @@ VPATH=src:src
 ECHO = echo
 CFG = debug
 REV = cp -f
-MACHINE = 
+MACHINE =
 
-util_SRC = $(notdir ${wildcard src/util/*.c}) 
+util_SRC = $(notdir ${wildcard src/util/*.c})
 util_DEP = $(patsubst %.c, deps/util_$(CFG)_%.d, ${util_SRC})
 util_OBJ = $(patsubst %.c, objs.$(CFG)/util_%.o, ${util_SRC})
 
-snd_SRC = $(notdir ${wildcard src/snd/*.c}) 
+snd_SRC = $(notdir ${wildcard src/snd/*.c})
 snd_DEP = $(patsubst %.c, deps/snd_$(CFG)_%.d, ${snd_SRC})
-snd_OBJ = $(patsubst %.c, objs.$(CFG)/snd_%.o, ${snd_SRC}) 
+snd_OBJ = $(patsubst %.c, objs.$(CFG)/snd_%.o, ${snd_SRC})
 
-gfx_SRC = $(notdir ${wildcard src/gfx/*.c}) 
+gfx_SRC = $(notdir ${wildcard src/gfx/*.c})
 gfx_DEP = $(patsubst %.c, deps/gfx_$(CFG)_%.d, ${gfx_SRC})
-gfx_OBJ = $(patsubst %.c, objs.$(CFG)/gfx_%.o, ${gfx_SRC}) 
+gfx_OBJ = $(patsubst %.c, objs.$(CFG)/gfx_%.o, ${gfx_SRC})
 
-gui_SRC = $(notdir ${wildcard src/gui/*.c}) 
+gui_SRC = $(notdir ${wildcard src/gui/*.c})
 gui_DEP = $(patsubst %.c, deps/gui_$(CFG)_%.d, ${gui_SRC})
 gui_OBJ = $(patsubst %.c, objs.$(CFG)/gui_%.o, ${gui_SRC}) $(util_OBJ) $(gfx_OBJ)
 
-lib_SRC = $(notdir ${wildcard src/lib/*.c}) 
+lib_SRC = $(notdir ${wildcard src/lib/*.c})
 lib_DEP = $(patsubst %.c, deps/lib_$(CFG)_%.d, ${lib_SRC})
-lib_OBJ = $(patsubst %.c, objs.$(CFG)/lib_%.o, ${lib_SRC}) 
-	
-CC = gcc -shared -std=gnu99 --no-strict-aliasing
+lib_OBJ = $(patsubst %.c, objs.$(CFG)/lib_%.o, ${lib_SRC})
+
+CC = gcc -shared -std=gnu99 -Wno-strict-aliasing
 CDEP = gcc -E -std=gnu99
 
 ifndef CFLAGS
@@ -34,7 +34,7 @@ endif
 
 # What include flags to pass to the compiler
 ifdef COMSPEC
-	SDLFLAGS = -I /MinGW/include/SDL2 -lSDL2 -lwinmm
+	SDLFLAGS = -I c:/MinGW/include/SDL2 -lSDL2 -lwinmm
 else
 	SDLFLAGS = `sdl2-config --cflags` -U_FORTIFY_SOURCE
 endif
@@ -43,7 +43,7 @@ INCLUDEFLAGS= -I ../Common -I src $(SDLFLAGS) -I src/gfx -I src/snd -I src/util 
 
 # Separate compile options per configuration
 ifeq ($(CFG),debug)
-	CFLAGS += -O3 -g -Wall ${INCLUDEFLAGS} -DDEBUG -fno-inline 
+	CFLAGS += -O3 -g -Wall ${INCLUDEFLAGS} -DDEBUG -fno-inline
 else
 	ifeq ($(CFG),profile)
 		CFLAGS += -O3 -pg -Wall ${INCLUDEFLAGS}
@@ -66,7 +66,7 @@ else
 endif
 
 # A common link flag for all configurations
-LDFLAGS = 
+LDFLAGS =
 
 .PHONY: tools all build
 
@@ -87,28 +87,28 @@ ksnd: bin.$(CFG)/libksndstatic.a bin.$(CFG)/ksnd.dll
 ifdef COMSPEC
 tools: tools/bin/makebundle.exe tools/bin/editor.exe
 else
-tools: tools/bin/makebundle.exe 
+tools: tools/bin/makebundle.exe
 endif
 
 inform:
 	@echo "Configuration "$(CFG)
 	@echo "------------------------"
-	
+
 bin.$(CFG)/lib${TARGET}_snd.a: ${snd_OBJ} | inform
 	@$(ECHO) "Linking "$(TARGET)"..."
 	@mkdir -p bin.$(CFG)
 	@ar rcs $@ $^
-	
+
 bin.$(CFG)/lib${TARGET}_gfx.a: ${gfx_OBJ} | inform
 	@$(ECHO) "Linking "$(TARGET)"..."
 	@mkdir -p bin.$(CFG)
 	@ar rcs $@ $^
-	
+
 bin.$(CFG)/lib${TARGET}_util.a: ${util_OBJ} | inform
 	@$(ECHO) "Linking "$(TARGET)"..."
 	@mkdir -p bin.$(CFG)
 	@ar rcs $@ $^
-	
+
 bin.$(CFG)/lib${TARGET}_gui.a: ${gui_OBJ} | inform
 	@$(ECHO) "Linking "$(TARGET)"..."
 	@mkdir -p bin.$(CFG)
@@ -122,7 +122,7 @@ ifdef COMSPEC
 	@$(ECHO) "Building ksndstatic.lib..."
 	@-lib /OUT:bin.$(CFG)/ksndstatic.lib $^
 endif
-	
+
 bin.$(CFG)/ksnd.dll: objs.$(CFG)/lib_ksnd.o ${snd_OBJ} src/lib/ksnd.def | inform
 	@$(ECHO) "Linking ksnd.dll..."
 	@mkdir -p bin.$(CFG)
@@ -131,13 +131,13 @@ ifdef COMSPEC
 	@$(ECHO) "Building ksnd.lib..."
 	@-lib /DEF:src/lib/ksnd.def /OUT:bin.$(CFG)/ksnd.lib
 endif
-	
-objs.$(CFG)/snd_%.o: snd/%.c 
+
+objs.$(CFG)/snd_%.o: snd/%.c
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
 	@$(CC) -c $(CFLAGS) -o $@ $<
 
-objs.$(CFG)/gfx_%.o: gfx/%.c 
+objs.$(CFG)/gfx_%.o: gfx/%.c
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
 	@$(CC) -c $(CFLAGS) -o $@ $<
@@ -151,13 +151,13 @@ objs.$(CFG)/gui_%.o: gui/%.c
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
 	@$(CC) -c $(CFLAGS) -o $@ $<
-	
+
 objs.$(CFG)/lib_%.o: lib/%.c
 	@$(ECHO) "Compiling "$(notdir $<)"..."
 	@mkdir -p objs.$(CFG)
 	@$(CC) -c $(CFLAGS) -o $@ $<
 
-deps/snd_$(CFG)_%.d: snd/%.c 
+deps/snd_$(CFG)_%.d: snd/%.c
 	@mkdir -p deps
 	@$(ECHO) "Generating dependencies for $<"
 	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
@@ -165,7 +165,7 @@ deps/snd_$(CFG)_%.d: snd/%.c
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
-deps/gfx_$(CFG)_%.d: gfx/%.c 
+deps/gfx_$(CFG)_%.d: gfx/%.c
 	@mkdir -p deps
 	@$(ECHO) "Generating dependencies for $<"
 	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
@@ -188,7 +188,7 @@ deps/gui_$(CFG)_%.d: gui/%.c
 	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/gui_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
-	
+
 deps/lib_$(CFG)_%.d: lib/%.c
 	@mkdir -p deps
 	@$(ECHO) "Generating dependencies for $<"
@@ -196,13 +196,13 @@ deps/lib_$(CFG)_%.d: lib/%.c
 	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/gui_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
-	
+
 clean:
 	@rm -rf deps objs.release objs.debug objs.profile objs.size bin.release bin.debug bin.profile bin.size
 
 # Unless "make clean" is called, include the dependency files
 # which are auto-generated. Don't fail if they are missing
-# (-include), since they will be missing in the first 
+# (-include), since they will be missing in the first
 # invocation!
 ifneq ($(MAKECMDGOALS),clean)
 -include ${snd_DEP}
@@ -213,7 +213,7 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 tools/bin/makebundle.exe: tools/makebundle/*.c
-	make -C tools/makebundle 
+	make -C tools/makebundle
 
 ifdef COMSPEC
 tools/bin/editor.exe: tools/editor/src/*
