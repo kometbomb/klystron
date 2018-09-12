@@ -41,7 +41,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 		block;\
 	}
 
-#define VER_READ(file_version, first_version, last_version, var, size) VER(file_version, first_version, last_version, SDL_RWread(ctx, var, !size ? sizeof(*var) : size, 1));
+#define VER_READ(file_version, first_version, last_version, var, size) VER(file_version, first_version, last_version, SDL_RWread(ctx, var, size == 0 ? sizeof(*var) : size, 1));
 #define _VER_READ(x, size) VER_READ(version, 0, MUS_VERSION, x, size)
 #define _VER_WRITE(x, size) fwrite(x, !size ? sizeof(*x) : size, 1, f)
 
