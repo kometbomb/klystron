@@ -436,7 +436,7 @@ void file_list_view(GfxDomain *dest_surface, const SDL_Rect *area, const SDL_Eve
 		if (data.files[i].type == FB_FILE)
 			font_write(data.largefont, dest_surface, &pos, data.files[i].display_name);
 		else
-			font_write_args(data.largefont, dest_surface, &pos, "ï¿½%s", data.files[i].display_name);
+			font_write_args(data.largefont, dest_surface, &pos, "½%s", data.files[i].display_name);
 
 		if (pos.y + pos.h <= content.h + content.y) slider_set_params(&data.scrollbar, 0, data.n_files - 1, data.list_position, i, &data.list_position, 1, SLIDER_VERTICAL, data.gfx);
 
@@ -475,7 +475,7 @@ void field_view(GfxDomain *dest_surface, const SDL_Rect *area, const SDL_Event *
 		}
 
 		if (data.editpos == i && i < length + 1)
-			font_write(data.largefont, dest_surface, &pos, "ï¿½");
+			font_write(data.largefont, dest_surface, &pos, "§");
 	}
 	else
 	{
