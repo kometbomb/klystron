@@ -120,7 +120,7 @@ enum
 	CYD_LOCK_REQUEST=1,
 	CYD_LOCK_LOCKED=2,
 	CYD_LOCK_CALLBACK=4
-	
+
 };
 
 #define WAVEFORMS (CYD_CHN_ENABLE_NOISE|CYD_CHN_ENABLE_PULSE|CYD_CHN_ENABLE_TRIANGLE|CYD_CHN_ENABLE_SAW|CYD_CHN_ENABLE_WAVE|CYD_CHN_ENABLE_LFSR)
@@ -138,6 +138,7 @@ typedef struct CydEngine_t
 	CydChannel *channel;
 	int n_channels;
 	Uint32 sample_rate;
+    int buffer_length;
 	// ----- internal
 	volatile Uint32 flags;
 	int (*callback)(void*);
@@ -146,7 +147,7 @@ typedef struct CydEngine_t
 	Uint16 *lookup_table, *lookup_table_ym;
 	CydFx fx[CYD_MAX_FX_CHANNELS];
 #ifdef USESDLMUTEXES
-	CydMutex mutex;	
+	CydMutex mutex;
 #else
 	volatile sig_atomic_t lock_request;
 	volatile sig_atomic_t lock_locked;
@@ -161,7 +162,7 @@ typedef struct CydEngine_t
 	int buffers_available;
 	int waveout_hdr_idx;
 	HWAVEOUT hWaveOut;
-	WAVEHDR waveout_hdr[CYD_NUM_WO_BUFFERS]; 
+	WAVEHDR waveout_hdr[CYD_NUM_WO_BUFFERS];
 # endif
 #endif
 	Uint64 samples_played;
