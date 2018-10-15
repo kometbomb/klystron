@@ -815,7 +815,7 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
     Sint16 *stream = (void*)_stream;
 #endif
 
-	for (int i = 0 ; i < len ; )
+	for (int i = 0 ; i < cyd->buffer_length ; )
 	{
 #ifndef USENATIVEAPIS
 
@@ -840,14 +840,14 @@ void cyd_output_buffer_stereo(int chan, void *_stream, int len, void *udata)
 
 		if (cyd->flags & CYD_PAUSED)
 		{
-			i += BUFFER_GRANULARITY * 2 * sizeof(Sint16);
+			i += BUFFER_GRANULARITY;
 			stream += BUFFER_GRANULARITY * 2;
 			continue;
 		}
 
 		cyd_lock(cyd, 1);
 
-		for (int g = 0 ; g < BUFFER_GRANULARITY && i < len ; i += sizeof(Sint16)*2, stream += 2, ++cyd->samples_output)
+		for (int g = 0 ; g < BUFFER_GRANULARITY && i < cyd->buffer_length ; i++, stream += 2, ++cyd->samples_output)
 		{
 
 			if (cyd->callback && cyd->callback_counter-- == 0)
