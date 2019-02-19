@@ -34,13 +34,6 @@ ifndef CFLAGS
 CFLAGS = $(MACHINE) -ftree-vectorize
 endif
 
-# What include flags to pass to the compiler
-ifdef COMSPEC
-	SDLFLAGS = -I c:/MinGW/include/SDL2 -lSDL2 -lwinmm
-else
-	SDLFLAGS = `sdl2-config --cflags` -U_FORTIFY_SOURCE
-endif
-
 INCLUDEFLAGS= -I ../Common -I src $(SDLFLAGS) -I src/gfx -I src/snd -I src/util -I src/gui $(EXTFLAGS)
 
 # Separate compile options per configuration
