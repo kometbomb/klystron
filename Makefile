@@ -5,6 +5,8 @@ CFG = debug
 REV = cp -f
 MACHINE =
 
+include common.mk
+
 util_SRC = $(notdir ${wildcard src/util/*.c})
 util_DEP = $(patsubst %.c, deps/util_$(CFG)_%.d, ${util_SRC})
 util_OBJ = $(patsubst %.c, objs.$(CFG)/util_%.o, ${util_SRC})
@@ -71,13 +73,13 @@ LDFLAGS =
 .PHONY: tools all build
 
 build: Makefile
-	@echo '#ifndef KLYSTRON_VERSION_H' > ./src/version.h
-	@echo '#define KLYSTRON_VERSION_H' >> ./src/version.h
-	@echo '#define KLYSTRON_REVISION "' | tr -d '\n' >> ./src/version.h
-	@date +"%Y%m%d" | tr -d '\n' >> ./src/version.h
-	@echo '"' >> ./src/version.h
-	@echo '#define KLYSTRON_VERSION_STRING "klystron " KLYSTRON_REVISION' >> ./src/version.h
-	@echo '#endif' >> ./src/version.h
+	$(Q)echo '#ifndef KLYSTRON_VERSION_H' > ./src/version.h
+	$(Q)echo '#define KLYSTRON_VERSION_H' >> ./src/version.h
+	$(Q)echo '#define KLYSTRON_REVISION "' | tr -d '\n' >> ./src/version.h
+	$(Q)date +"%Y%m%d" | tr -d '\n' >> ./src/version.h
+	$(Q)echo '"' >> ./src/version.h
+	$(Q)echo '#define KLYSTRON_VERSION_STRING "klystron " KLYSTRON_REVISION' >> ./src/version.h
+	$(Q)echo '#endif' >> ./src/version.h
 	make all CFG=$(CFG)
 
 all: bin.$(CFG)/lib${TARGET}_snd.a bin.$(CFG)/lib${TARGET}_gfx.a bin.$(CFG)/lib${TARGET}_util.a bin.$(CFG)/lib${TARGET}_gui.a tools
@@ -95,110 +97,110 @@ inform:
 	@echo "------------------------"
 
 bin.$(CFG)/lib${TARGET}_snd.a: ${snd_OBJ} | inform
-	@$(ECHO) "Linking "$(TARGET)"..."
-	@mkdir -p bin.$(CFG)
-	@ar rcs $@ $^
+	$(MSG) "Linking "$(TARGET)"..."
+	$(Q)mkdir -p bin.$(CFG)
+	$(Q)ar rcs $@ $^
 
 bin.$(CFG)/lib${TARGET}_gfx.a: ${gfx_OBJ} | inform
-	@$(ECHO) "Linking "$(TARGET)"..."
-	@mkdir -p bin.$(CFG)
-	@ar rcs $@ $^
+	$(MSG) "Linking "$(TARGET)"..."
+	$(Q)mkdir -p bin.$(CFG)
+	$(Q)ar rcs $@ $^
 
 bin.$(CFG)/lib${TARGET}_util.a: ${util_OBJ} | inform
-	@$(ECHO) "Linking "$(TARGET)"..."
-	@mkdir -p bin.$(CFG)
-	@ar rcs $@ $^
+	$(MSG) "Linking "$(TARGET)"..."
+	$(Q)mkdir -p bin.$(CFG)
+	$(Q)ar rcs $@ $^
 
 bin.$(CFG)/lib${TARGET}_gui.a: ${gui_OBJ} | inform
-	@$(ECHO) "Linking "$(TARGET)"..."
-	@mkdir -p bin.$(CFG)
-	@ar rcs $@ $^
+	$(MSG) "Linking "$(TARGET)"..."
+	$(Q)mkdir -p bin.$(CFG)
+	$(Q)ar rcs $@ $^
 
 bin.$(CFG)/libksndstatic.a: objs.$(CFG)/lib_ksnd.o ${snd_OBJ} | inform
-	@$(ECHO) "Linking "$(TARGET)"..."
-	@mkdir -p bin.$(CFG)
-	@ar rcs $@ $^
+	$(MSG) "Linking "$(TARGET)"..."
+	$(Q)mkdir -p bin.$(CFG)
+	$(Q)ar rcs $@ $^
 ifdef COMSPEC
-	@$(ECHO) "Building ksndstatic.lib..."
+	$(MSG) "Building ksndstatic.lib..."
 	@-lib /OUT:bin.$(CFG)/ksndstatic.lib $^
 endif
 
 bin.$(CFG)/ksnd.dll: objs.$(CFG)/lib_ksnd.o ${snd_OBJ} src/lib/ksnd.def | inform
-	@$(ECHO) "Linking ksnd.dll..."
-	@mkdir -p bin.$(CFG)
-	@$(CC) -shared -o $@ objs.$(CFG)/lib_ksnd.o src/lib/ksnd.def ${snd_OBJ} $(CFLAGS) $(INCLUDEFLAGS) -DDLLEXPORT -Wl,--out-implib,bin.$(CFG)/libksnd.a
+	$(MSG) "Linking ksnd.dll..."
+	$(Q)mkdir -p bin.$(CFG)
+	$(Q)$(CC) -shared -o $@ objs.$(CFG)/lib_ksnd.o src/lib/ksnd.def ${snd_OBJ} $(CFLAGS) $(INCLUDEFLAGS) -DDLLEXPORT -Wl,--out-implib,bin.$(CFG)/libksnd.a
 ifdef COMSPEC
-	@$(ECHO) "Building ksnd.lib..."
+	$(MSG) "Building ksnd.lib..."
 	@-lib /DEF:src/lib/ksnd.def /OUT:bin.$(CFG)/ksnd.lib
 endif
 
 objs.$(CFG)/snd_%.o: snd/%.c
-	@$(ECHO) "Compiling "$(notdir $<)"..."
-	@mkdir -p objs.$(CFG)
-	@$(CC) -c $(CFLAGS) -o $@ $<
+	$(MSG) "Compiling "$(notdir $<)"..."
+	$(Q)mkdir -p objs.$(CFG)
+	$(Q)$(CC) -c $(CFLAGS) -o $@ $<
 
 objs.$(CFG)/gfx_%.o: gfx/%.c
-	@$(ECHO) "Compiling "$(notdir $<)"..."
-	@mkdir -p objs.$(CFG)
-	@$(CC) -c $(CFLAGS) -o $@ $<
+	$(MSG) "Compiling "$(notdir $<)"..."
+	$(Q)mkdir -p objs.$(CFG)
+	$(Q)$(CC) -c $(CFLAGS) -o $@ $<
 
 objs.$(CFG)/util_%.o: util/%.c
-	@$(ECHO) "Compiling "$(notdir $<)"..."
-	@mkdir -p objs.$(CFG)
-	@$(CC) -c $(CFLAGS) -o $@ $<
+	$(MSG) "Compiling "$(notdir $<)"..."
+	$(Q)mkdir -p objs.$(CFG)
+	$(Q)$(CC) -c $(CFLAGS) -o $@ $<
 
 objs.$(CFG)/gui_%.o: gui/%.c
-	@$(ECHO) "Compiling "$(notdir $<)"..."
-	@mkdir -p objs.$(CFG)
-	@$(CC) -c $(CFLAGS) -o $@ $<
+	$(MSG) "Compiling "$(notdir $<)"..."
+	$(Q)mkdir -p objs.$(CFG)
+	$(Q)$(CC) -c $(CFLAGS) -o $@ $<
 
 objs.$(CFG)/lib_%.o: lib/%.c
-	@$(ECHO) "Compiling "$(notdir $<)"..."
-	@mkdir -p objs.$(CFG)
-	@$(CC) -c $(CFLAGS) -o $@ $<
+	$(MSG) "Compiling "$(notdir $<)"..."
+	$(Q)mkdir -p objs.$(CFG)
+	$(Q)$(CC) -c $(CFLAGS) -o $@ $<
 
 deps/snd_$(CFG)_%.d: snd/%.c
-	@mkdir -p deps
-	@$(ECHO) "Generating dependencies for $<"
-	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
+	$(Q)mkdir -p deps
+	$(MSG) "Generating dependencies for $<"
+	$(Q)set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/snd_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
 deps/gfx_$(CFG)_%.d: gfx/%.c
-	@mkdir -p deps
-	@$(ECHO) "Generating dependencies for $<"
-	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
+	$(Q)mkdir -p deps
+	$(MSG) "Generating dependencies for $<"
+	$(Q)set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/gfx_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
 deps/util_$(CFG)_%.d: util/%.c
-	@mkdir -p deps
-	@$(ECHO) "Generating dependencies for $<"
-	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
+	$(Q)mkdir -p deps
+	$(MSG) "Generating dependencies for $<"
+	$(Q)set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/util_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
 deps/gui_$(CFG)_%.d: gui/%.c
-	@mkdir -p deps
-	@$(ECHO) "Generating dependencies for $<"
-	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
+	$(Q)mkdir -p deps
+	$(MSG) "Generating dependencies for $<"
+	$(Q)set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/gui_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
 deps/lib_$(CFG)_%.d: lib/%.c
-	@mkdir -p deps
-	@$(ECHO) "Generating dependencies for $<"
-	@set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
+	$(Q)mkdir -p deps
+	$(MSG) "Generating dependencies for $<"
+	$(Q)set -e ; $(CDEP) -MM $(INCLUDEFLAGS) $< > $@.$$$$; \
 	sed 's,\($*\)\.o[ :]*,objs.$(CFG)\/gui_\1.o $@ : ,g' \
 		< $@.$$$$ > $@; \
 	rm -f $@.$$$$
 
 clean:
-	@rm -rf deps objs.release objs.debug objs.profile objs.size bin.release bin.debug bin.profile bin.size
+	$(Q)rm -rf deps objs.release objs.debug objs.profile objs.size bin.release bin.debug bin.profile bin.size
 
 # Unless "make clean" is called, include the dependency files
 # which are auto-generated. Don't fail if they are missing
