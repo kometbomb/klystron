@@ -997,10 +997,22 @@ void cyd_enable_gate(CydEngine *cyd, CydChannel *chn, Uint8 enable)
 	else
 	{
 		chn->flags &= ~CYD_CHN_WAVE_OVERRIDE_ENV;
+		// Adjust envelope value to create a continuous transition between attack and release
+		if (chn->adsr.envelope_state == ATTACK)
+		{
+			float fenv = sqrtf((float)chn->adsr.envelope * (float)(65536*256));
+			chn->adsr.envelope = fenv;
+		}
 		chn->adsr.envelope_state = RELEASE;
 		chn->adsr.env_speed = envspd(cyd, chn->adsr.r);
 		
 #ifndef CYD_DISABLE_FM
+		// Adjust envelope value to create a continuous modulator transition between attack and release
+		if (chn->fm.adsr.envelope_state == ATTACK)
+		{
+			float fenv = sqrtf((float)chn->fm.adsr.envelope * (float)(65536*256));
+			chn->fm.adsr.envelope = fenv;
+		}
 		chn->fm.adsr.envelope_state = RELEASE;
 		chn->fm.adsr.env_speed = envspd(cyd, chn->fm.adsr.r);
 #endif		
