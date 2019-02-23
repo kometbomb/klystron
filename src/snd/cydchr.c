@@ -41,9 +41,10 @@ void cydchr_output(CydChorus *chr, Sint32 in_l, Sint32 in_r, Sint32 *out_l, Sint
 	++chr->pos_buf;
 	if (chr->pos_buf >= chr->buf_size)
 		chr->pos_buf = 0;
-		
-	chr->buffer[chr->pos_buf] = in_r;
-	chr->buffer[chr->pos_buf + chr->buf_size] = in_r;
+
+	Sint32 in_c = (in_l + in_r) / 2;
+	chr->buffer[chr->pos_buf] = in_c;
+	chr->buffer[chr->pos_buf + chr->buf_size] = in_c;
 	
 	int acc_l = 0, acc_r = 0;
 	
