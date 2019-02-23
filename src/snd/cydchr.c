@@ -65,7 +65,7 @@ void cydchr_output(CydChorus *chr, Sint32 in_l, Sint32 in_r, Sint32 *out_l, Sint
 		if (chr->lut_size)
 			acc_l += a;
 		else
-			acc_l += in_l;
+			acc_l += in_c;
 			
 		a = chr->buffer[(chr->pos_buf - chr->lut[chr->pos_r] + chr->buf_size)];
 		acc_r += a; 
@@ -77,7 +77,7 @@ void cydchr_output(CydChorus *chr, Sint32 in_l, Sint32 in_r, Sint32 *out_l, Sint
 		if (chr->lut_size)
 			acc_l += a + (b - a) * s / CHORUS_ACCURACY;
 		else
-			acc_l += in_l;
+			acc_l += in_c;
 			
 		a = chr->buffer[(chr->pos_buf - chr->lut[chr->pos_r] / CHORUS_ACCURACY + chr->buf_size)];
 		b = chr->buffer[(chr->pos_buf - chr->lut[chr->pos_r] / CHORUS_ACCURACY - 1 + chr->buf_size)];
