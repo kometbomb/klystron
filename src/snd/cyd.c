@@ -1066,6 +1066,9 @@ static void fill_buffer(CydEngine *cyd)
 {
 	//waveOutUnprepareHeader(cyd->hWaveOut, &cyd->waveout_hdr[cyd->waveout_hdr_idx],sizeof(WAVEHDR));
 
+  // Zero buffer as klystron will mix the new data with existing buffer contents
+  memset(cyd->waveout_hdr[cyd->waveout_hdr_idx].lpData, 0, cyd->waveout_hdr[cyd->waveout_hdr_idx].dwBufferLength);
+
 #ifdef NOSDL_MIXER
 	cyd_output_buffer_stereo(cyd, cyd->waveout_hdr[cyd->waveout_hdr_idx].lpData, cyd->waveout_hdr[cyd->waveout_hdr_idx].dwBufferLength);
 #else
