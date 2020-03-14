@@ -268,3 +268,9 @@ KLYSAPI int KSND_GetPlayTime(KSong *song, int position)
 {
 	return mus_get_playtime_at(&song->song, position);
 }
+
+
+KLYSAPI int KSND_TriggerInstrument(KPlayer *player, KSong *song, int instrument, int channel, int note, int panning)
+{
+	return mus_trigger_instrument(player->mus, channel, &player->mus->instrument[instrument], note, panning);
+}
