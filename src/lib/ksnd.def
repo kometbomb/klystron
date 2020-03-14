@@ -17,3 +17,5 @@ KSND_GetVUMeters
 KSND_GetSongInfo
 KSND_SetLooping
 KSND_GetPlayTime
+KSND_TriggerInstrument
+KSND_ReleaseNote
