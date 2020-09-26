@@ -33,7 +33,7 @@ struct menu_t
 	const struct menu_t *submenu;
 	void (*action)(void*, void*, void *);
 	void *p1, *p2, *p3;
-} menu_t;
+};
 
 enum { MENU_BULLET = 1 };
 #define MENU_CHECK (void*)1
