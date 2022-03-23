@@ -32,3 +32,6 @@ void set_motion_target(void (*action)(int,int,void*), void *param);
 int check_event(const SDL_Event *event, const SDL_Rect *rect, void (*action)(void*,void*,void*), void *param1, void *param2, void *param3);
 int check_drag_event(const SDL_Event *event, const SDL_Rect *rect, void (*action)(int,int,void*), void *param);
 void set_repeat_timer(const SDL_Event *event);
+
+// Whether to immediately break the input polling loop and process the current mouse event.
+int should_process_mouse(const SDL_Event *event);
