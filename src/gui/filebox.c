@@ -795,9 +795,10 @@ int filebox(const char *title, int mode, char *buffer, size_t buffer_size, const
 
 			if (e.type != SDL_MOUSEMOTION || (e.motion.state)) ++got_event;
 
-			// ensure the last event is a mouse click so it gets passed to the draw/event code
-
-			if (e.type == SDL_MOUSEBUTTONDOWN || (e.type == SDL_MOUSEMOTION && e.motion.state)) break;
+			// Process mouse click events immediately, and batch mouse motion events
+			// (process the last one) to fix lag with high poll rate mice on Linux.
+			if (should_process_mouse(&e))
+				break;
 		}
 
 		if (data.selected)
